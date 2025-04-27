@@ -3,35 +3,56 @@ import Head from 'next/head';
 import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
+import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
-  const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [] });
+  // Include assignees in distinct values state
+  const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [] }); 
   const [filters, setFilters] = useState({ brand: '', asset: '', requester: '' });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start loading true
   const [error, setError] = useState('');
 
-  // Fetch distinct values for filters on mount
-  useEffect(() => {
-    const fetchDistinct = async () => {
-      try {
-        setError('');
-        const res = await fetch('/api/tasks?distinct=true');
-        if (!res.ok) {
-          throw new Error(`Failed to fetch distinct values: ${res.statusText}`);
-        }
-        const data = await res.json();
-        setDistinctValues(data);
-      } catch (err) {
-        console.error('Error fetching distinct values:', err);
-        setError('Could not load filter options. Please try refreshing.');
+  // Combined fetch function for both distinct values and initial tasks
+  const initialFetch = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      // Fetch distinct values
+      const distinctRes = await fetch('/api/tasks?distinct=true');
+      if (!distinctRes.ok) {
+        throw new Error(`Failed to fetch distinct values: ${distinctRes.statusText}`);
       }
-    };
-    fetchDistinct();
+      const distinctData = await distinctRes.json();
+      setDistinctValues(distinctData); // Update distinct values including assignees
+
+      // Fetch initial tasks (no filters applied yet)
+      const tasksRes = await fetch('/api/tasks');
+      if (!tasksRes.ok) {
+        const errorData = await tasksRes.json();
+        throw new Error(errorData.message || `Failed to fetch tasks: ${tasksRes.statusText}`);
+      }
+      const tasksData = await tasksRes.json();
+      setTasks(tasksData);
+
+    } catch (err) {
+      console.error('Error during initial fetch:', err);
+      setError(err.message || 'Could not load dashboard data. Please refresh.');
+      setTasks([]); // Clear tasks on error
+      setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [] }); // Clear distinct values
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Function to fetch tasks based on current filters
-  const fetchTasks = useCallback(async (currentFilters) => {
+  // Fetch initial data on mount
+  useEffect(() => {
+    initialFetch();
+  }, [initialFetch]);
+
+
+  // Function to fetch tasks based on current filters (used by FilterPanel)
+  const fetchTasksWithFilters = useCallback(async (currentFilters) => {
     setIsLoading(true);
     setError('');
     
@@ -39,6 +60,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     if (currentFilters.brand) queryParams.append('brand', currentFilters.brand);
     if (currentFilters.asset) queryParams.append('asset', currentFilters.asset);
     if (currentFilters.requester) queryParams.append('requester', currentFilters.requester);
+    // Note: We are not filtering by assignee yet in the UI, but could add it here
     
     const url = `/api/tasks?${queryParams.toString()}`;
 
@@ -51,23 +73,25 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       const data = await res.json();
       setTasks(data);
     } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setError(err.message || 'Could not load tasks. Please check connection or filters.');
+      console.error('Error fetching filtered tasks:', err);
+      setError(err.message || 'Could not load tasks with current filters.');
       setTasks([]); // Clear tasks on error
     } finally {
       setIsLoading(false);
     }
-  }, []); // No dependencies needed as it uses the passed currentFilters
-
-  // Fetch tasks initially when component mounts
-  useEffect(() => {
-    fetchTasks(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
   // Handler for applying filters from the panel
   const handleApplyFilters = (newFilters = filters) => {
-    fetchTasks(newFilters);
+    setFilters(newFilters); // Update local filter state
+    fetchTasksWithFilters(newFilters);
+  };
+  
+  // Handler for resetting filters
+  const handleResetFilters = () => {
+      const defaultFilters = { brand: '', asset: '', requester: '' };
+      setFilters(defaultFilters);
+      fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
 
   return (
@@ -76,18 +100,35 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <title>Dashboard - Asana Tasks</title>
       </Head>
       <div>
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Asana Tasks</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
+        
+        {/* --- Reporting Section --- */} 
+        <div className="mb-8">
+          {isLoading && !tasks.length ? (
+             <div className="text-center py-10">Loading chart data...</div>
+          ) : error && !tasks.length ? (
+             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                Could not load chart data: {error}
+             </div>
+          ) : (
+            <CompletionStatusChart tasks={tasks} /> 
+          )}
+        </div>
+
+        {/* --- Filter and Table Section --- */}
+        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
         
         <FilterPanel 
           filters={filters} 
           setFilters={setFilters} 
-          distinctValues={distinctValues} 
+          distinctValues={distinctValues} // Pass distinct values (including assignees)
           onApplyFilters={handleApplyFilters} 
+          onResetFilters={handleResetFilters} // Pass reset handler
         />
 
         <TaskTable 
           tasks={tasks} 
-          isLoading={isLoading} 
+          isLoading={isLoading && tasks.length === 0} // Show table loading only if tasks array is empty during load
           error={error} 
         />
       </div>
@@ -96,7 +137,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 }
 
 // Protect the page using the withAuth HOC
-// No specific getServerSideProps needed here unless you want pre-fetched data
-export const getServerSideProps = withAuth(); 
+export const getServerSideProps = withAuth();
 
 export default DashboardPage; 

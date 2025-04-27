@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function FilterPanel({ filters, setFilters, distinctValues, onApplyFilters }) {
+export default function FilterPanel({ filters, setFilters, distinctValues, onApplyFilters, onResetFilters }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
@@ -12,9 +12,14 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
   }
 
   const handleReset = () => {
-    setFilters({ brand: '', asset: '', requester: '' });
-    // Optionally trigger apply immediately after reset or wait for user to click Apply
-    onApplyFilters({ brand: '', asset: '', requester: '' });
+    // Call the reset handler passed from the parent dashboard page
+    if (onResetFilters) {
+        onResetFilters();
+    } else {
+        // Fallback if handler not provided (though it should be)
+        setFilters({ brand: '', asset: '', requester: '' });
+        onApplyFilters({ brand: '', asset: '', requester: '' }); 
+    }
   };
 
   return (
