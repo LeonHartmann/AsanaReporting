@@ -40,6 +40,7 @@ export async function getTasks(filters = {}) {
     }
 
     const result = await response.json();
+    console.log("--- Raw Asana API Response Data ---", JSON.stringify(result.data, null, 2));
     let tasks = result.data || [];
 
     if (brand) {
@@ -111,6 +112,7 @@ export async function getTasks(filters = {}) {
       };
     });
 
+    console.log("--- Formatted Tasks Data ---", JSON.stringify(formattedTasks, null, 2));
     return formattedTasks;
 
   } catch (error) {
