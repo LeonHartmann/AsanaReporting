@@ -2,6 +2,8 @@ prepare:
   steps:
     - name: npm install
       command: npm install
+    - name: Clear next cache
+      command: rm -rf .next
     - name: npm run build
       command: npm run build
 test:

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any custom global styles below */
+/* Optional: Your custom global styles below */
 body {
   @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
-} 
+}
