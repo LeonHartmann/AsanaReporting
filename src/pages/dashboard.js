@@ -6,6 +6,7 @@ import TaskTable from '@/components/TaskTable';
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
+import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import the asset chart
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -119,8 +120,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               <CompletionStatusChart tasks={tasks} /> 
               {/* Render Brand Chart */} 
               <TasksByBrandChart tasks={tasks} />
-              {/* Render Assignee Chart (will span if odd number) */} 
+              {/* Render Assignee Chart */} 
               <TasksByAssigneeChart tasks={tasks} />
+              {/* Render Asset Chart */} 
+              <TasksByAssetChart tasks={tasks} />
               {/* Add placeholders for next charts if needed */} 
               {/* <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80">Placeholder</div> */} 
             </>
