@@ -7,13 +7,13 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
 
   // Define SPORTFIVE brand colors for consistent styling
   const brandColors = {
-    primary: [21, 101, 192],    // Blue for titles and main elements
-    secondary: [52, 168, 83],   // Green for completed items and positive indicators
-    accent: [251, 188, 5],      // Yellow for warnings or attention items
-    negative: [234, 67, 53],    // Red for negative indicators
-    neutral: [80, 80, 80],      // Gray for regular text
-    neutralLight: [150, 150, 150], // Light gray for secondary text
-    sportfiveAccent: [240, 130, 0] // Orange accent color
+    primary: { r: 21, g: 101, b: 192 },    // Blue for titles and main elements
+    secondary: { r: 52, g: 168, b: 83 },   // Green for completed items and positive indicators
+    accent: { r: 251, g: 188, b: 5 },      // Yellow for warnings or attention items
+    negative: { r: 234, g: 67, b: 53 },    // Red for negative indicators
+    neutral: { r: 80, g: 80, b: 80 },      // Gray for regular text
+    neutralLight: { r: 150, g: 150, b: 150 }, // Light gray for secondary text
+    sportfiveAccent: { r: 240, g: 130, b: 0 } // Orange accent color
   };
 
   const generatePDF = async () => {
@@ -37,14 +37,14 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       const margin = 10; // Base margin in mm
       
       // Add brand styling elements - subtle header band
-      pdf.setFillColor(...brandColors.primary, 0.1); // Light blue background with alpha
+      pdf.setFillColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b, 0.1); // Light blue background with alpha
       pdf.rect(0, 0, pageWidth, 15, 'F');
-      pdf.setFillColor(...brandColors.sportfiveAccent);
+      pdf.setFillColor(brandColors.sportfiveAccent.r, brandColors.sportfiveAccent.g, brandColors.sportfiveAccent.b);
       pdf.rect(0, 15, pageWidth, 2, 'F');
       
       // Add title and logo with improved positioning
       pdf.setFontSize(28);
-      pdf.setTextColor(...brandColors.primary);
+      pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
       pdf.text('SPORTFIVE', pageWidth / 2, 25, { align: 'center' });
       
       pdf.setFontSize(18);
@@ -57,7 +57,7 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       const currentYear = new Date().getFullYear();
       
       pdf.setFontSize(10);
-      pdf.setTextColor(...brandColors.neutralLight);
+      pdf.setTextColor(brandColors.neutralLight.r, brandColors.neutralLight.g, brandColors.neutralLight.b);
       pdf.text(`Generated on: ${currentDate}`, pageWidth / 2, 43, { align: 'center' });
       
       // Add a more substantial divider line
@@ -81,11 +81,11 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       
       // Summary statistics with improved typography
       pdf.setFontSize(14);
-      pdf.setTextColor(...brandColors.primary);
+      pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
       pdf.text('EXECUTIVE SUMMARY', margin + 5, summaryBoxY + 8);
       
       pdf.setFontSize(11);
-      pdf.setTextColor(...brandColors.neutral);
+      pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
       
       // Calculate task metrics
       const totalTasks = tasks.length;
@@ -115,9 +115,9 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       
       const diffIndicator = parseFloat(completionDiff) >= 0 ? '▲' : '▼';
       if (parseFloat(completionDiff) >= 0) {
-        pdf.setTextColor(...brandColors.secondary);
+        pdf.setTextColor(brandColors.secondary.r, brandColors.secondary.g, brandColors.secondary.b);
       } else {
-        pdf.setTextColor(...brandColors.negative);
+        pdf.setTextColor(brandColors.negative.r, brandColors.negative.g, brandColors.negative.b);
       }
       pdf.text(`${diffIndicator} ${Math.abs(parseFloat(completionDiff))}% vs. previous period`, margin + 35, summaryBoxY + 29);
       
@@ -135,19 +135,24 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
         const completeWidth = (completedTasks / totalTasks) * barWidth;
         
         // We can't use gradient in this jsPDF version, but we can use solid color
-        pdf.setFillColor(...brandColors.secondary);
+        pdf.setFillColor(brandColors.secondary.r, brandColors.secondary.g, brandColors.secondary.b);
         pdf.roundedRect(margin + 5, barY, completeWidth, barHeight, 1, 1, 'F');
       }
       
       // Add key metrics with icons (using unicode symbols)
-      pdf.setTextColor(...brandColors.neutral);
+      pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
       pdf.text(`◉ Incomplete Tasks: ${incompleteTasks}`, margin + 5, summaryBoxY + 42);
-      pdf.setTextColor(overdueTasksCount > 0 ? brandColors.negative : brandColors.neutral);
+      
+      if (overdueTasksCount > 0) {
+        pdf.setTextColor(brandColors.negative.r, brandColors.negative.g, brandColors.negative.b);
+      } else {
+        pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
+      }
       pdf.text(`◉ Overdue Tasks: ${overdueTasksCount}`, margin + 50, summaryBoxY + 42);
       
       // Add KPI section with improved visual hierarchy
       pdf.setFontSize(16);
-      pdf.setTextColor(...brandColors.primary);
+      pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
       pdf.text('KEY PERFORMANCE INDICATORS', margin, summaryBoxY + summaryBoxHeight + 15);
       
       // Array of chart IDs with their titles and context messages for insights
@@ -226,7 +231,7 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
             
             // Add chart title with more prominent styling
             pdf.setFontSize(11);
-            pdf.setTextColor(...brandColors.primary);
+            pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
             pdf.text(chartInfo[i].title, chartX, chartY);
             
             // Add chart image with improved quality
@@ -235,7 +240,7 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
             
             // Add insight text below each chart with improved styling
             pdf.setFontSize(7);
-            pdf.setTextColor(...brandColors.neutral);
+            pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
             
             // Calculate text position at bottom of chart area
             const insightY = chartY + chartHeight - 3;
@@ -261,9 +266,9 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
         pdf.addPage([width, height]); // Maintain 16:9 aspect ratio
         
         // Add brand styling to the new page
-        pdf.setFillColor(...brandColors.primary, 0.1);
+        pdf.setFillColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b, 0.1);
         pdf.rect(0, 0, pageWidth, 15, 'F');
-        pdf.setFillColor(...brandColors.sportfiveAccent);
+        pdf.setFillColor(brandColors.sportfiveAccent.r, brandColors.sportfiveAccent.g, brandColors.sportfiveAccent.b);
         pdf.rect(0, 15, pageWidth, 2, 'F');
         
         try {
@@ -278,12 +283,12 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
           
           // Add title with more prominence and better positioning
           pdf.setFontSize(20);
-          pdf.setTextColor(...brandColors.primary);
+          pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
           pdf.text('Task Creation Trend Over Time', pageWidth / 2, 25, { align: 'center' });
           
           // Add subtitle with context
           pdf.setFontSize(12);
-          pdf.setTextColor(...brandColors.neutral);
+          pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
           pdf.text('Tracking task volume patterns to predict resource needs', pageWidth / 2, 35, { align: 'center' });
           
           // Add executive insights callout box
@@ -293,11 +298,11 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
           pdf.roundedRect(margin, 45, pageWidth - (margin * 2), 20, 3, 3, 'S');
           
           pdf.setFontSize(10);
-          pdf.setTextColor(...brandColors.primary);
+          pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
           pdf.text('KEY INSIGHT:', margin + 5, 53);
           
           pdf.setFontSize(10);
-          pdf.setTextColor(...brandColors.neutral);
+          pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
           const trendAnalysis = "Task volume shows consistent patterns aligned with project cycles. " +
                                 `Peak activity in ${currentMonth} indicates need for additional resources during this period. ` +
                                 `${mostCommonBrand} brand shows highest workload and should be prioritized for resource allocation.`;
@@ -320,11 +325,11 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
           pdf.rect(0, pageHeight - 30, pageWidth, 30, 'F');
           
           pdf.setFontSize(12);
-          pdf.setTextColor(...brandColors.primary);
+          pdf.setTextColor(brandColors.primary.r, brandColors.primary.g, brandColors.primary.b);
           pdf.text('EXECUTIVE RECOMMENDATIONS:', margin, pageHeight - 20);
           
           pdf.setFontSize(9);
-          pdf.setTextColor(...brandColors.neutral);
+          pdf.setTextColor(brandColors.neutral.r, brandColors.neutral.g, brandColors.neutral.b);
           
           // Create actionable recommendations
           const recommendations = [
@@ -356,7 +361,7 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
         pdf.rect(0, pageHeight - 7, pageWidth, 7, 'F');
         
         pdf.setFontSize(8);
-        pdf.setTextColor(...brandColors.neutralLight);
+        pdf.setTextColor(brandColors.neutralLight.r, brandColors.neutralLight.g, brandColors.neutralLight.b);
         pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 2, { align: 'center' });
         pdf.text('SPORTFIVE Asana Dashboard', margin, pageHeight - 2);
         pdf.text(`Generated: ${currentDate}`, pageWidth - margin, pageHeight - 2, { align: 'right' });
