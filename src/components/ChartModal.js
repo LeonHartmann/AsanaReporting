@@ -30,8 +30,9 @@ export default function ChartModal({ isOpen, onClose, title, children }) {
           </h3>
         )}
         
-        {/* Modal Content (Chart) - ensure chart container has height */}
-        <div className="h-[75vh] w-full"> {/* Increased height */}
+        {/* Modal Content (Chart) - Let chart determine height within width */}
+        <div className="w-full min-h-[300px] flex justify-center"> {/* Removed fixed height, added min-height and centering */}
+           {/* The chart component passed as children should have responsive:true and maintainAspectRatio:false */} 
            {children}
         </div>
       </div>
