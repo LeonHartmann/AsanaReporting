@@ -9,6 +9,7 @@ import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // 
 import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import the asset chart
 import TaskCreationTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the line chart
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
+import ChartModal from '@/components/ChartModal'; // Import the modal
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -17,6 +18,20 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [filters, setFilters] = useState({ brand: '', asset: '', requester: '' });
   const [isLoading, setIsLoading] = useState(true); // Start loading true
   const [error, setError] = useState('');
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', chart: null });
+
+  const openModal = (title, chartElement) => {
+    setModalContent({ title, chart: chartElement });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalContent({ title: '', chart: null }); // Clear content on close
+  };
 
   // Combined fetch function for both distinct values and initial tasks
   const initialFetch = useCallback(async () => {
@@ -99,6 +114,19 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
 
+  // Helper to create clickable chart wrappers
+  const renderClickableChart = (title, ChartComponent) => {
+    // We need to pass tasks to the ChartComponent when rendering it inside the modal
+    // Cloning the element allows us to pass the necessary props dynamically
+    const chartElement = <ChartComponent tasks={tasks} />;
+    return (
+      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, chartElement)}>
+         {/* Render the chart directly here for the dashboard view */}
+         {chartElement}
+      </div>
+    );
+  }
+
   return (
     <>
       <Head>
@@ -118,18 +146,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
           ) : (
             <>
-              {/* Render Completion Chart */} 
-              <CompletionStatusChart tasks={tasks} /> 
-              {/* Render Brand Chart */} 
-              <TasksByBrandChart tasks={tasks} />
-              {/* Render Assignee Chart */} 
-              <TasksByAssigneeChart tasks={tasks} />
-              {/* Render Asset Chart */} 
-              <TasksByAssetChart tasks={tasks} />
-              {/* Render Requester Chart */} 
-              <TasksByRequesterChart tasks={tasks} />
-              {/* Add placeholders for next charts if needed */} 
-              {/* <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80">Placeholder</div> */} 
+              {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+              {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+              {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+              {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+              {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
             </>
           )}
         </div>
@@ -137,7 +158,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         {/* --- Line Chart Section (Full Width) --- */} 
         <div className="mb-8"> 
            {!isLoading && !error && tasks.length > 0 && (
-                <TaskCreationTrendChart tasks={tasks} />
+                renderClickableChart('Task Creation Trend', TaskCreationTrendChart)
            )} 
            {/* Optionally show loading/error specific to this chart if needed */} 
         </div>
@@ -159,6 +180,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           error={error} 
         />
       </div>
+
+      {/* --- Modal --- */}
+      <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>
+        {/* Render the selected chart component inside the modal */} 
+        {modalContent.chart}
+      </ChartModal>
     </>
   );
 }
