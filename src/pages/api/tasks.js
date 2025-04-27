@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth';
 
 async function tasksHandler(req, res) {
   if (req.method === 'GET') {
-    const { brand, asset, requester, assignee, distinct } = req.query;
+    const { brand, asset, requester, assignee, startDate, endDate, distinct } = req.query;
 
     // Basic input validation/sanitization could be added here
 
@@ -13,6 +13,8 @@ async function tasksHandler(req, res) {
         asset: asset || undefined,
         requester: requester || undefined,
         assignee: assignee || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         distinct: distinct === 'true', // Convert string 'true' to boolean
       };
       const data = await getTasks(filters);

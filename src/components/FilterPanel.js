@@ -17,14 +17,14 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         onResetFilters();
     } else {
         // Fallback if handler not provided (though it should be)
-        setFilters({ brand: '', asset: '', requester: '', assignee: '' });
-        onApplyFilters({ brand: '', asset: '', requester: '', assignee: '' }); 
+        setFilters({ brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '' });
+        onApplyFilters({ brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '' }); 
     }
   };
 
   return (
     <form onSubmit={handleApply} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
         {/* Brand Filter */}
         <div>
           <label htmlFor="brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -100,6 +100,46 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             ))}
           </select>
         </div>
+
+        {/* Empty column to maintain grid layout with second row */}
+        <div className="md:hidden"></div>
+      </div>
+
+      {/* Date Range Row */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
+        {/* Start Date */}
+        <div>
+          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            From Date
+          </label>
+          <input
+            type="date"
+            id="startDate"
+            name="startDate"
+            value={filters.startDate || ''}
+            onChange={handleInputChange}
+            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* End Date */}
+        <div>
+          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            To Date
+          </label>
+          <input
+            type="date"
+            id="endDate"
+            name="endDate"
+            value={filters.endDate || ''}
+            onChange={handleInputChange}
+            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Empty columns to align with grid */}
+        <div className="hidden md:block"></div>
+        <div className="hidden md:block"></div>
 
         {/* Action Buttons */}
         <div className="flex space-x-2">
