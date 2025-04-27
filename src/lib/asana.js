@@ -63,7 +63,7 @@ export async function getTasks(filters = {}) {
       const distinctAssets = new Set();
       const distinctRequesters = new Set();
 
-      const distinctFields = 'name,custom_fields.name,custom_fields.enum_value.name,custom_fields.text_value';
+      const distinctFields = 'name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name,custom_fields.text_value';
       const allTasksUrl = `${projectTasksEndpoint}?opt_fields=${distinctFields}&limit=${limit}`;
       const allTasksResponse = await fetch(allTasksUrl, { headers: { Authorization: `Bearer ${ASANA_PAT}`, Accept: 'application/json' } });
       if (!allTasksResponse.ok) throw new Error('Failed to fetch all tasks for distinct values');
@@ -77,8 +77,9 @@ export async function getTasks(filters = {}) {
         }
 
         const assetField = task.custom_fields?.find(f => f.name === 'Assets');
-        if (assetField?.enum_value?.name) {
-          distinctAssets.add(assetField.enum_value.name);
+        if (assetField?.display_value) {
+          const values = assetField.display_value.split(', ');
+          values.forEach(value => distinctAssets.add(value.trim()));
         }
 
         const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
