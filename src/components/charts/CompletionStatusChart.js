@@ -15,7 +15,7 @@ ChartJS.register(
   Title
 );
 
-export default function CompletionStatusChart({ tasks, onClick }) {
+export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) {
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
   }
@@ -38,26 +38,45 @@ export default function CompletionStatusChart({ tasks, onClick }) {
           'rgba(75, 192, 192, 1)',
           'rgba(255, 99, 132, 1)',
         ],
-        borderWidth: 1,
+        borderWidth: isFullscreen ? 2 : 1,
       },
     ],
   };
 
-  const options = {
+  // Base options for both normal and fullscreen modes
+  const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          font: {
+            size: isFullscreen ? 16 : 12
+          },
+          padding: isFullscreen ? 20 : 10
+        }
       },
       title: {
         display: true,
         text: 'Task Completion Status',
         font: {
-          size: 16
+          size: isFullscreen ? 24 : 16,
+          weight: 'bold'
+        },
+        padding: {
+          top: isFullscreen ? 20 : 10,
+          bottom: isFullscreen ? 20 : 10
         }
       },
       tooltip: {
+        titleFont: {
+          size: isFullscreen ? 16 : 12
+        },
+        bodyFont: {
+          size: isFullscreen ? 14 : 12
+        },
+        padding: isFullscreen ? 12 : 8,
         callbacks: {
           label: function(context) {
             let label = context.label || '';
@@ -74,22 +93,38 @@ export default function CompletionStatusChart({ tasks, onClick }) {
         }
       }
     },
-     // Optional: Add center text like the Asana example
-     // This requires a custom plugin or careful styling
-     // elements: {
-     //   center: {
-     //     text: totalTasks,
-     //     color: '#36A2EB', // Default font color
-     //     fontStyle: 'Arial', // Default font
-     //     sidePadding: 20 // Default padding
-     //   }
-     // },
-     cutout: '60%', // Adjust for doughnut thickness
+    cutout: isFullscreen ? '50%' : '60%', // Wider doughnut in fullscreen mode
   };
+
+  // Additional options for fullscreen mode
+  const fullscreenOptions = isFullscreen ? {
+    layout: {
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 20
+      }
+    },
+    animation: {
+      duration: 500
+    }
+  } : {};
+
+  // Merge options
+  const options = {
+    ...baseOptions,
+    ...fullscreenOptions
+  };
+
+  // Custom container class based on fullscreen state
+  const containerClass = isFullscreen
+    ? "w-full h-full"
+    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80 cursor-pointer";
 
   return (
     <div 
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80 cursor-pointer" 
+      className={containerClass}
       onClick={onClick}
     > 
       <Doughnut data={data} options={options} />
