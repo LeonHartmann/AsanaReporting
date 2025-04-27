@@ -62,7 +62,7 @@ export async function getTasks(filters = {}) {
   try {
     if (distinct) {
       // --- Fetch All Tasks for Distinct Values --- 
-      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value'; // Added assignee.name
+      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,completed'; // Added completed
       const distinctUrl = `${projectTasksEndpoint}?opt_fields=${distinctFields}&limit=${limit}`;
       
       const allTasksData = await fetchAllPages(distinctUrl);
@@ -106,7 +106,7 @@ export async function getTasks(filters = {}) {
       };
     } else {
       // --- Fetch All Tasks for Display --- 
-      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at'; // Added assignee.name
+      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at,completed'; // Added completed
       const displayUrl = `${projectTasksEndpoint}?opt_fields=${displayFields}&limit=${limit}`;
       
       let allTasks = await fetchAllPages(displayUrl);
@@ -141,7 +141,8 @@ export async function getTasks(filters = {}) {
           brand: getSafe(() => task.name.match(/^\s*\[(.*?)\]/)?.[1]?.trim(), 'N/A'),
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
-          assignee: task.assignee?.name || 'Unassigned', // Added assignee
+          assignee: task.assignee?.name || 'Unassigned',
+          completed: task.completed, // Added completed status
           createdAt: task.created_at,
         };
       });
