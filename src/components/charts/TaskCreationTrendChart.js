@@ -21,7 +21,7 @@ ChartJS.register(
   Legend
 );
 
-export default function TaskCreationTrendChart({ tasks }) {
+export default function TaskCreationTrendChart({ tasks, onClick }) {
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
   }
@@ -102,7 +102,10 @@ export default function TaskCreationTrendChart({ tasks }) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80"> {/* Fixed height container */}
+    <div 
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80 cursor-pointer" 
+      onClick={onClick}
+    >
       <Line data={data} options={options} />
     </div>
   );
