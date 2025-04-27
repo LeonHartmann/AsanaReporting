@@ -8,6 +8,7 @@ import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
 import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import the asset chart
 import TaskCreationTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the line chart
+import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -125,6 +126,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               <TasksByAssigneeChart tasks={tasks} />
               {/* Render Asset Chart */} 
               <TasksByAssetChart tasks={tasks} />
+              {/* Render Requester Chart */} 
+              <TasksByRequesterChart tasks={tasks} />
               {/* Add placeholders for next charts if needed */} 
               {/* <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80">Placeholder</div> */} 
             </>
