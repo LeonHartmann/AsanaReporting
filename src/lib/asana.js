@@ -92,14 +92,20 @@ export async function getTasks(filters = {}) {
       };
     }
 
-    const formattedTasks = tasks.map(task => ({
-      id: task.gid,
-      name: task.name,
-      brand: getSafe(() => task.name.match(/^\s*\[(.*?)\]/)?.[1]?.trim(), 'N/A'),
-      asset: getSafe(() => task.custom_fields?.find(f => f.name === 'Asset')?.enum_value?.name, 'N/A'),
-      requester: getSafe(() => task.custom_fields?.find(f => f.name === 'Requested By')?.text_value, 'N/A'),
-      createdAt: task.created_at,
-    }));
+    const formattedTasks = tasks.map(task => {
+      // Use getSafe with default null, then check the result
+      const assetValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Asset')?.enum_value?.name); 
+      const requesterValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Requested By')?.text_value);
+
+      return {
+        id: task.gid,
+        name: task.name,
+        brand: getSafe(() => task.name.match(/^\\s*\\[(.*?)\\]/)?.[1]?.trim(), 'N/A'),
+        asset: assetValue || 'N/A', // Use 'N/A' if assetValue is falsy (null, undefined, "")
+        requester: requesterValue || 'N/A', // Use 'N/A' if requesterValue is falsy
+        createdAt: task.created_at,
+      };
+    });
 
     return formattedTasks;
 
