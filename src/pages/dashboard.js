@@ -15,7 +15,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
   // Include assignees in distinct values state
   const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [] }); 
-  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: '' });
+  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '' });
   const [isLoading, setIsLoading] = useState(true); // Start loading true
   const [error, setError] = useState('');
 
@@ -80,7 +80,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     if (currentFilters.brand) queryParams.append('brand', currentFilters.brand);
     if (currentFilters.asset) queryParams.append('asset', currentFilters.asset);
     if (currentFilters.requester) queryParams.append('requester', currentFilters.requester);
-    if (currentFilters.assignee) queryParams.append('assignee', currentFilters.assignee);
+    // Note: We are not filtering by assignee yet in the UI, but could add it here
     
     const url = `/api/tasks?${queryParams.toString()}`;
 
@@ -109,7 +109,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   
   // Handler for resetting filters
   const handleResetFilters = () => {
-      const defaultFilters = { brand: '', asset: '', requester: '', assignee: '' };
+      const defaultFilters = { brand: '', asset: '', requester: '' };
       setFilters(defaultFilters);
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
