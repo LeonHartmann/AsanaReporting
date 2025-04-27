@@ -38,6 +38,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 Requested By
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Assignee
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Task Name
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -75,6 +78,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {task.requester}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {task.assignee}
                 </td>
                 <td className="px-6 py-4 whitespace-normal text-sm text-gray-900 dark:text-white">
                   {task.name} 
