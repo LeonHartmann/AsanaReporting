@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function ChartModal({ isOpen, onClose, title, children }) {
+  useEffect(() => {
+    if (isOpen) {
+      // Force Chart.js to recalculate size
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+    }
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
