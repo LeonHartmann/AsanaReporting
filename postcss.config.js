@@ -1,11 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
   },
 };
-
-export default nextConfig;
