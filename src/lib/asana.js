@@ -40,7 +40,6 @@ export async function getTasks(filters = {}) {
     }
 
     const result = await response.json();
-    console.log("--- Raw Asana API Response Data ---", JSON.stringify(result.data, null, 2));
     let tasks = result.data || [];
 
     if (brand) {
@@ -48,12 +47,12 @@ export async function getTasks(filters = {}) {
     }
     if (asset) {
       tasks = tasks.filter(task =>
-        getSafe(() => task.custom_fields.find(f => f.name === 'Asset')?.enum_value?.name === asset)
+        getSafe(() => task.custom_fields.find(f => f.name === 'Assets')?.enum_value?.name === asset)
       );
     }
     if (requester) {
       tasks = tasks.filter(task =>
-        getSafe(() => task.custom_fields.find(f => f.name === 'Requested By')?.text_value === requester)
+        getSafe(() => task.custom_fields.find(f => f.name === 'Requested by')?.text_value === requester)
       );
     }
 
@@ -75,12 +74,12 @@ export async function getTasks(filters = {}) {
           distinctBrands.add(brandMatch[1].trim());
         }
 
-        const assetField = task.custom_fields?.find(f => f.name === 'Asset');
+        const assetField = task.custom_fields?.find(f => f.name === 'Assets');
         if (assetField?.enum_value?.name) {
           distinctAssets.add(assetField.enum_value.name);
         }
 
-        const requesterField = task.custom_fields?.find(f => f.name === 'Requested By');
+        const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
         if (requesterField?.text_value) {
           distinctRequesters.add(requesterField.text_value);
         }
@@ -94,9 +93,9 @@ export async function getTasks(filters = {}) {
     }
 
     const formattedTasks = tasks.map(task => {
-      // Find the custom fields first
-      const assetField = task.custom_fields?.find(f => f.name === 'Asset');
-      const requesterField = task.custom_fields?.find(f => f.name === 'Requested By');
+      // Find the custom fields first using the CORRECT names
+      const assetField = task.custom_fields?.find(f => f.name === 'Assets');
+      const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
 
       // Use display_value if available, otherwise default to 'N/A'
       const assetValue = assetField?.display_value;
@@ -112,7 +111,6 @@ export async function getTasks(filters = {}) {
       };
     });
 
-    console.log("--- Formatted Tasks Data ---", JSON.stringify(formattedTasks, null, 2));
     return formattedTasks;
 
   } catch (error) {
