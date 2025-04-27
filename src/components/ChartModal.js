@@ -11,7 +11,7 @@ export default function ChartModal({ isOpen, onClose, title, children }) {
       onClick={onClose} // Close modal if overlay is clicked
     >
       <div 
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl relative w-full max-w-3xl h-auto max-h-[80vh] overflow-auto"
+        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl relative w-full max-w-6xl h-auto max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal content
       >
         {/* Close Button */}
@@ -31,7 +31,7 @@ export default function ChartModal({ isOpen, onClose, title, children }) {
         )}
         
         {/* Modal Content (Chart) - ensure chart container has height */}
-        <div className="h-[60vh] w-full"> {/* Adjust height as needed */}
+        <div className="h-[75vh] w-full"> {/* Increased height */}
            {children}
         </div>
       </div>
