@@ -20,7 +20,7 @@ export async function getTasks(filters = {}) {
   }
 
   const projectTasksEndpoint = `${ASANA_API_BASE}/projects/${ASANA_PROJECT_ID}/tasks`;
-  const fields = 'name,custom_fields.name,custom_fields.enum_value.name,custom_fields.text_value,created_by.name,created_at';
+  const fields = 'name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name,custom_fields.text_value,created_by.name,created_at';
   const limit = 100;
 
   const url = `${projectTasksEndpoint}?opt_fields=${fields}&limit=${limit}`;
@@ -93,16 +93,20 @@ export async function getTasks(filters = {}) {
     }
 
     const formattedTasks = tasks.map(task => {
-      // Use getSafe with default null, then check the result
-      const assetValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Asset')?.enum_value?.name); 
-      const requesterValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Requested By')?.text_value);
+      // Find the custom fields first
+      const assetField = task.custom_fields?.find(f => f.name === 'Asset');
+      const requesterField = task.custom_fields?.find(f => f.name === 'Requested By');
+
+      // Use display_value if available, otherwise default to 'N/A'
+      const assetValue = assetField?.display_value;
+      const requesterValue = requesterField?.display_value;
 
       return {
         id: task.gid,
         name: task.name,
-        brand: getSafe(() => task.name.match(/^\\s*\\[(.*?)\\]/)?.[1]?.trim(), 'N/A'),
-        asset: assetValue || 'N/A', // Use 'N/A' if assetValue is falsy (null, undefined, "")
-        requester: requesterValue || 'N/A', // Use 'N/A' if requesterValue is falsy
+        brand: getSafe(() => task.name.match(/^\s*\[(.*?)\]/)?.[1]?.trim(), 'N/A'),
+        asset: assetValue || 'N/A', // Use 'N/A' if display_value is missing or falsy
+        requester: requesterValue || 'N/A', // Use 'N/A' if display_value is missing or falsy
         createdAt: task.created_at,
       };
     });
