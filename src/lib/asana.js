@@ -46,9 +46,11 @@ export async function getTasks(filters = {}) {
       tasks = tasks.filter(task => getSafe(() => task.name.toLowerCase().includes(brand.toLowerCase())));
     }
     if (asset) {
-      tasks = tasks.filter(task =>
-        getSafe(() => task.custom_fields.find(f => f.name === 'Assets')?.enum_value?.name === asset)
-      );
+      tasks = tasks.filter(task => {
+        const displayValue = getSafe(() => task.custom_fields.find(f => f.name === 'Assets')?.display_value);
+        // Check if the display_value (which might be a comma-separated string for multi-select) includes the selected asset filter
+        return displayValue?.includes(asset);
+      });
     }
     if (requester) {
       tasks = tasks.filter(task =>
