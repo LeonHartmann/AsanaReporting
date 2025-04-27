@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
+import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -103,15 +104,21 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
         
         {/* --- Reporting Section --- */} 
-        <div className="mb-8">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Use grid layout */}
           {isLoading && !tasks.length ? (
-             <div className="text-center py-10">Loading chart data...</div>
+             // Show a single loading indicator spanning columns if needed, or repeat per chart
+             <div className="md:col-span-2 text-center py-10">Loading chart data...</div> 
           ) : error && !tasks.length ? (
-             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+             <div className="md:col-span-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                 Could not load chart data: {error}
              </div>
           ) : (
-            <CompletionStatusChart tasks={tasks} /> 
+            <>
+              {/* Render Completion Chart */} 
+              <CompletionStatusChart tasks={tasks} /> 
+              {/* Render Brand Chart */} 
+              <TasksByBrandChart tasks={tasks} />
+            </>
           )}
         </div>
 
