@@ -167,6 +167,8 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
 
   return (
     <div 
+      id="tasks-by-requester-chart"
+      data-title="Tasks by Requester"
       className={containerClass}
       onClick={onClick}
     >

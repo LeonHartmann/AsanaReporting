@@ -161,6 +161,8 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
 
   return (
     <div 
+      id="tasks-by-asset-chart"
+      data-title="Tasks by Asset Type"
       className={containerClass}
       onClick={onClick}
     >

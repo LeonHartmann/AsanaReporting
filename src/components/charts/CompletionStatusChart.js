@@ -138,6 +138,8 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
 
   return (
     <div 
+      id="completion-status-chart"
+      data-title="Task Status Distribution"
       className={containerClass}
       onClick={onClick}
     > 

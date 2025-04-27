@@ -127,6 +127,8 @@ export default function TasksByDeadlineChart({ tasks, onClick }) {
 
   return (
     <div 
+      id="tasks-by-deadline-chart"
+      data-title="Tasks by Deadline"
       className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer" 
       onClick={onClick}
     >

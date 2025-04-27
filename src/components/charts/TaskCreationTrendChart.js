@@ -193,6 +193,8 @@ export default function TaskCreationTrendChart({ tasks, onClick, isFullscreen })
 
   return (
     <div 
+      id="task-creation-trend-chart"
+      data-title="Task Creation Trend"
       className={containerClass}
       onClick={onClick}
     >
