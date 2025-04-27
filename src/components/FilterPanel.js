@@ -17,14 +17,14 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         onResetFilters();
     } else {
         // Fallback if handler not provided (though it should be)
-        setFilters({ brand: '', asset: '', requester: '' });
-        onApplyFilters({ brand: '', asset: '', requester: '' }); 
+        setFilters({ brand: '', asset: '', requester: '', assignee: '' });
+        onApplyFilters({ brand: '', asset: '', requester: '', assignee: '' }); 
     }
   };
 
   return (
     <form onSubmit={handleApply} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
         {/* Brand Filter */}
         <div>
           <label htmlFor="brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -78,6 +78,26 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             <option value="">All Requesters</option>
             {distinctValues.requesters?.map((requester) => (
               <option key={requester} value={requester}>{requester}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Assignee Filter */}
+        <div>
+          <label htmlFor="assignee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Assignee
+          </label>
+          <select
+            id="assignee"
+            name="assignee"
+            value={filters.assignee || ''}
+            onChange={handleInputChange}
+            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="">All Assignees</option>
+            <option value="Unassigned">Unassigned</option>
+            {distinctValues.assignees?.filter(assignee => assignee !== 'Unassigned').map((assignee) => (
+              <option key={assignee} value={assignee}>{assignee}</option>
             ))}
           </select>
         </div>

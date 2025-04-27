@@ -49,7 +49,7 @@ const getSafe = (fn, defaultValue = null) => {
 };
 
 export async function getTasks(filters = {}) {
-  const { brand, asset, requester, distinct } = filters;
+  const { brand, asset, requester, assignee, distinct } = filters;
 
   if (!ASANA_PAT || !ASANA_PROJECT_ID) {
     console.error('Asana PAT or Project ID is missing in environment variables.');
@@ -127,6 +127,15 @@ export async function getTasks(filters = {}) {
           return displayValue === requester; // Exact match for requester
         });
       }
+      if (assignee) {
+        allTasks = allTasks.filter(task => {
+          if (assignee === 'Unassigned') {
+            return !task.assignee; // Filter for unassigned tasks
+          } else {
+            return getSafe(() => task.assignee?.name) === assignee; // Exact match for assignee name
+          }
+        });
+      }
 
       // --- Format Tasks --- 
       const formattedTasks = allTasks.map(task => {
@@ -152,6 +161,6 @@ export async function getTasks(filters = {}) {
   } catch (error) {
     console.error('Error fetching or processing Asana tasks:', error);
     // Ensure consistent return type on error
-    return distinct ? { brands: [], assets: [], requesters: [] } : [];
+    return distinct ? { brands: [], assets: [], requesters: [], assignees: [] } : [];
   }
 } 
