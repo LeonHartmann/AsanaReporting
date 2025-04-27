@@ -21,3 +21,34 @@ body {
 .h-96 {
   height: 24rem !important;
 }
+
+/* Fullscreen modal styles */
+.w-screen.h-screen {
+  background-color: #fff;
+}
+
+.dark .w-screen.h-screen {
+  background-color: #1f2937; /* dark:bg-gray-800 */
+}
+
+/* Make sure fullscreen charts have proper height */
+.w-screen.h-screen .h-full {
+  height: 100vh !important;
+}
+
+/* Chart fullscreen styles */
+.w-screen.h-screen .flex-1 {
+  padding: 1rem !important; /* Add padding to charts in fullscreen */
+}
+
+/* Enhanced styles for chart buttons in fullscreen mode */
+.w-screen.h-screen .absolute.top-2.right-2 {
+  top: 1rem;
+  right: 1rem;
+}
+
+.w-screen.h-screen .w-8.h-8 {
+  width: 2.5rem;
+  height: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}

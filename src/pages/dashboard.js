@@ -118,7 +118,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   // Helper to create clickable chart wrappers
   const renderClickableChart = (title, ChartComponent) => {
     // We need to pass tasks to the ChartComponent when rendering it inside the modal
-    // Cloning the element allows us to pass the necessary props dynamically
+    // The isFullscreen prop is passed automatically by the ChartModal component
     const chartElement = <ChartComponent tasks={tasks} />;
     return (
       <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, chartElement)}>
