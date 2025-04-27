@@ -8,39 +8,51 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
   const generatePDF = async () => {
     setIsGenerating(true);
     try {
-      // Create a new PDF document
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Create a new PDF document in landscape orientation with 16:9 aspect ratio
+      // A4 is 210mm x 297mm, so we'll use a custom page size to match 16:9
+      const width = 280; // Width in mm
+      const height = 158; // Height in mm (16:9 ratio)
+      const pdf = new jsPDF('landscape', 'mm', [width, height]);
+      
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10; // margin in mm
       
-      // Add title and logo (if available)
-      pdf.setFontSize(24);
+      // Add title and logo
+      pdf.setFontSize(28);
       pdf.setTextColor(21, 101, 192); // Blue color for title
       pdf.text('SPORTFIVE', pageWidth / 2, 20, { align: 'center' });
       
-      pdf.setFontSize(20);
+      pdf.setFontSize(18);
       pdf.setTextColor(0, 0, 0); // Black text for subtitle
       pdf.text('Executive Asana Task Report', pageWidth / 2, 30, { align: 'center' });
       
-      // Add date and time
+      // Add date
       const currentDate = new Date().toLocaleDateString();
-      const currentTime = new Date().toLocaleTimeString();
+      const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+      const currentYear = new Date().getFullYear();
+      
       pdf.setFontSize(10);
       pdf.setTextColor(100, 100, 100); // Gray color for date
-      pdf.text(`Generated on: ${currentDate} at ${currentTime}`, pageWidth / 2, 40, { align: 'center' });
+      pdf.text(`Generated on: ${currentDate}`, pageWidth / 2, 38, { align: 'center' });
       
       // Add a divider line
       pdf.setDrawColor(200, 200, 200);
-      pdf.line(margin, 45, pageWidth - margin, 45);
+      pdf.line(margin, 42, pageWidth - margin, 42);
       
-      // Add summary section title
-      pdf.setFontSize(16);
-      pdf.setTextColor(33, 33, 33);
-      pdf.text('EXECUTIVE SUMMARY', margin, 55);
+      // Add summary section in a box
+      const summaryBoxY = 50;
+      const summaryBoxHeight = 35;
+      pdf.setFillColor(248, 250, 252); // Light gray background
+      pdf.setDrawColor(230, 230, 230);
+      pdf.roundedRect(margin, summaryBoxY, 80, summaryBoxHeight, 3, 3, 'F');
       
       // Summary statistics
-      pdf.setFontSize(12);
+      pdf.setFontSize(14);
+      pdf.setTextColor(33, 33, 33);
+      pdf.text('EXECUTIVE SUMMARY', margin + 5, summaryBoxY + 8);
+      
+      pdf.setFontSize(11);
       pdf.setTextColor(80, 80, 80);
       
       const totalTasks = tasks.length;
@@ -48,29 +60,30 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       const incompleteTasks = totalTasks - completedTasks;
       const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
       
-      const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-      const currentYear = new Date().getFullYear();
+      pdf.text(`Reporting Period: ${currentMonth} ${currentYear}`, margin + 5, summaryBoxY + 15);
+      pdf.text(`Total Tasks: ${totalTasks}`, margin + 5, summaryBoxY + 21);
+      pdf.text(`Completion Rate: ${completionRate}%`, margin + 5, summaryBoxY + 27);
       
-      pdf.text(`Report Period: ${currentMonth} ${currentYear}`, margin, 63);
-      pdf.text(`Total Tasks: ${totalTasks}`, margin, 71);
-      pdf.text(`Completed Tasks: ${completedTasks} (${completionRate}%)`, margin, 79);
-      pdf.text(`Incomplete Tasks: ${incompleteTasks}`, margin, 87);
-
-      // Count tasks by brand if available
-      if (distinctValues && distinctValues.brands && distinctValues.brands.length > 0) {
-        const topBrand = distinctValues.brands[0];
-        const brandTaskCount = tasks.filter(task => task.brand === topBrand).length;
-        pdf.text(`Top Brand: ${topBrand} (${brandTaskCount} tasks)`, margin, 95);
+      // Status summary as mini horizontal bar
+      const barY = summaryBoxY + 32;
+      const barWidth = 70;
+      const barHeight = 3;
+      
+      // Background bar (total)
+      pdf.setFillColor(220, 220, 220);
+      pdf.rect(margin + 5, barY, barWidth, barHeight, 'F');
+      
+      // Completed bar
+      if (totalTasks > 0) {
+        const completeWidth = (completedTasks / totalTasks) * barWidth;
+        pdf.setFillColor(52, 168, 83); // Green for completed
+        pdf.rect(margin + 5, barY, completeWidth, barHeight, 'F');
       }
       
-      // Add a divider line
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(margin, 105, pageWidth - margin, 105);
-      
-      // Add charts section title
+      // Add KPI section title
       pdf.setFontSize(16);
       pdf.setTextColor(33, 33, 33);
-      pdf.text('KEY PERFORMANCE INDICATORS', margin, 115);
+      pdf.text('KEY PERFORMANCE INDICATORS', margin, summaryBoxY + summaryBoxHeight + 15);
       
       // Array of chart IDs with their titles
       const chartInfo = [
@@ -79,103 +92,55 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
         { id: 'tasks-by-brand-chart', title: 'Tasks by Brand' },
         { id: 'tasks-by-assignee-chart', title: 'Tasks by Assignee' },
         { id: 'tasks-by-asset-chart', title: 'Tasks by Asset Type' },
-        { id: 'tasks-by-requester-chart', title: 'Tasks by Requester' },
-        { id: 'task-creation-trend-chart', title: 'Task Creation Trend' }
+        { id: 'tasks-by-requester-chart', title: 'Tasks by Requester' }
       ];
       
-      let yPosition = 125;
-      let chartCount = 0;
+      // Set up a 3x2 grid layout for charts
+      const chartStartY = summaryBoxY + summaryBoxHeight + 20;
+      const chartWidth = (pageWidth - (margin * 4)) / 3; // 3 columns with margins
+      const chartHeight = 55; // Height for each chart
+      const chartMargin = 5; // Space between charts
       
-      // Handle charts in a 2-column layout
-      for (let i = 0; i < chartInfo.length; i += 2) {
-        // Check if we need a new page
-        if (yPosition + 80 > pageHeight - margin) {
-          pdf.addPage();
-          yPosition = margin + 10;
-        }
+      // Process charts in a grid layout
+      for (let i = 0; i < chartInfo.length; i++) {
+        const row = Math.floor(i / 3);
+        const col = i % 3;
         
-        // Process first chart in the row
-        const chart1 = document.getElementById(chartInfo[i].id);
-        if (chart1) {
+        const chartX = margin + (col * (chartWidth + chartMargin));
+        const chartY = chartStartY + (row * (chartHeight + chartMargin));
+        
+        const chart = document.getElementById(chartInfo[i].id);
+        if (chart) {
           try {
             // Convert chart to canvas
-            const canvas1 = await html2canvas(chart1, {
+            const canvas = await html2canvas(chart, {
               scale: 2,
               logging: false,
               useCORS: true,
               backgroundColor: '#ffffff',
-              // Set a specific width to ensure consistency
               width: 400
             });
             
-            // Calculate dimensions
-            const imgWidth1 = (pageWidth - (margin * 3)) / 2; // Half width minus margins
-            const imgHeight1 = (canvas1.height * imgWidth1) / canvas1.width;
-            
             // Add chart title
-            pdf.setFontSize(12);
+            pdf.setFontSize(10);
             pdf.setTextColor(33, 33, 33);
-            pdf.text(chartInfo[i].title, margin, yPosition);
+            pdf.text(chartInfo[i].title, chartX, chartY);
             
             // Add image
-            const imgData1 = canvas1.toDataURL('image/png');
-            pdf.addImage(imgData1, 'PNG', margin, yPosition + 5, imgWidth1, imgHeight1);
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', chartX, chartY + 3, chartWidth, chartHeight - 10);
             
-            chartCount++;
           } catch (err) {
             console.error(`Error processing chart ${chartInfo[i].id}:`, err);
           }
         }
-        
-        // Process second chart in the row (if exists)
-        if (i + 1 < chartInfo.length) {
-          const chart2 = document.getElementById(chartInfo[i + 1].id);
-          if (chart2) {
-            try {
-              // Convert chart to canvas
-              const canvas2 = await html2canvas(chart2, {
-                scale: 2,
-                logging: false,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                width: 400
-              });
-              
-              // Calculate dimensions and position
-              const imgWidth2 = (pageWidth - (margin * 3)) / 2; // Half width minus margins
-              const imgHeight2 = (canvas2.height * imgWidth2) / canvas2.width;
-              const xPosition2 = margin * 2 + imgWidth2; // Position after first chart + margin
-              
-              // Add chart title
-              pdf.setFontSize(12);
-              pdf.setTextColor(33, 33, 33);
-              pdf.text(chartInfo[i + 1].title, xPosition2, yPosition);
-              
-              // Add image
-              const imgData2 = canvas2.toDataURL('image/png');
-              pdf.addImage(imgData2, 'PNG', xPosition2, yPosition + 5, imgWidth2, imgHeight2);
-              
-              chartCount++;
-            } catch (err) {
-              console.error(`Error processing chart ${chartInfo[i+1].id}:`, err);
-            }
-          }
-        }
-        
-        // Update y-position for next row of charts
-        // Use max height from both charts or default height if charts not found
-        const maxImgHeight = 75; // default height if charts not rendered
-        yPosition += maxImgHeight + 15;
       }
       
-      // Special handling for the trend chart (full width)
+      // Special handling for the trend chart (full width on a new page)
       const trendChart = document.getElementById('task-creation-trend-chart');
       if (trendChart) {
-        // Check if we need a new page
-        if (yPosition + 80 > pageHeight - margin) {
-          pdf.addPage();
-          yPosition = margin + 10;
-        }
+        // Add a new page
+        pdf.addPage([width, height]); // Maintain 16:9 aspect ratio
         
         try {
           // Convert chart to canvas
@@ -187,133 +152,25 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
             width: 800
           });
           
-          // Calculate dimensions for full width
-          const imgWidth = pageWidth - (margin * 2);
-          const imgHeight = (trendCanvas.height * imgWidth) / trendCanvas.width;
+          // Add title
+          pdf.setFontSize(18);
+          pdf.setTextColor(21, 101, 192);
+          pdf.text('Task Creation Trend Over Time', pageWidth / 2, 20, { align: 'center' });
           
-          // Add chart title
-          pdf.setFontSize(14);
-          pdf.setTextColor(33, 33, 33);
-          pdf.text('Task Creation Trend Over Time', margin, yPosition);
+          // Calculate dimensions for trend chart (almost full page)
+          const imgWidth = pageWidth - (margin * 2);
+          const imgHeight = pageHeight - 40; // Leave room for title and footer
           
           // Add image
           const imgData = trendCanvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', margin, yPosition + 5, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'PNG', margin, 30, imgWidth, imgHeight - 15);
           
-          yPosition += imgHeight + 20;
-          chartCount++;
         } catch (err) {
           console.error('Error processing trend chart:', err);
         }
       }
       
-      // Add a page for task list summary if we have tasks
-      if (tasks.length > 0) {
-        pdf.addPage();
-        
-        // Add header
-        pdf.setFontSize(18);
-        pdf.setTextColor(21, 101, 192);
-        pdf.text('TASK LIST SUMMARY', margin, 20);
-        
-        // Add table headers
-        pdf.setFontSize(10);
-        pdf.setDrawColor(100, 100, 100);
-        pdf.setFillColor(240, 240, 240);
-        pdf.setTextColor(60, 60, 60);
-        
-        // Draw header background
-        pdf.rect(margin, 30, pageWidth - (margin * 2), 8, 'F');
-        
-        // Add header text
-        pdf.text('Task Name', margin + 2, 35);
-        pdf.text('Brand', margin + 70, 35);
-        pdf.text('Assignee', margin + 105, 35);
-        pdf.text('Status', margin + 140, 35);
-        pdf.text('Due Date', margin + 165, 35);
-        
-        // Add rows
-        pdf.setFontSize(9);
-        pdf.setTextColor(80, 80, 80);
-        
-        let rowY = 43;
-        const rowHeight = 7;
-        const maxTasksInTable = 25; // Limit tasks shown in table
-        
-        // Sort tasks by due date (closest first)
-        const sortedTasks = [...tasks].sort((a, b) => {
-          if (!a.due_date) return 1;
-          if (!b.due_date) return -1;
-          return new Date(a.due_date) - new Date(b.due_date);
-        });
-        
-        // Show only the first maxTasksInTable tasks
-        const tasksToShow = sortedTasks.slice(0, maxTasksInTable);
-        
-        // Alternate row colors
-        let isEvenRow = false;
-        
-        for (const task of tasksToShow) {
-          // Add alternating row background
-          if (isEvenRow) {
-            pdf.setFillColor(250, 250, 250);
-            pdf.rect(margin, rowY - 3, pageWidth - (margin * 2), rowHeight, 'F');
-          }
-          isEvenRow = !isEvenRow;
-          
-          // Add task data
-          const name = task.name || 'Untitled';
-          const brand = task.brand || 'N/A';
-          const assignee = task.assignee || 'Unassigned';
-          const status = task.completed ? 'Completed' : (task.status || 'Open');
-          const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date';
-          
-          // Truncate long text
-          const truncate = (text, maxLen) => text.length > maxLen ? text.substring(0, maxLen - 3) + '...' : text;
-          
-          pdf.text(truncate(name, 35), margin + 2, rowY);
-          pdf.text(truncate(brand, 17), margin + 70, rowY);
-          pdf.text(truncate(assignee, 17), margin + 105, rowY);
-          pdf.text(status, margin + 140, rowY);
-          pdf.text(dueDate, margin + 165, rowY);
-          
-          rowY += rowHeight;
-          
-          // Check if we need a new page
-          if (rowY > pageHeight - margin) {
-            pdf.addPage();
-            rowY = margin + 10;
-            
-            // Re-add headers on new page
-            pdf.setFontSize(10);
-            pdf.setDrawColor(100, 100, 100);
-            pdf.setFillColor(240, 240, 240);
-            pdf.setTextColor(60, 60, 60);
-            
-            pdf.rect(margin, rowY, pageWidth - (margin * 2), 8, 'F');
-            
-            pdf.text('Task Name', margin + 2, rowY + 5);
-            pdf.text('Brand', margin + 70, rowY + 5);
-            pdf.text('Assignee', margin + 105, rowY + 5);
-            pdf.text('Status', margin + 140, rowY + 5);
-            pdf.text('Due Date', margin + 165, rowY + 5);
-            
-            rowY += 13;
-            pdf.setFontSize(9);
-            pdf.setTextColor(80, 80, 80);
-          }
-        }
-        
-        // Add a note if we truncated the task list
-        if (tasks.length > maxTasksInTable) {
-          rowY += 5;
-          pdf.setTextColor(100, 100, 100);
-          pdf.setFontSize(8);
-          pdf.text(`Note: Showing ${maxTasksInTable} of ${tasks.length} total tasks (sorted by due date)`, margin, rowY);
-        }
-      }
-      
-      // Add footer with page numbers
+      // Add footer with page numbers to all pages
       const totalPages = pdf.internal.getNumberOfPages();
       
       for (let i = 1; i <= totalPages; i++) {
