@@ -27,29 +27,13 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
         orientation: 'landscape', 
         unit: 'mm', 
         format: [width, height],
-        compress: true,
-        precision: 2,
-        userUnit: 1.0
+        compress: true
       });
       
-      // Add metadata for better accessibility and document properties
-      pdf.setLanguage("en-US");
-      pdf.setTitle("SPORTFIVE Executive Asana Task Report");
-      const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-      const currentYear = new Date().getFullYear();
-      pdf.setSubject(`Task Performance Analytics - ${currentMonth} ${currentYear}`);
-      pdf.setAuthor("SPORTFIVE Analytics Dashboard");
-      pdf.setCreator("Asana Dashboard Reporting Tool");
-      
-      // Set up proportional layout values
+      // Set up layout values
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10; // Base margin in mm
-      
-      // Create document outline/bookmarks
-      pdf.outline.add(null, "Executive Summary", { pageNumber: 1 });
-      pdf.outline.add(null, "Key Performance Indicators", { pageNumber: 1 });
-      pdf.outline.add(null, "Task Creation Trends", { pageNumber: 2 });
       
       // Add title and logo
       pdf.setFontSize(28);
@@ -62,6 +46,8 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       
       // Add date
       const currentDate = new Date().toLocaleDateString();
+      const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+      const currentYear = new Date().getFullYear();
       
       pdf.setFontSize(10);
       pdf.setTextColor(...brandColors.neutralLight);
@@ -174,65 +160,54 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
       const chartHeight = 55; // Height for each chart
       const chartMargin = 5; // Space between charts
       
-      // Process charts in batches for better performance
-      const chartBatches = [
-        [chartInfo[0], chartInfo[1], chartInfo[2]],
-        [chartInfo[3], chartInfo[4], chartInfo[5]]
-      ];
-      
-      let batchIndex = 0;
-      for (const batch of chartBatches) {
-        const batchY = chartStartY + (batchIndex * (chartHeight + chartMargin + 5));
+      // Process charts in rows to avoid memory issues
+      for (let i = 0; i < chartInfo.length; i++) {
+        const row = Math.floor(i / 3);
+        const col = i % 3;
         
-        await Promise.all(batch.map(async (info, colIndex) => {
-          const chartX = margin + (colIndex * (chartWidth + chartMargin));
-          const chartY = batchY;
-          
-          const chart = document.getElementById(info.id);
-          if (chart) {
-            try {
-              // OPTIMIZE: Increased resolution for clearer charts
-              const canvas = await html2canvas(chart, {
-                scale: 3, // Higher scale for better resolution
-                logging: false,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                width: 400,
-                imageTimeout: 0,
-                quality: 0.95 // Slightly reduced quality for better file size
-              });
+        const chartX = margin + (col * (chartWidth + chartMargin));
+        const chartY = chartStartY + (row * (chartHeight + chartMargin + 5));
+        
+        const chart = document.getElementById(chartInfo[i].id);
+        if (chart) {
+          try {
+            // Increased resolution for clearer charts
+            const canvas = await html2canvas(chart, {
+              scale: 3, // Higher scale for better resolution
+              logging: false,
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              width: 400
+            });
+            
+            // Add chart title with more prominent styling
+            pdf.setFontSize(10);
+            pdf.setTextColor(...brandColors.primary);
+            pdf.text(chartInfo[i].title, chartX, chartY);
+            
+            // Add chart image
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', chartX, chartY + 3, chartWidth, chartHeight - 12);
+            
+            // Add insight text below each chart
+            pdf.setFontSize(7);
+            pdf.setTextColor(...brandColors.neutral);
+            
+            // Calculate text position at bottom of chart area
+            const insightY = chartY + chartHeight - 3;
+            
+            // Check if insight text is too long and truncate if needed
+            const maxChars = 50;
+            const insight = chartInfo[i].insight.length > maxChars ? 
+              chartInfo[i].insight.substring(0, maxChars) + '...' : 
+              chartInfo[i].insight;
               
-              // Add chart title with more prominent styling
-              pdf.setFontSize(10);
-              pdf.setTextColor(...brandColors.primary);
-              pdf.text(info.title, chartX, chartY);
-              
-              // Add chart image
-              const imgData = canvas.toDataURL('image/png');
-              pdf.addImage(imgData, 'PNG', chartX, chartY + 3, chartWidth, chartHeight - 12);
-              
-              // Add insight text below each chart
-              pdf.setFontSize(7);
-              pdf.setTextColor(...brandColors.neutral);
-              
-              // Calculate text position at bottom of chart area
-              const insightY = chartY + chartHeight - 3;
-              
-              // Check if insight text is too long and truncate if needed
-              const maxChars = 50;
-              const insight = info.insight.length > maxChars ? 
-                info.insight.substring(0, maxChars) + '...' : 
-                info.insight;
-                
-              pdf.text(insight, chartX, insightY);
-              
-            } catch (err) {
-              console.error(`Error processing chart ${info.id}:`, err);
-            }
+            pdf.text(insight, chartX, insightY);
+            
+          } catch (err) {
+            console.error(`Error processing chart ${chartInfo[i].id}:`, err);
           }
-        }));
-        
-        batchIndex++;
+        }
       }
       
       // Special handling for the trend chart on a new page
@@ -248,9 +223,7 @@ const ReportGenerator = ({ tasks, distinctValues }) => {
             logging: false,
             useCORS: true,
             backgroundColor: '#ffffff',
-            width: 800,
-            imageTimeout: 0,
-            quality: 0.95
+            width: 800
           });
           
           // Add title with more prominence
