@@ -13,6 +13,36 @@ export default function TaskTable({ tasks, isLoading, error }) {
     }
   };
 
+  // Format a completion status as a styled badge
+  const formatStatus = (completed, status) => {
+    if (completed) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+          Completed
+        </span>
+      );
+    }
+    
+    // Color code based on status name
+    let colorClass = 'bg-gray-100 text-gray-800'; // Default
+    
+    if (status.toLowerCase().includes('in progress')) {
+      colorClass = 'bg-blue-100 text-blue-800';
+    } else if (status.toLowerCase().includes('todo') || status.toLowerCase().includes('to do')) {
+      colorClass = 'bg-yellow-100 text-yellow-800';
+    } else if (status.toLowerCase().includes('review')) {
+      colorClass = 'bg-purple-100 text-purple-800';
+    } else if (status.toLowerCase().includes('block')) {
+      colorClass = 'bg-red-100 text-red-800';
+    }
+    
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}>
+        {status}
+      </span>
+    );
+  };
+
   if (error) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -44,6 +74,12 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 Task Name
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Deadline
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Created At
               </th>
             </tr>
@@ -51,7 +87,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan="5" className="text-center py-10">
+                <td colSpan="8" className="text-center py-10">
                    <div className="flex justify-center items-center">
                       <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -63,7 +99,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
             )}
             {!isLoading && tasks.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan="8" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -84,6 +120,12 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 </td>
                 <td className="px-6 py-4 whitespace-normal text-sm text-gray-900 dark:text-white">
                   {task.name} 
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatStatus(task.completed, task.status)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(task.deadline)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(task.createdAt)}

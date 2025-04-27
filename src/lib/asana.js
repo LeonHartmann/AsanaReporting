@@ -106,7 +106,7 @@ export async function getTasks(filters = {}) {
       };
     } else {
       // --- Fetch All Tasks for Display --- 
-      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at,completed'; // Added completed
+      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
       const displayUrl = `${projectTasksEndpoint}?opt_fields=${displayFields}&limit=${limit}`;
       
       let allTasks = await fetchAllPages(displayUrl);
@@ -140,6 +140,12 @@ export async function getTasks(filters = {}) {
         const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
         const assetValue = assetField?.display_value;
         const requesterValue = requesterField?.display_value;
+        
+        // Get task status from section if available
+        const section = getSafe(() => task.memberships?.[0]?.section?.name);
+        
+        // Get deadline (prefer due_at for exact time, fallback to due_on for date only)
+        const deadline = task.due_at || task.due_on;
 
         return {
           id: task.gid,
@@ -148,7 +154,9 @@ export async function getTasks(filters = {}) {
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
           assignee: task.assignee?.name || 'Unassigned',
-          completed: task.completed, // Added completed status
+          completed: task.completed, // Completion status
+          status: section || 'No Status', // Section can be used as status
+          deadline: deadline, // Task deadline
           createdAt: task.created_at,
         };
       });

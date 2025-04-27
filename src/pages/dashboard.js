@@ -10,6 +10,7 @@ import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import
 import TaskCreationTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the line chart
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 import ChartModal from '@/components/ChartModal'; // Import the modal
+import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -147,6 +148,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           ) : (
             <>
               {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+              {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
               {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
               {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
               {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
