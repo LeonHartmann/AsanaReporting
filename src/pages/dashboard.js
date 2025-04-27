@@ -133,11 +133,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       <Head>
         <title>Dashboard - Asana Tasks</title>
       </Head>
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-2 md:px-4">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
         
         {/* --- Reporting Section --- */} 
-        <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6"> {/* Changed to 3 columns on large screens */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Adjusted gap to be smaller */}
           {isLoading && !tasks.length ? (
              // Show a single loading indicator spanning columns if needed, or repeat per chart
              <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 

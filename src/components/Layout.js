@@ -30,7 +30,7 @@ export default function Layout({ children, title = 'Asana Dashboard' }) {
       </Head>
 
       <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <nav className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="w-full mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -51,14 +51,14 @@ export default function Layout({ children, title = 'Asana Dashboard' }) {
         </nav>
       </header>
 
-      <main>
-        <div className="w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="w-full">
+        <div className="w-full mx-auto py-4 px-2 sm:px-4 lg:px-6">
           {children}
         </div>
       </main>
 
-      <footer className="bg-white dark:bg-gray-800 mt-8 py-4">
-          <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+      <footer className="bg-white dark:bg-gray-800 mt-6 py-4">
+          <div className="w-full mx-auto px-2 sm:px-4 lg:px-6 text-center text-gray-500 dark:text-gray-400 text-sm">
               © {new Date().getFullYear()} Asana Dashboard
           </div>
       </footer>
