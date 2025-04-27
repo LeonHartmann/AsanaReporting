@@ -7,6 +7,7 @@ import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; /
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
 import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import the asset chart
+import TaskCreationTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the line chart
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -128,6 +129,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               {/* <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80">Placeholder</div> */} 
             </>
           )}
+        </div>
+
+        {/* --- Line Chart Section (Full Width) --- */} 
+        <div className="mb-8"> 
+           {!isLoading && !error && tasks.length > 0 && (
+                <TaskCreationTrendChart tasks={tasks} />
+           )} 
+           {/* Optionally show loading/error specific to this chart if needed */} 
         </div>
 
         {/* --- Filter and Table Section --- */}
