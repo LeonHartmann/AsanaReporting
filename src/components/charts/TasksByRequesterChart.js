@@ -163,7 +163,7 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full"
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80 cursor-pointer";
+    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
 
   return (
     <div 

@@ -96,7 +96,7 @@ export default function TasksByAssetChart({ tasks, onClick }) {
 
   return (
     <div 
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-80 cursor-pointer" 
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer" 
       onClick={onClick}
     >
       <Bar data={data} options={options} />
