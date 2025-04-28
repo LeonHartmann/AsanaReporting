@@ -261,7 +261,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col" // Use flex-col for fullscreen layout
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
+    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col";
 
   // If in normal view, render just the chart with a note
   if (!isFullscreen) {
@@ -272,10 +272,12 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
         className={containerClass}
         onClick={onClick}
       >
-        <Bar data={data} options={options} />
+        <div className="flex-grow relative">
+          <Bar data={data} options={options} />
+        </div>
         
         {allAssets.length > maxItems && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center absolute bottom-2 left-0 right-0">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
             Showing top {maxItems} of {allAssets.length} asset types.
           </div>
         )}
@@ -314,7 +316,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       </div>
       
       {/* Chart */}
-      <div className="flex-1 overflow-hidden relative"> {/* Use flex-1 and overflow-hidden for chart area */}
+      <div className="flex-1 overflow-hidden relative">
         <Bar data={data} options={options} />
       </div>
       
