@@ -244,7 +244,7 @@ export async function getTasks(filters = {}) {
 
       // Log the filter being applied and the statuses of the tasks being filtered
       console.log(`[Asana Filter Debug] Applying completionFilter: ${completionFilter}`);
-      // filteredTasks.forEach(task => console.log(`[Asana Filter Debug] Task ID: ${task.id}, Status: '${task.status}'`)); // Log individual statuses if needed
+      filteredTasks.forEach(task => console.log(`[Asana Filter Debug] Task ID: ${task.id}, Status: '${task.status}'`)); // Uncommented for detailed status logging
 
       if (completionFilter === 'only_completed_feedback') {
           finalTasks = filteredTasks.filter(task => completedStatuses.includes(task.status));

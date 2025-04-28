@@ -171,7 +171,7 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             <option value="only_completed_feedback">Only Completed + Feedback</option>
             <option value="hide_completed_feedback">Hide Completed + Feedback</option>
             <option value="only_completed">Only Completed</option>
-            <option value="hide_completed">Hide Completed (excl. Feedback)</option> /* Clarified label */
+            <option value="hide_completed">Hide 'Completed' Status</option> /* Changed label */
           </select>
         </div>
 
