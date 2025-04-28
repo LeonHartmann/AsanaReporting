@@ -237,34 +237,66 @@ export async function getTasks(filters = {}) {
       
       // Apply completion/status filter if specified
       let finalTasks = filteredTasks;
-      // Define the exact status strings including the emoji
       const completedFeedbackStatus = '🌀 Completed/Feedback';
       const completedStatus = 'Completed';
       const completedStatuses = [completedStatus, completedFeedbackStatus];
 
-      // Remove previous logs
-      // console.log(`[Asana Filter Debug] Applying completionFilter: ${completionFilter}`);
-      // filteredTasks.forEach(task => console.log(`[Asana Filter Debug] Task ID: ${task.id}, Status: '${task.status}'`));
+      console.log(`[Asana Filter] Applying filter: ${completionFilter}`);
+
+      // --- Start Filter Logic ---
+      const initialTaskCount = filteredTasks.length;
+      let tasksAfterFilter = [];
 
       switch (completionFilter) {
           case 'only_completed': // Point 2: Only status 'Completed'
-              finalTasks = filteredTasks.filter(task => task.status?.trim() === completedStatus);
+              tasksAfterFilter = filteredTasks.filter(task => {
+                  const status = task.status?.trim();
+                  const match = status === completedStatus;
+                  // if (status === completedStatus || status === completedFeedbackStatus) {
+                  //     console.log(`[Debug only_completed] Task ${task.id}, Status: '${status}', Match: ${match}`);
+                  // }
+                  return match;
+              });
               break;
           case 'hide_completed': // Point 3: Not status 'Completed'
-              finalTasks = filteredTasks.filter(task => task.status?.trim() !== completedStatus);
+              tasksAfterFilter = filteredTasks.filter(task => {
+                  const status = task.status?.trim();
+                  const match = status !== completedStatus;
+                  // if (status === completedStatus || status === completedFeedbackStatus) {
+                  //     console.log(`[Debug hide_completed] Task ${task.id}, Status: '${status}', Match: ${match}`);
+                  // }
+                  return match;
+              });
               break;
           case 'only_completed_feedback': // Point 4: Status 'Completed' OR '🌀 Completed/Feedback'
-              finalTasks = filteredTasks.filter(task => completedStatuses.includes(task.status?.trim()));
+              tasksAfterFilter = filteredTasks.filter(task => {
+                  const status = task.status?.trim();
+                  const match = completedStatuses.includes(status);
+                  // if (status === completedStatus || status === completedFeedbackStatus) {
+                  //     console.log(`[Debug only_completed_feedback] Task ${task.id}, Status: '${status}', Includes: ${match}`);
+                  // }
+                  return match;
+              });
               break;
           case 'hide_completed_feedback': // Point 5: NEITHER 'Completed' NOR '🌀 Completed/Feedback'
-              finalTasks = filteredTasks.filter(task => !completedStatuses.includes(task.status?.trim()));
+              tasksAfterFilter = filteredTasks.filter(task => {
+                  const status = task.status?.trim();
+                  const match = !completedStatuses.includes(status);
+                  // if (status === completedStatus || status === completedFeedbackStatus) {
+                  //     console.log(`[Debug hide_completed_feedback] Task ${task.id}, Status: '${status}', Not Includes: ${match}`);
+                  // }
+                  return match;
+              });
               break;
           case 'all': // Point 1: All tasks (excluding '📍 Resources')
           default:
-              // No additional filtering needed beyond the initial exclusion of '📍 Resources'
-              // finalTasks already equals filteredTasks
+              tasksAfterFilter = filteredTasks; // Use the already filtered list (excluding Resources)
               break;
       }
+      // --- End Filter Logic ---
+
+      console.log(`[Asana Filter] Initial tasks: ${initialTaskCount}, Tasks after filter '${completionFilter}': ${tasksAfterFilter.length}`);
+      finalTasks = tasksAfterFilter;
 
       return finalTasks;
     }
