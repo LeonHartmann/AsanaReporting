@@ -4,7 +4,7 @@ export default function TaskSummary({ tasks }) {
   // Calculate task statistics
   const stats = useMemo(() => {
     if (!tasks || tasks.length === 0) {
-      return { completed: 0, incomplete: 0, overdue: 0, total: 0 };
+      return { completed: 0, incomplete: 0, overdue: 0, waitingFeedback: 0, total: 0 };
     }
 
     // Current date for comparisons (normalized to start of day)
@@ -14,8 +14,15 @@ export default function TaskSummary({ tasks }) {
     let overdue = 0;
     let completed = 0;
     let incomplete = 0;
+    let waitingFeedback = 0;
 
     tasks.forEach(task => {
+      // Check for tasks with "🌀 Completed/Feedback" status
+      if (task.status && task.status === "🌀 Completed/Feedback") {
+        waitingFeedback++;
+        return;
+      }
+      
       if (task.completed) {
         completed++;
         return;
@@ -39,12 +46,13 @@ export default function TaskSummary({ tasks }) {
       completed,
       incomplete,
       overdue,
+      waitingFeedback,
       total: tasks.length
     };
   }, [tasks]);
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-5 gap-4 mb-8">
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
         <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Completed tasks</h3>
         <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.completed}</div>
@@ -54,8 +62,12 @@ export default function TaskSummary({ tasks }) {
         <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.incomplete}</div>
       </div>
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Waiting for Feedback</h3>
+        <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.waitingFeedback}</div>
+      </div>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
         <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Overdue tasks</h3>
-        <div className="text-3xl font-bold text-red-500">{stats.overdue}</div>
+        <div className={`text-3xl font-bold ${stats.overdue > 0 ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{stats.overdue}</div>
       </div>
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
         <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Total tasks</h3>
