@@ -172,6 +172,8 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             <option value="hide_completed">Hide Completed (Checkbox)</option>
             <option value="only_completed_feedback">Only Completed (Checkbox) or '🌀 Feedback' Status</option>
             <option value="hide_completed_feedback">Hide Completed (Checkbox) and '🌀 Feedback' Status</option>
+            <option value="only_closed_won">Only '🟢 CLOSED WON' Status</option>
+            <option value="only_closed_lost">Only '🔴 CLOSED LOST' Status</option>
           </select>
         </div>
 

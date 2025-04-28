@@ -264,6 +264,13 @@ export async function getTasks(filters = {}) {
                   task.completed === false && task.status?.trim() !== completedFeedbackStatus
               );
               break;
+          // New Status Cases
+          case 'only_closed_won':
+              tasksAfterFilter = filteredTasks.filter(task => task.status?.trim() === '🟢 CLOSED WON');
+              break;
+          case 'only_closed_lost':
+              tasksAfterFilter = filteredTasks.filter(task => task.status?.trim() === '🔴 CLOSED LOST');
+              break;
           case 'all': // Point 1: All tasks (excluding '📍 Resources')
           default:
               tasksAfterFilter = filteredTasks; // Already filtered for '📍 Resources'
