@@ -150,18 +150,20 @@ export async function getTasks(filters = {}) {
       // Task Type filtering (similar to assignee, handles comma-separated list for OR logic)
       if (taskType) {
           const selectedTaskTypes = taskType.split(',');
-          console.log('[Asana API Filter] Received taskType filter:', taskType);
-          console.log('[Asana API Filter] Selected task types:', selectedTaskTypes);
+          console.log(`[Asana Filter Debug] Filtering by Task Types: ${selectedTaskTypes.join(', ')}`);
+          console.log(`[Asana Filter Debug] Tasks BEFORE Task Type filter: ${allTasks.length}`);
           if (selectedTaskTypes.length > 0) {
-              allTasks = allTasks.filter(task => {
+              const tasksBeforeFilter = allTasks; // Keep a reference for logging
+              allTasks = tasksBeforeFilter.filter(task => {
                   const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
                   // Use enum_value.name for single-select comparison
                   const taskTypeValue = taskTypeField?.enum_value?.name;
                   const shouldKeep = taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
                   // Log details for each task being checked
-                  // console.log(`[Asana API Filter] Task: ${task.gid}, Type Field: ${JSON.stringify(taskTypeField)}, Value: ${taskTypeValue}, Keep: ${shouldKeep}`);
+                  console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: ${taskTypeValue || ''}, Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
                   return shouldKeep;
               });
+              console.log(`[Asana Filter Debug] Tasks AFTER Task Type filter: ${allTasks.length}`);
           }
       }
       
