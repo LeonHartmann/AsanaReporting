@@ -238,35 +238,35 @@ export async function getTasks(filters = {}) {
       // Apply completion/status filter if specified
       let finalTasks = filteredTasks;
       const completedFeedbackStatus = '🌀 Completed/Feedback';
-      const completedStatus = 'Completed';
-      const completedStatuses = [completedStatus, completedFeedbackStatus];
+      // const completedStatus = 'Completed'; // No longer needed as a string status
+      // const completedStatuses = [completedStatus, completedFeedbackStatus]; // No longer needed
 
       console.log(`[Asana Filter] Applying filter: ${completionFilter}`);
 
       // --- Start Filter Logic ---
-      const initialTaskCount = filteredTasks.length;
+      const initialTaskCount = filteredTasks.length; // Count after excluding '📍 Resources'
       let tasksAfterFilter = [];
 
       switch (completionFilter) {
-          case 'only_completed_feedback': // Point 4 Equivalent: Show only '🌀 Completed/Feedback'
-              tasksAfterFilter = filteredTasks.filter(task => {
-                  const status = task.status?.trim();
-                  // Since 'Completed' doesn't exist, this simplifies to checking only completedFeedbackStatus
-                  const match = status === completedFeedbackStatus; 
-                  return match;
-              });
+          case 'only_completed': // Point 2: completed === true
+              tasksAfterFilter = filteredTasks.filter(task => task.completed === true);
               break;
-          case 'hide_completed_feedback': // Point 5 Equivalent: Hide only '🌀 Completed/Feedback'
-              tasksAfterFilter = filteredTasks.filter(task => {
-                  const status = task.status?.trim();
-                  // Since 'Completed' doesn't exist, this simplifies to checking only completedFeedbackStatus
-                  const match = status !== completedFeedbackStatus;
-                  return match;
-              });
+          case 'hide_completed': // Point 3: completed === false
+              tasksAfterFilter = filteredTasks.filter(task => task.completed === false);
+              break;
+          case 'only_completed_feedback': // Point 4: completed === true OR status is Feedback
+              tasksAfterFilter = filteredTasks.filter(task => 
+                  task.completed === true || task.status?.trim() === completedFeedbackStatus
+              );
+              break;
+          case 'hide_completed_feedback': // Point 5: completed === false AND status is NOT Feedback
+              tasksAfterFilter = filteredTasks.filter(task => 
+                  task.completed === false && task.status?.trim() !== completedFeedbackStatus
+              );
               break;
           case 'all': // Point 1: All tasks (excluding '📍 Resources')
           default:
-              tasksAfterFilter = filteredTasks; // Use the already filtered list (excluding Resources)
+              tasksAfterFilter = filteredTasks; // Already filtered for '📍 Resources'
               break;
       }
       // --- End Filter Logic ---
