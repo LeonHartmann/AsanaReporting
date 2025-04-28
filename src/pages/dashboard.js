@@ -130,73 +130,105 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   // Function to handle PDF export
   const handleExportPDF = async () => {
     console.log("Exporting PDF...");
-    const filtersApplied = Object.entries(filters)
-      .filter(([key, value]) => value && (!Array.isArray(value) || value.length > 0)) // Filter out empty/null values and empty arrays
-      .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-      .join('\n'); // Use literal \n for newline in PDF text
-
     const chartContainer = chartsContainerRef.current;
     if (!chartContainer) {
       console.error("Chart container not found for export.");
-      setError("Could not find chart elements to export.");
+      setError("Could not find elements to export.");
       return;
     }
 
     setIsLoading(true); // Show loading indicator during export
     setError('');
 
+    // Format Filters Text
+    const filtersApplied = Object.entries(filters)
+      .filter(([key, value]) => value && (!Array.isArray(value) || value.length > 0))
+      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${Array.isArray(value) ? value.join(', ') : value}`)
+      .join('\n');
+
+    // Get current date and time
+    const now = new Date();
+    const dateTimeString = now.toLocaleString();
+
     try {
+      console.log("Capturing content with html2canvas...");
       const canvas = await html2canvas(chartContainer, {
-          scale: 2, // Increase scale for better resolution
-          useCORS: true // If charts load external resources (unlikely here, but good practice)
+          scale: 1.5, // Reduced scale slightly for smaller file size
+          useCORS: true,
+          backgroundColor: '#ffffff' // Ensure background is white for capture
       });
-      const imgData = canvas.toDataURL('image/png');
+      console.log("Canvas generated, converting to JPEG...");
+      const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG format with 80% quality
       
+      console.log("Creating PDF...");
       const pdf = new jsPDF({
-          orientation: 'landscape', // Use landscape for potentially wide chart layouts
-          unit: 'pt', // Use points for dimensions
-          format: 'a4' // A4 size
+          orientation: 'landscape',
+          unit: 'pt',
+          format: 'a4'
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 40; // points
+
+      // --- PDF Content --- 
+      let currentY = margin;
+
+      // 1. Title
+      pdf.setFontSize(16);
+      pdf.setFont(undefined, 'bold'); // Use default font, but bold
+      pdf.text("GGBC Reporting Dashboard", pdfWidth / 2, currentY, { align: 'center' });
+      currentY += 15; // Add space after title
+
+      // 2. Export Date/Time (smaller font, top right)
+      pdf.setFontSize(8);
+      pdf.setFont(undefined, 'normal'); // Reset font weight
+      pdf.text(`Exported: ${dateTimeString}`, pdfWidth - margin, margin + 5, { align: 'right' }); // Position relative to top margin
+      currentY += 10; // Add a bit more space
+
+      // 3. Applied Filters
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Applied Filters:', margin, currentY);
+      currentY += 15;
+      pdf.setFont(undefined, 'normal');
+      // Use splitTextToSize to handle potentially long filter lists
+      const splitFilters = pdf.splitTextToSize(filtersApplied || 'None', pdfWidth - 2 * margin);
+      pdf.text(splitFilters, margin, currentY);
+      currentY += (splitFilters.length * 10) + 10; // Adjust Y based on number of lines for filters + spacing
+
+      // 4. Chart Image
+      const imageYPos = currentY;
       const imgProps = pdf.getImageProperties(imgData);
       const imgWidth = imgProps.width;
       const imgHeight = imgProps.height;
-
-      // Calculate scaling to fit image within page width (leaving some margin)
-      const margin = 40; // points
       const availableWidth = pdfWidth - 2 * margin;
-      const scale = availableWidth / imgWidth;
-      const finalImgHeight = imgHeight * scale;
-      const finalImgWidth = imgWidth * scale; // Should be equal to availableWidth
+      const availableHeight = pdfHeight - imageYPos - margin; 
 
-      // Add Filters Text
-      pdf.setFontSize(10);
-      pdf.text('Applied Filters:', margin, margin);
-      pdf.text(filtersApplied || 'None', margin, margin + 15); // Add filter text below title
+      // Calculate scaling to fit image within available space
+      let finalImgWidth = imgWidth;
+      let finalImgHeight = imgHeight;
+      const widthScale = availableWidth / finalImgWidth;
+      const heightScale = availableHeight / finalImgHeight;
+      const scale = Math.min(widthScale, heightScale); // Use the smaller scale to fit both dimensions
 
-      // Check if image height exceeds available page height after filter text
-      const yPos = margin + 40; // Position image below filter text
-      const availableHeight = pdfHeight - yPos - margin; 
+      finalImgWidth = imgWidth * scale;
+      finalImgHeight = imgHeight * scale;
+      
+      // Center the image horizontally
+      const imageXPos = margin + (availableWidth - finalImgWidth) / 2; 
 
-      if (finalImgHeight > availableHeight) {
-        // Handle oversized content if necessary (e.g., split into pages - complex)
-        // For now, we'll let it clip or scale down further if needed, though landscape helps.
-        console.warn("Chart content might be too tall for a single PDF page.");
-        // Or add rudimentary scaling based on height:
-        // const heightScale = availableHeight / finalImgHeight;
-        // pdf.addImage(imgData, 'PNG', margin, yPos, finalImgWidth * heightScale, finalImgHeight * heightScale);
-         pdf.addImage(imgData, 'PNG', margin, yPos, finalImgWidth, finalImgHeight); // Add image
-      } else {
-         pdf.addImage(imgData, 'PNG', margin, yPos, finalImgWidth, finalImgHeight); // Add image
-      }
+      console.log("Adding image to PDF...");
+      pdf.addImage(imgData, 'JPEG', imageXPos, imageYPos, finalImgWidth, finalImgHeight);
 
-      pdf.save('dashboard-charts-export.pdf');
+      // --- Save PDF --- 
+      console.log("Saving PDF...");
+      pdf.save(`GGBC_Dashboard_Export_${now.toISOString().split('T')[0]}.pdf`); // Add date to filename
+      console.log("PDF Saved.");
 
     } catch (err) {
         console.error("Error generating PDF:", err);
-        setError("Failed to generate PDF export. Please try again.");
+        setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
     } finally {
         setIsLoading(false); // Hide loading indicator
     }
@@ -243,18 +275,20 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             </button>
         </div>
 
-        {/* Task Summary Section */}
-        {!isLoading && !error && tasks.length > 0 && (
-          <TaskSummary tasks={tasks} />
-        )}
-        
-        {/* --- Reporting Section --- */} 
-        <div ref={chartsContainerRef}> 
+        {/* --- Exportable Content Area (Summary + Charts) --- */}
+        {/* Attach the ref here to include TaskSummary and all charts */}
+        <div ref={chartsContainerRef}>
+            {/* Task Summary Section */} 
+            {!isLoading && !error && tasks.length > 0 && (
+              <TaskSummary tasks={tasks} />
+            )}
+
+            {/* --- Chart Grid Section --- */} 
             <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Adjusted gap to be smaller */}
-              {isLoading && !tasks.length ? (
-                 // Show a single loading indicator spanning columns if needed, or repeat per chart
-                 <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
-              ) : error && !tasks.length ? (
+            {isLoading && !tasks.length ? (
+                // Show a single loading indicator spanning columns if needed, or repeat per chart
+                <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
+            ) : error && !tasks.length ? (
                  <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                     Could not load chart data: {error}
                  </div>
@@ -289,7 +323,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
                )} 
                {/* Optionally show loading/error specific to this chart if needed */} 
             </div>
-        </div> {/* End of chartsContainerRef div */}
+        </div> {/* End of chartsContainerRef / Exportable Content div */}
 
         {/* --- Filter and Table Section --- */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
