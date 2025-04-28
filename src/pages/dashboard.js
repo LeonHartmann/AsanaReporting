@@ -21,6 +21,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isExporting, setIsExporting] = useState(false); // Add state for export loading
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -137,8 +138,9 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       return;
     }
 
-    setIsLoading(true); // Show loading indicator during export
-    setError('');
+    // Use dedicated export state, not general loading state
+    setIsExporting(true);
+    // setError(''); // Keep error state separate, don't clear it here necessarily
 
     // Format Filters Text
     const filtersApplied = Object.entries(filters)
@@ -161,7 +163,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       if (!captureElement) {
           console.error("Capture target element (#capture-content) not found.");
           setError("Could not find content element to export.");
-          setIsLoading(false); // Stop loading indicator
+          // Stop export loading indicator if element not found
+          setIsExporting(false); 
           return;
       }
 
@@ -262,7 +265,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             captureElement.style.height = originalHeight;
         }
     } finally {
-        setIsLoading(false); // Hide loading indicator
+        // Hide EXPORT loading indicator
+        setIsExporting(false); 
     }
   };
 
@@ -300,10 +304,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <div className="my-4 text-right">
             <button
                 onClick={handleExportPDF}
-                disabled={isLoading}
+                disabled={isExporting || isLoading} // Disable if exporting OR loading data
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isLoading ? 'Exporting...' : 'Export Charts to PDF'}
+                {isExporting ? 'Exporting...' : 'Export Charts to PDF'} {/* Use isExporting for text */}
             </button>
         </div>
 
