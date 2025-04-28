@@ -7,7 +7,7 @@ import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; /
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
 import TasksByAssetChart from '@/components/charts/TasksByAssetChart'; // Import the asset chart
-import TaskCreationTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the line chart
+import TaskTrendChart from '@/components/charts/TaskCreationTrendChart'; // Import the trend chart
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
@@ -183,7 +183,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         {/* --- Line Chart Section (Full Width) --- */} 
         <div className="mb-8"> 
            {!isLoading && !error && tasks.length > 0 && (
-                renderClickableChart('Task Creation Trend', TaskCreationTrendChart)
+                renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
            )} 
            {/* Optionally show loading/error specific to this chart if needed */} 
         </div>
