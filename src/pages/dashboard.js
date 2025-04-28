@@ -156,19 +156,32 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
       console.log("Capturing content with html2canvas...");
 
-      // Temporarily set overflow to visible to help capture everything
-      const originalOverflow = chartContainer.style.overflow;
-      chartContainer.style.overflow = 'visible';
+      // Get the inner wrapper element
+      const captureElement = document.getElementById('capture-content');
+      if (!captureElement) {
+          console.error("Capture target element (#capture-content) not found.");
+          setError("Could not find content element to export.");
+          setIsLoading(false); // Stop loading indicator
+          return;
+      }
+
+      // Temporarily set overflow to visible on the CAPTURE element
+      const originalOverflow = captureElement.style.overflow;
+      captureElement.style.overflow = 'visible';
+      let originalHeight = captureElement.style.height;
+      captureElement.style.height = 'auto'; // Ensure full height is considered
 
       let canvas;
       try {
-          canvas = await html2canvas(chartContainer, {
+          // Capture the INNER element
+          canvas = await html2canvas(captureElement, {
               useCORS: true,
               backgroundColor: '#ffffff' // Use the built-in option for background
           });
       } finally {
-          // Restore original overflow style even if html2canvas fails
-          chartContainer.style.overflow = originalOverflow;
+          // Restore original styles on the CAPTURE element
+          captureElement.style.overflow = originalOverflow;
+          captureElement.style.height = originalHeight;
       }
 
       console.log("Canvas generated, converting to JPEG...");
@@ -243,9 +256,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     } catch (err) {
         console.error("Error generating PDF:", err);
         setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
-        // Ensure overflow is restored in case of errors *after* capture but before finally
-        if (chartContainer && typeof originalOverflow !== 'undefined') { // Check if originalOverflow was set
-            chartContainer.style.overflow = originalOverflow;
+        // Ensure overflow is restored on the CAPTURE element in case of errors
+        if (captureElement && typeof originalOverflow !== 'undefined') { 
+            captureElement.style.overflow = originalOverflow;
+            captureElement.style.height = originalHeight;
         }
     } finally {
         setIsLoading(false); // Hide loading indicator
@@ -294,53 +308,56 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         </div>
 
         {/* --- Exportable Content Area (Summary + Charts) --- */}
-        {/* Attach the ref here to include TaskSummary and all charts */}
+        {/* Outer div still uses the ref */}
         <div ref={chartsContainerRef}>
-            {/* Task Summary Section */} 
-            {!isLoading && !error && tasks.length > 0 && (
-              <TaskSummary tasks={tasks} />
-            )}
-
-            {/* --- Chart Grid Section --- */} 
-            <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Adjusted gap to be smaller */}
-            {isLoading && !tasks.length ? (
-                // Show a single loading indicator spanning columns if needed, or repeat per chart
-                <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
-            ) : error && !tasks.length ? (
-                 <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    Could not load chart data: {error}
-                 </div>
-              ) : (
-                <>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Task Completion Status', CompletionStatusChart)}
-                  </div>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
-                  </div>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
-                  </div>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
-                  </div>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
-                  </div>
-                  <div className="lg:col-span-1">
-                    {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
-                  </div>
-                </>
+          {/* Inner wrapper div for actual capture target */}
+          <div id="capture-content">
+              {/* Task Summary Section */} 
+              {!isLoading && !error && tasks.length > 0 && (
+                <TaskSummary tasks={tasks} />
               )}
-            </div>
 
-            {/* --- Line Chart Section (Full Width) --- */} 
-            <div className="mb-8"> 
-               {!isLoading && !error && tasks.length > 0 && (
-                    renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
-               )} 
-               {/* Optionally show loading/error specific to this chart if needed */} 
-            </div>
+              {/* --- Chart Grid Section --- */} 
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Adjusted gap to be smaller */}
+              {isLoading && !tasks.length ? (
+                  // Show a single loading indicator spanning columns if needed, or repeat per chart
+                  <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
+              ) : error && !tasks.length ? (
+                   <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                      Could not load chart data: {error}
+                   </div>
+                ) : (
+                  <>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+                    </div>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
+                    </div>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+                    </div>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+                    </div>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+                    </div>
+                    <div className="lg:col-span-1">
+                      {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* --- Line Chart Section (Full Width) --- */} 
+              <div className="mb-8"> 
+                 {!isLoading && !error && tasks.length > 0 && (
+                      renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
+                 )} 
+                 {/* Optionally show loading/error specific to this chart if needed */} 
+              </div>
+          </div> {/* End inner wrapper #capture-content */}
         </div> {/* End of chartsContainerRef / Exportable Content div */}
 
         {/* --- Filter and Table Section --- */}
