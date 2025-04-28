@@ -177,6 +177,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       title: {
         display: true,
         text: 'Tasks by Asset Type',
+        align: 'center',
         font: {
           size: isFullscreen ? 24 : 16,
           weight: 'bold'
@@ -274,8 +275,8 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
         <Bar data={data} options={options} />
         
         {allAssets.length > maxItems && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Showing top {maxItems} of {allAssets.length} asset types. Click on the icon on the top to view all.
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center absolute bottom-2 left-0 right-0">
+            Showing top {maxItems} of {allAssets.length} asset types.
           </div>
         )}
       </div>
@@ -313,7 +314,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       </div>
       
       {/* Chart */}
-      <div className="flex-1 overflow-hidden"> {/* Use flex-1 and overflow-hidden for chart area */}
+      <div className="flex-1 overflow-hidden relative"> {/* Use flex-1 and overflow-hidden for chart area */}
         <Bar data={data} options={options} />
       </div>
       

@@ -123,6 +123,7 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
       title: {
         display: true,
         text: 'Task Creation & Completion Trend',
+        align: 'center',
         font: {
           size: isFullscreen ? 24 : 16,
           weight: 'bold'

@@ -81,6 +81,7 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
       title: {
         display: true,
         text: 'Task Status Distribution',
+        align: 'center',
         font: {
           size: isFullscreen ? 24 : 16,
           weight: 'bold'

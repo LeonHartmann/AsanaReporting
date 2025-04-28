@@ -65,6 +65,7 @@ export default function TasksByAssigneeChart({ tasks, onClick }) {
       title: {
         display: true,
         text: 'Tasks by Assignee',
+        align: 'center',
          font: {
           size: 16
         }

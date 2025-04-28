@@ -102,6 +102,7 @@ export default function TasksByDeadlineChart({ tasks, onClick }) {
       title: {
         display: true,
         text: 'Tasks by Deadline',
+        align: 'center',
         font: {
           size: 16
         }

@@ -165,6 +165,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       title: {
         display: true,
         text: 'Tasks by Brand',
+        align: 'center',
         font: {
           size: isFullscreen ? 24 : 16,
           weight: 'bold'
@@ -257,8 +258,8 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
         <Bar data={data} options={options} />
         
         {allBrands.length > maxItems && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Showing top {maxItems} of {allBrands.length} brands. Click to view all.
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center absolute bottom-2 left-0 right-0">
+            Showing top {maxItems} of {allBrands.length} brands.
           </div>
         )}
       </div>
@@ -296,7 +297,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       </div>
       
       {/* Chart */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative">
         <Bar data={data} options={options} />
       </div>
       
