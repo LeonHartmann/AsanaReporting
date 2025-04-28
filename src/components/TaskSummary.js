@@ -7,16 +7,40 @@ export default function TaskSummary({ tasks }) {
       return { completed: 0, incomplete: 0, overdue: 0, total: 0 };
     }
     
+    // Create date with time set to start of day to handle date-only comparisons
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     
     return {
       completed: tasks.filter(task => task.completed).length,
       incomplete: tasks.filter(task => !task.completed).length,
-      overdue: tasks.filter(task => 
-        !task.completed && 
-        task.due_date && 
-        new Date(task.due_date) < now
-      ).length,
+      // Modified overdue logic:
+      // 1. Task is not completed
+      // 2. Task has a due date
+      // 3. Due date is earlier than today
+      // 4. Also check for 'is_overdue' flag if it exists in the API data
+      overdue: tasks.filter(task => {
+        if (task.completed) return false;
+        
+        // Check if there's a specific 'is_overdue' flag
+        if (task.is_overdue) return true;
+        
+        // If task has a due_date, parse it properly
+        if (task.due_date) {
+          const dueDate = new Date(task.due_date);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate < now;
+        }
+        
+        // Also check due_on which might be used instead of due_date
+        if (task.due_on) {
+          const dueDate = new Date(task.due_on);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate < now;
+        }
+        
+        return false;
+      }).length,
       total: tasks.length
     };
   }, [tasks]);
