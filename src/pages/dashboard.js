@@ -5,6 +5,7 @@ import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
 import TaskSummary from '@/components/TaskSummary'; // Import TaskSummary component
 import AssetSummary from '@/components/AssetSummary'; // Import AssetSummary component
+import TaskTypeSummary from '@/components/TaskTypeSummary'; // Import TaskTypeSummary component
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
@@ -366,6 +367,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               {/* --- Asset Summary Section --- */}
               {!isLoading && !error && tasks.length > 0 && (
                 <AssetSummary tasks={tasks} />
+              )}
+
+              {/* --- Task Type Summary Section --- */}
+              {!isLoading && !error && tasks.length > 0 && (
+                <TaskTypeSummary tasks={tasks} />
               )}
           </div> {/* End inner wrapper #capture-content */}
         </div> {/* End of chartsContainerRef / Exportable Content div */}
