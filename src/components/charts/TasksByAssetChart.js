@@ -261,7 +261,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col" // Use flex-col for fullscreen layout
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col";
+    : "bg-white dark:bg-gray-800 px-4 pt-4 pb-6 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col"; // Adjusted padding
 
   // If in normal view, render just the chart with a note
   if (!isFullscreen) {
