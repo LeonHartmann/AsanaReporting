@@ -62,7 +62,7 @@ export async function getTasks(filters = {}) {
   try {
     if (distinct) {
       // --- Fetch All Tasks for Distinct Values --- 
-      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,completed'; // Added completed
+      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value,completed'; // Added enum_value and completed
       const distinctUrl = `${projectTasksEndpoint}?opt_fields=${distinctFields}&limit=${limit}`;
       
       const allTasksData = await fetchAllPages(distinctUrl);
@@ -98,11 +98,9 @@ export async function getTasks(filters = {}) {
           distinctAssignees.add(task.assignee.name);
         }
 
-        // Task Type from custom field
+        // Task Type from custom field (using enum_value for single-select)
         const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
-        if (taskTypeField?.display_value) { // Using display_value, assuming single select or text
-            distinctTaskTypes.add(taskTypeField.display_value);
-        } else if (taskTypeField?.enum_value?.name) { // Fallback for single-select enum
+        if (taskTypeField?.enum_value?.name) { // Use enum_value.name for single-select
              distinctTaskTypes.add(taskTypeField.enum_value.name);
         }
       });
@@ -157,8 +155,8 @@ export async function getTasks(filters = {}) {
           if (selectedTaskTypes.length > 0) {
               allTasks = allTasks.filter(task => {
                   const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
-                  // Check both display_value (text/multi-select) and enum_value.name (single-select)
-                  const taskTypeValue = taskTypeField?.display_value || taskTypeField?.enum_value?.name;
+                  // Use enum_value.name for single-select comparison
+                  const taskTypeValue = taskTypeField?.enum_value?.name;
                   const shouldKeep = taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
                   // Log details for each task being checked
                   // console.log(`[Asana API Filter] Task: ${task.gid}, Type Field: ${JSON.stringify(taskTypeField)}, Value: ${taskTypeValue}, Keep: ${shouldKeep}`);
@@ -204,8 +202,8 @@ export async function getTasks(filters = {}) {
         const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type'); // Find Task Type field
         const assetValue = assetField?.display_value;
         const requesterValue = requesterField?.display_value;
-        // Get Task Type value (check display_value first, then enum_value.name)
-        const taskTypeValue = taskTypeField?.display_value || taskTypeField?.enum_value?.name;
+        // Get Task Type value (use enum_value.name for single-select)
+        const taskTypeValue = taskTypeField?.enum_value?.name;
         
         // Get task status from section if available
         const section = getSafe(() => task.memberships?.[0]?.section?.name);
@@ -220,7 +218,7 @@ export async function getTasks(filters = {}) {
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
           assignee: task.assignee?.name || 'Unassigned',
-          taskType: taskTypeValue || 'N/A', // Include task type
+          taskType: taskTypeValue || 'N/A', // Include task type (from enum_value)
           completed: task.completed, // Completion status
           status: section || 'No Status', // Section can be used as status
           deadline: deadline, // Task deadline
