@@ -128,10 +128,15 @@ export async function getTasks(filters = {}) {
         });
       }
       if (assignee) {
-        allTasks = allTasks.filter(task => {
-          const assigneeName = getSafe(() => task.assignee?.name);
-          return assigneeName === assignee; // Exact match for assignee name
-        });
+        // Assignee filter now handles comma-separated list for OR logic
+        const selectedAssignees = assignee.split(',');
+        if (selectedAssignees.length > 0) {
+           allTasks = allTasks.filter(task => {
+             const taskAssigneeName = getSafe(() => task.assignee?.name);
+             // Include task if its assignee is in the selected list
+             return taskAssigneeName && selectedAssignees.includes(taskAssigneeName);
+           });
+        }
       }
       
       // Date range filtering
