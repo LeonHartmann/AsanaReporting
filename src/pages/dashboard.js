@@ -139,10 +139,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   return (
     <>
       <Head>
-        <title>Dashboard - Asana Tasks</title>
+        <title>GGBC Reporting Dashboard</title>
       </Head>
       <div className="container mx-auto px-2 md:px-4">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
 
         {/* --- Moved Filter Section --- */}
         <FilterPanel
