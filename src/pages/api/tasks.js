@@ -3,7 +3,10 @@ import { requireAuth } from '@/lib/auth';
 
 async function tasksHandler(req, res) {
   if (req.method === 'GET') {
-    const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter } = req.query;
+    // Log the raw query object received from the request
+    console.log('[API Handler Debug] Received req.query:', JSON.stringify(req.query, null, 2));
+
+    const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = req.query;
 
     // Basic input validation/sanitization could be added here
 
@@ -13,11 +16,16 @@ async function tasksHandler(req, res) {
         asset: asset || undefined,
         requester: requester || undefined,
         assignee: assignee || undefined,
+        taskType: taskType || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         distinct: distinct === 'true', // Convert string 'true' to boolean
         completionFilter: completionFilter || undefined,
       };
+
+      // Log the constructed filters object before passing it to getTasks
+      console.log('[API Handler Debug] Constructed Filters for getTasks:', JSON.stringify(filters, null, 2));
+
       const data = await getTasks(filters);
       return res.status(200).json(data);
     } catch (error) {
