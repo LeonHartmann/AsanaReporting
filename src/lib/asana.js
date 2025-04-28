@@ -120,7 +120,7 @@ export async function getTasks(filters = {}) {
       let allTasks = await fetchAllPages(displayUrl);
 
       // --- Apply Filters After Fetching ---
-      console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
+      // console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
 
       if (brand) {
         allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
@@ -152,8 +152,8 @@ export async function getTasks(filters = {}) {
       // Task Type filtering (similar to assignee, handles comma-separated list for OR logic)
       if (taskType) {
           const selectedTaskTypes = taskType.split(',');
-          console.log(`[Asana Filter Debug] Filtering by Task Types: ${selectedTaskTypes.join(', ')}`);
-          console.log(`[Asana Filter Debug] Tasks BEFORE Task Type filter: ${allTasks.length}`);
+          // console.log(`[Asana Filter Debug] Filtering by Task Types: ${selectedTaskTypes.join(', ')}`);
+          // console.log(`[Asana Filter Debug] Tasks BEFORE Task Type filter: ${allTasks.length}`);
           if (selectedTaskTypes.length > 0) {
               const tasksBeforeFilter = allTasks; // Keep a reference for logging
               allTasks = tasksBeforeFilter.filter(task => {
@@ -164,10 +164,10 @@ export async function getTasks(filters = {}) {
                   const trimmedTaskTypeValue = taskTypeValue?.trim(); 
                   const shouldKeep = trimmedTaskTypeValue && selectedTaskTypes.includes(trimmedTaskTypeValue); 
                   // Log details for each task being checked
-                  console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: '${taskTypeValue || ''}', Trimmed: '${trimmedTaskTypeValue || ''}', Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
+                  // console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: '${taskTypeValue || ''}', Trimmed: '${trimmedTaskTypeValue || ''}', Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
                   return shouldKeep;
               });
-              console.log(`[Asana Filter Debug] Tasks AFTER Task Type filter: ${allTasks.length}`);
+              // console.log(`[Asana Filter Debug] Tasks AFTER Task Type filter: ${allTasks.length}`);
           }
       }
       

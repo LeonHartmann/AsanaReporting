@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth';
 async function tasksHandler(req, res) {
   if (req.method === 'GET') {
     // Log the raw query object received from the request
-    console.log('[API Handler Debug] Received req.query:', JSON.stringify(req.query, null, 2));
+    // console.log('[API Handler Debug] Received req.query:', JSON.stringify(req.query, null, 2));
 
     const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = req.query;
 
@@ -24,7 +24,7 @@ async function tasksHandler(req, res) {
       };
 
       // Log the constructed filters object before passing it to getTasks
-      console.log('[API Handler Debug] Constructed Filters for getTasks:', JSON.stringify(filters, null, 2));
+      // console.log('[API Handler Debug] Constructed Filters for getTasks:', JSON.stringify(filters, null, 2));
 
       const data = await getTasks(filters);
       return res.status(200).json(data);
