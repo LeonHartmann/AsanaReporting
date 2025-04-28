@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,6 +20,11 @@ ChartJS.register(
 );
 
 export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredBrands, setFilteredBrands] = useState([]);
+  const brandsPerPage = 20; // Number of brands to show per page in fullscreen
+
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
   }
@@ -35,16 +40,51 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
   const sortedBrands = Object.entries(brandCounts)
     .sort(([, countA], [, countB]) => countB - countA);
 
-  // Limit the number of items in normal view but show more in fullscreen
-  const maxItems = isFullscreen ? 30 : 10;
+  // Handle search/filtering for fullscreen mode
+  useEffect(() => {
+    if (isFullscreen) {
+      const filtered = sortedBrands.filter(([brand]) => 
+        brand.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredBrands(filtered);
+      setCurrentPage(1); // Reset to first page when search changes
+    }
+  }, [searchTerm, isFullscreen, sortedBrands]);
+
+  // Set up initial filtered brands on mount or when fullscreen changes
+  useEffect(() => {
+    if (isFullscreen) {
+      setFilteredBrands(sortedBrands);
+    }
+  }, [isFullscreen, sortedBrands]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredBrands.length / brandsPerPage);
+
+  // Get current brands for pagination
+  const indexOfLastBrand = currentPage * brandsPerPage;
+  const indexOfFirstBrand = indexOfLastBrand - brandsPerPage;
+  const currentBrands = filteredBrands.slice(indexOfFirstBrand, indexOfLastBrand);
+
+  // Handle pagination
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+
+  // For normal view, truncate data
+  const maxItems = 10;
   const truncatedData = sortedBrands.slice(0, maxItems);
   
-  // If we truncated the data and we're not in fullscreen, add an "Others" category
+  // Prepare chart data
   let labels = [];
   let dataCounts = [];
   
-  if (!isFullscreen && sortedBrands.length > maxItems) {
-    // Get the top items
+  if (isFullscreen) {
+    // In fullscreen mode, use paginated/filtered data
+    labels = currentBrands.map(([brand]) => brand);
+    dataCounts = currentBrands.map(([, count]) => count);
+  } else if (sortedBrands.length > maxItems) {
+    // In normal view, use top brands + Others
     labels = truncatedData.map(([brand]) => brand);
     dataCounts = truncatedData.map(([, count]) => count);
     
@@ -55,9 +95,9 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       dataCounts.push(othersSum);
     }
   } else {
-    // Use all data if in fullscreen mode or if we have fewer items than the limit
-    labels = truncatedData.map(([brand]) => brand);
-    dataCounts = truncatedData.map(([, count]) => count);
+    // If we have fewer brands than the limit, show all
+    labels = sortedBrands.map(([brand]) => brand);
+    dataCounts = sortedBrands.map(([, count]) => count);
   }
   
   // In fullscreen mode, auto-adjust bar height based on number of items
@@ -144,9 +184,9 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
     layout: {
       padding: {
         top: 10,
-        right: 30, // More padding on the right for values
+        right: 30,
         bottom: 10,
-        left: 20  // More padding on the left for labels
+        left: 20
       }
     },
     animation: {
@@ -162,24 +202,109 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
-    ? "w-full h-full"
+    ? "w-full h-full flex flex-col"
     : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
 
+  // If in normal view, render just the chart with a note
+  if (!isFullscreen) {
+    return (
+      <div 
+        id="tasks-by-brand-chart"
+        data-title="Tasks by Brand"
+        className={containerClass}
+        onClick={onClick}
+      >
+        <Bar data={data} options={options} />
+        
+        {sortedBrands.length > maxItems && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+            Showing top {maxItems} of {sortedBrands.length} brands. Click to view all.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // In fullscreen mode, include search and pagination
   return (
     <div 
-      id="tasks-by-brand-chart"
+      id="tasks-by-brand-chart-fullscreen"
       data-title="Tasks by Brand"
       className={containerClass}
-      onClick={onClick}
+      onClick={(e) => e.stopPropagation()} // Prevent the modal from closing when clicking inside
     >
-      <Bar data={data} options={options} />
+      {/* Search and info bar */}
+      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            placeholder="Search brands..."
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-300">
+          Total: {sortedBrands.length} brands | Filtered: {filteredBrands.length} brands
+        </div>
+      </div>
       
-      {/* Show a note about truncated data in normal view */}
-      {!isFullscreen && sortedBrands.length > maxItems && (
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-          Showing top {maxItems} of {sortedBrands.length} brands. Click to view all.
+      {/* Chart */}
+      <div className="flex-1 overflow-hidden">
+        <Bar data={data} options={options} />
+      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="p-3 border-t flex justify-between items-center">
+          <button 
+            onClick={prevPage} 
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          >
+            Previous
+          </button>
+          
+          <div className="text-sm">
+            Page {currentPage} of {totalPages} | 
+            Showing {indexOfFirstBrand + 1}-{Math.min(indexOfLastBrand, filteredBrands.length)} of {filteredBrands.length} brands
+          </div>
+          
+          <button 
+            onClick={nextPage} 
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          >
+            Next
+          </button>
         </div>
       )}
+      
+      {/* Download button */}
+      <div className="p-3 border-t">
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            // Create CSV content for all brands
+            const csvContent = 'Brand,Tasks\n' + 
+              sortedBrands.map(([brand, count]) => `"${brand}",${count}`).join('\n');
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'brands_tasks.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Download Brand Data (CSV)
+        </button>
+      </div>
     </div>
   );
 } 
