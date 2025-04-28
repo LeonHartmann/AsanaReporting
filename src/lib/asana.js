@@ -242,17 +242,17 @@ export async function getTasks(filters = {}) {
       const completedStatus = 'Completed';
       const completedStatuses = [completedStatus, completedFeedbackStatus];
 
+      // Log the filter being applied and the statuses of the tasks being filtered
+      console.log(`[Asana Filter Debug] Applying completionFilter: ${completionFilter}`);
+      // filteredTasks.forEach(task => console.log(`[Asana Filter Debug] Task ID: ${task.id}, Status: '${task.status}'`)); // Log individual statuses if needed
+
       if (completionFilter === 'only_completed_feedback') {
-          // Show only tasks that are either 'Completed' or '🌀 Completed/Feedback'
           finalTasks = filteredTasks.filter(task => completedStatuses.includes(task.status));
       } else if (completionFilter === 'hide_completed_feedback') {
-          // Hide tasks that are either 'Completed' or '🌀 Completed/Feedback'
           finalTasks = filteredTasks.filter(task => !completedStatuses.includes(task.status));
       } else if (completionFilter === 'only_completed') {
-          // Show only tasks that are exactly 'Completed'
           finalTasks = filteredTasks.filter(task => task.status === completedStatus);
       } else if (completionFilter === 'hide_completed') {
-          // Hide only tasks that are exactly 'Completed' (keeps '🌀 Completed/Feedback')
           finalTasks = filteredTasks.filter(task => task.status !== completedStatus);
       }
       // If completionFilter is 'all' or not set, no further filtering is needed here.
