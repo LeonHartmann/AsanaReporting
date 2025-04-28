@@ -190,8 +190,11 @@ export async function getTasks(filters = {}) {
           createdAt: task.created_at,
         };
       });
+      
+      // Filter out tasks with status '📍 Resources'
+      const filteredTasks = formattedTasks.filter(task => task.status !== '📍 Resources');
 
-      return formattedTasks;
+      return filteredTasks;
     }
   } catch (error) {
     console.error('Error fetching or processing Asana tasks:', error);
