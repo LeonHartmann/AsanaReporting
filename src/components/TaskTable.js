@@ -1,6 +1,60 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function TaskTable({ tasks, isLoading, error }) {
+  const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'descending' });
+
+  const sortedTasks = useMemo(() => {
+    let sortableItems = [...tasks];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        // Ensure values exist for sorting, default to empty string or 0 if null/undefined
+        const aValue = a[sortConfig.key] ?? (typeof a[sortConfig.key] === 'number' ? 0 : '');
+        const bValue = b[sortConfig.key] ?? (typeof b[sortConfig.key] === 'number' ? 0 : '');
+
+        // Handle date sorting specifically for 'deadline' and 'createdAt'
+        if (sortConfig.key === 'deadline' || sortConfig.key === 'createdAt') {
+            const dateA = aValue ? new Date(aValue) : new Date(0); // Use epoch if null
+            const dateB = bValue ? new Date(bValue) : new Date(0);
+             if (dateA < dateB) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+             }
+             if (dateA > dateB) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+             }
+             return 0;
+        }
+
+        // Handle string sorting (case-insensitive)
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+          return sortConfig.direction === 'ascending' ? comparison : -comparison;
+        }
+        
+        // Handle numeric sorting or fallback comparison
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [tasks, sortConfig]);
+
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    } else if (sortConfig.key === key && sortConfig.direction === 'descending') {
+       // Optional: Third click could reset sort or cycle back to ascending
+       // For now, let's just toggle between asc/desc
+       direction = 'ascending'; 
+    }
+    setSortConfig({ key, direction });
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -58,32 +112,32 @@ export default function TaskTable({ tasks, isLoading, error }) {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Brand
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('brand')}>
+                Brand {sortConfig.key === 'brand' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Asset
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('asset')}>
+                Asset {sortConfig.key === 'asset' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Requested By
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('requester')}>
+                Requested By {sortConfig.key === 'requester' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Assignee
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('assignee')}>
+                Assignee {sortConfig.key === 'assignee' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Task Type
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('taskType')}>
+                Task Type {sortConfig.key === 'taskType' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Task Name
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('name')}>
+                Task Name {sortConfig.key === 'name' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Status
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
+                Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Deadline
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('deadline')}>
+                Deadline {sortConfig.key === 'deadline' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Created At
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('createdAt')}>
+                Created At {sortConfig.key === 'createdAt' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
             </tr>
           </thead>
@@ -100,14 +154,14 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 </td>
               </tr>
             )}
-            {!isLoading && tasks.length === 0 && (
+            {!isLoading && sortedTasks.length === 0 && (
               <tr>
                 <td colSpan="9" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
             )}
-            {!isLoading && tasks.map((task) => (
+            {!isLoading && sortedTasks.map((task) => (
               <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {task.brand}
