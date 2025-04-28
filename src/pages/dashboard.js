@@ -120,13 +120,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
 
-  // New handler for TaskSummary filtering
-  const handleSummaryFilter = (filterType) => {
-    const newFilters = { ...filters, completionFilter: filterType };
-    setFilters(newFilters);
-    fetchTasksWithFilters(newFilters);
-  };
-
   // Helper to create clickable chart wrappers
   const renderClickableChart = (title, ChartComponent) => {
     // We need to pass tasks to the ChartComponent when rendering it inside the modal
@@ -150,7 +143,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         
         {/* Task Summary Section */}
         {!isLoading && !error && tasks.length > 0 && (
-          <TaskSummary tasks={tasks} onFilterChange={handleSummaryFilter} />
+          <TaskSummary tasks={tasks} />
         )}
         
         {/* --- Report Generation Button --- */}
