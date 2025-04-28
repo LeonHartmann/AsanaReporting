@@ -152,12 +152,17 @@ export async function getTasks(filters = {}) {
       // Task Type filtering (similar to assignee, handles comma-separated list for OR logic)
       if (taskType) {
           const selectedTaskTypes = taskType.split(',');
+          console.log('[Asana API Filter] Received taskType filter:', taskType);
+          console.log('[Asana API Filter] Selected task types:', selectedTaskTypes);
           if (selectedTaskTypes.length > 0) {
               allTasks = allTasks.filter(task => {
                   const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
                   // Check both display_value (text/multi-select) and enum_value.name (single-select)
                   const taskTypeValue = taskTypeField?.display_value || taskTypeField?.enum_value?.name;
-                  return taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
+                  const shouldKeep = taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
+                  // Log details for each task being checked
+                  // console.log(`[Asana API Filter] Task: ${task.gid}, Type Field: ${JSON.stringify(taskTypeField)}, Value: ${taskTypeValue}, Keep: ${shouldKeep}`);
+                  return shouldKeep;
               });
           }
       }
