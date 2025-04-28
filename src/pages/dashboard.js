@@ -155,18 +155,21 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
 
       console.log("Capturing content with html2canvas...");
-      // Remove manual style changes
-      // const originalStyle = chartContainer.style.backgroundColor;
-      // chartContainer.style.backgroundColor = '#ffffff';
 
-      // Simplify options: remove scale, width, height, window*; use html2canvas background option
-      const canvas = await html2canvas(chartContainer, {
-          useCORS: true,
-          backgroundColor: '#ffffff' // Use the built-in option for background
-      });
+      // Temporarily set overflow to visible to help capture everything
+      const originalOverflow = chartContainer.style.overflow;
+      chartContainer.style.overflow = 'visible';
 
-      // Remove style restoration
-      // chartContainer.style.backgroundColor = originalStyle;
+      let canvas;
+      try {
+          canvas = await html2canvas(chartContainer, {
+              useCORS: true,
+              backgroundColor: '#ffffff' // Use the built-in option for background
+          });
+      } finally {
+          // Restore original overflow style even if html2canvas fails
+          chartContainer.style.overflow = originalOverflow;
+      }
 
       console.log("Canvas generated, converting to JPEG...");
       const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG format with 80% quality
@@ -238,12 +241,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       console.log("PDF Saved.");
 
     } catch (err) {
-        // Remove style restoration from catch block as well
-        // if (chartContainer) {
-        //   chartContainer.style.backgroundColor = originalStyle;
-        // }
         console.error("Error generating PDF:", err);
         setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
+        // Ensure overflow is restored in case of errors *after* capture but before finally
+        if (chartContainer && typeof originalOverflow !== 'undefined') { // Check if originalOverflow was set
+            chartContainer.style.overflow = originalOverflow;
+        }
     } finally {
         setIsLoading(false); // Hide loading indicator
     }
