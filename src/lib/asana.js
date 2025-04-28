@@ -237,19 +237,24 @@ export async function getTasks(filters = {}) {
       
       // Apply completion/status filter if specified
       let finalTasks = filteredTasks;
-      const completedStatuses = ['Completed', 'Completed/Feedback'];
+      // Define the exact status strings including the emoji
+      const completedFeedbackStatus = '🌀 Completed/Feedback';
+      const completedStatus = 'Completed';
+      const completedStatuses = [completedStatus, completedFeedbackStatus];
 
       if (completionFilter === 'only_completed_feedback') {
+          // Show only tasks that are either 'Completed' or '🌀 Completed/Feedback'
           finalTasks = filteredTasks.filter(task => completedStatuses.includes(task.status));
       } else if (completionFilter === 'hide_completed_feedback') {
+          // Hide tasks that are either 'Completed' or '🌀 Completed/Feedback'
           finalTasks = filteredTasks.filter(task => !completedStatuses.includes(task.status));
       } else if (completionFilter === 'only_completed') {
-          // Only tasks explicitly marked as 'Completed' status (not 'Completed/Feedback')
-          finalTasks = filteredTasks.filter(task => task.status === 'Completed');
+          // Show only tasks that are exactly 'Completed'
+          finalTasks = filteredTasks.filter(task => task.status === completedStatus);
       } else if (completionFilter === 'hide_completed') {
-          // Hide only tasks explicitly marked as 'Completed' status (keeps 'Completed/Feedback')
-          finalTasks = filteredTasks.filter(task => task.status !== 'Completed');
-      } 
+          // Hide only tasks that are exactly 'Completed' (keeps '🌀 Completed/Feedback')
+          finalTasks = filteredTasks.filter(task => task.status !== completedStatus);
+      }
       // If completionFilter is 'all' or not set, no further filtering is needed here.
 
       return finalTasks;
