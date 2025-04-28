@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
 import TaskSummary from '@/components/TaskSummary'; // Import TaskSummary component
+import AssetSummary from '@/components/AssetSummary'; // Import AssetSummary component
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
@@ -361,6 +362,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
                  )} 
                  {/* Optionally show loading/error specific to this chart if needed */} 
               </div>
+
+              {/* --- Asset Summary Section --- */}
+              {!isLoading && !error && tasks.length > 0 && (
+                <AssetSummary tasks={tasks} />
+              )}
           </div> {/* End inner wrapper #capture-content */}
         </div> {/* End of chartsContainerRef / Exportable Content div */}
 
