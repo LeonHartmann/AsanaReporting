@@ -49,7 +49,7 @@ const getSafe = (fn, defaultValue = null) => {
 };
 
 export async function getTasks(filters = {}) {
-  const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType, previousPeriod } = filters;
+  const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = filters;
 
   if (!ASANA_PAT || !ASANA_PROJECT_ID) {
     console.error('Asana PAT or Project ID is missing in environment variables.');
@@ -122,55 +122,6 @@ export async function getTasks(filters = {}) {
       // --- Apply Filters After Fetching ---
       // console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
 
-      // If previousPeriod is true, fetch tasks from the previous 30 days
-      if (previousPeriod) {
-        const now = new Date();
-        const thirtyDaysAgo = new Date();
-        const sixtyDaysAgo = new Date();
-        
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        sixtyDaysAgo.setDate(now.getDate() - 60);
-        
-        // Filter tasks to only include those created between 60 and 30 days ago
-        allTasks = allTasks.filter(task => {
-          if (!task.created_at) return false;
-          
-          const taskDate = new Date(task.created_at);
-          if (isNaN(taskDate.getTime())) return false;
-          
-          return taskDate >= sixtyDaysAgo && taskDate <= thirtyDaysAgo;
-        });
-      } 
-      // Apply normal date range filters if not requesting previous period
-      else if (startDate || endDate) {
-        allTasks = allTasks.filter(task => {
-          // Use created_at date for filtering
-          if (!task.created_at) return false;
-          
-          const taskDate = new Date(task.created_at);
-          // Skip tasks with invalid dates
-          if (isNaN(taskDate.getTime())) return false;
-          
-          // Apply start date filter if provided
-          if (startDate) {
-            const startDateObj = new Date(startDate);
-            // Set time to beginning of day
-            startDateObj.setHours(0, 0, 0, 0);
-            if (taskDate < startDateObj) return false;
-          }
-          
-          // Apply end date filter if provided
-          if (endDate) {
-            const endDateObj = new Date(endDate);
-            // Set time to end of day
-            endDateObj.setHours(23, 59, 59, 999);
-            if (taskDate > endDateObj) return false;
-          }
-          
-          return true;
-        });
-      }
-
       if (brand) {
         allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
       }
@@ -220,6 +171,36 @@ export async function getTasks(filters = {}) {
           }
       }
       
+      // Date range filtering
+      if (startDate || endDate) {
+        allTasks = allTasks.filter(task => {
+          // Use created_at date for filtering
+          if (!task.created_at) return false;
+          
+          const taskDate = new Date(task.created_at);
+          // Skip tasks with invalid dates
+          if (isNaN(taskDate.getTime())) return false;
+          
+          // Apply start date filter if provided
+          if (startDate) {
+            const startDateObj = new Date(startDate);
+            // Set time to beginning of day
+            startDateObj.setHours(0, 0, 0, 0);
+            if (taskDate < startDateObj) return false;
+          }
+          
+          // Apply end date filter if provided
+          if (endDate) {
+            const endDateObj = new Date(endDate);
+            // Set time to end of day
+            endDateObj.setHours(23, 59, 59, 999);
+            if (taskDate > endDateObj) return false;
+          }
+          
+          return true;
+        });
+      }
+
       // --- Format Tasks --- 
       const formattedTasks = allTasks.map(task => {
         const assetField = task.custom_fields?.find(f => f.name === 'Assets');

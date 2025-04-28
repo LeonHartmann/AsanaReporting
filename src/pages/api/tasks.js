@@ -6,7 +6,7 @@ async function tasksHandler(req, res) {
     // Log the raw query object received from the request
     // console.log('[API Handler Debug] Received req.query:', JSON.stringify(req.query, null, 2));
 
-    const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType, previousPeriod } = req.query;
+    const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = req.query;
 
     // Basic input validation/sanitization could be added here
 
@@ -21,7 +21,6 @@ async function tasksHandler(req, res) {
         endDate: endDate || undefined,
         distinct: distinct === 'true', // Convert string 'true' to boolean
         completionFilter: completionFilter || undefined,
-        previousPeriod: previousPeriod === 'true', // Add previousPeriod flag
       };
 
       // Log the constructed filters object before passing it to getTasks
