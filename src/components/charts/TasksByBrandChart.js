@@ -43,8 +43,9 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
   // Handle search/filtering for fullscreen mode
   useEffect(() => {
     if (isFullscreen) {
+      console.log("Filtering brands with search term:", searchTerm);
       const filtered = sortedBrands.filter(([brand]) => 
-        brand.toLowerCase().includes(searchTerm.toLowerCase())
+        brand.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBrands(filtered);
       setCurrentPage(1); // Reset to first page when search changes
@@ -232,15 +233,19 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
   }
 
   // In fullscreen mode, include search and pagination
+  const handleChartContainerClick = (e) => {
+    e.stopPropagation(); // Prevent the modal from closing when clicking inside
+  };
+
   return (
     <div 
       id="tasks-by-brand-chart-fullscreen"
       data-title="Tasks by Brand"
       className={containerClass}
-      onClick={(e) => e.stopPropagation()} // Prevent the modal from closing when clicking inside
+      onClick={handleChartContainerClick}
     >
       {/* Search and info bar */}
-      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex-1 min-w-[200px]">
           <input
             type="text"
@@ -248,7 +253,6 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
             className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-300">
@@ -257,15 +261,18 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       </div>
       
       {/* Chart */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <Bar data={data} options={options} />
       </div>
       
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-3 border-t flex justify-between items-center">
+        <div className="p-3 border-t flex justify-between items-center" onClick={(e) => e.stopPropagation()}>
           <button 
-            onClick={prevPage} 
+            onClick={(e) => {
+              e.stopPropagation();
+              prevPage();
+            }}
             disabled={currentPage === 1}
             className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
           >
@@ -278,7 +285,10 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
           </div>
           
           <button 
-            onClick={nextPage} 
+            onClick={(e) => {
+              e.stopPropagation();
+              nextPage();
+            }}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
           >
@@ -288,7 +298,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       )}
       
       {/* Download button */}
-      <div className="p-3 border-t">
+      <div className="p-3 border-t" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={(e) => {
             e.stopPropagation();
