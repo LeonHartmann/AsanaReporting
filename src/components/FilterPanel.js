@@ -168,10 +168,8 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           >
             <option value="all">All Tasks</option>
-            <option value="only_completed_feedback">Only 'Completed' or '🌀 Completed/Feedback'</option>
-            <option value="hide_completed_feedback">Hide 'Completed' and '🌀 Completed/Feedback'</option>
-            <option value="only_completed">Only 'Completed' Status</option>
-            <option value="hide_completed">Hide 'Completed' Status</option>
+            <option value="only_completed_feedback">Only '🌀 Completed/Feedback'</option>
+            <option value="hide_completed_feedback">Hide '🌀 Completed/Feedback'</option>
           </select>
         </div>
 

@@ -248,43 +248,19 @@ export async function getTasks(filters = {}) {
       let tasksAfterFilter = [];
 
       switch (completionFilter) {
-          case 'only_completed': // Point 2: Only status 'Completed'
+          case 'only_completed_feedback': // Point 4 Equivalent: Show only '🌀 Completed/Feedback'
               tasksAfterFilter = filteredTasks.filter(task => {
                   const status = task.status?.trim();
-                  const match = status === completedStatus;
-                  // if (status === completedStatus || status === completedFeedbackStatus) {
-                  //     console.log(`[Debug only_completed] Task ${task.id}, Status: '${status}', Match: ${match}`);
-                  // }
+                  // Since 'Completed' doesn't exist, this simplifies to checking only completedFeedbackStatus
+                  const match = status === completedFeedbackStatus; 
                   return match;
               });
               break;
-          case 'hide_completed': // Point 3: Not status 'Completed'
+          case 'hide_completed_feedback': // Point 5 Equivalent: Hide only '🌀 Completed/Feedback'
               tasksAfterFilter = filteredTasks.filter(task => {
                   const status = task.status?.trim();
-                  const match = status !== completedStatus;
-                  // if (status === completedStatus || status === completedFeedbackStatus) {
-                  //     console.log(`[Debug hide_completed] Task ${task.id}, Status: '${status}', Match: ${match}`);
-                  // }
-                  return match;
-              });
-              break;
-          case 'only_completed_feedback': // Point 4: Status 'Completed' OR '🌀 Completed/Feedback'
-              tasksAfterFilter = filteredTasks.filter(task => {
-                  const status = task.status?.trim();
-                  const match = completedStatuses.includes(status);
-                  // if (status === completedStatus || status === completedFeedbackStatus) {
-                  //     console.log(`[Debug only_completed_feedback] Task ${task.id}, Status: '${status}', Includes: ${match}`);
-                  // }
-                  return match;
-              });
-              break;
-          case 'hide_completed_feedback': // Point 5: NEITHER 'Completed' NOR '🌀 Completed/Feedback'
-              tasksAfterFilter = filteredTasks.filter(task => {
-                  const status = task.status?.trim();
-                  const match = !completedStatuses.includes(status);
-                  // if (status === completedStatus || status === completedFeedbackStatus) {
-                  //     console.log(`[Debug hide_completed_feedback] Task ${task.id}, Status: '${status}', Not Includes: ${match}`);
-                  // }
+                  // Since 'Completed' doesn't exist, this simplifies to checking only completedFeedbackStatus
+                  const match = status !== completedFeedbackStatus;
                   return match;
               });
               break;
