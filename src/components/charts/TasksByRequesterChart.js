@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -20,44 +20,118 @@ ChartJS.register(
 );
 
 export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredRequesters, setFilteredRequesters] = useState([]);
+  const [allRequesters, setAllRequesters] = useState([]);
+  const requestersPerPage = 15; // Show 15 requesters per page in fullscreen
+
+  // Calculate task counts per requester
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) return;
+    
+    const requesterCounts = tasks.reduce((acc, task) => {
+      const requester = task.requester || 'N/A'; // Use 'N/A' if requester is missing
+      acc[requester] = (acc[requester] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Sort requesters by task count descending
+    const sorted = Object.entries(requesterCounts)
+      .sort(([, countA], [, countB]) => countB - countA);
+    
+    setAllRequesters(sorted);
+    setFilteredRequesters(sorted);
+  }, [tasks]);
+
+  // Handle search input changes
+  const handleSearchChange = useCallback((e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    
+    if (term.trim() === '') {
+      setFilteredRequesters(allRequesters);
+    } else {
+      const results = allRequesters.filter(([requester]) => 
+        requester.toString().toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredRequesters(results);
+    }
+    
+    setCurrentPage(1); // Reset to first page on search
+  }, [allRequesters]);
+
+  // Pagination handlers
+  const handlePrevPage = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+
+  const handleNextPage = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const totalPages = Math.ceil(filteredRequesters.length / requestersPerPage);
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [filteredRequesters.length, requestersPerPage]);
+  
+  // Handle download
+  const handleDownload = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Create CSV content for all requesters
+    const csvContent = 'Requester,Tasks\n' + 
+      allRequesters.map(([requester, count]) => `"${requester}",${count}`).join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'requesters_tasks.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [allRequesters]);
+
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
   }
 
-  // Calculate task counts per requester
-  const requesterCounts = tasks.reduce((acc, task) => {
-    const requester = task.requester || 'N/A'; // Use 'N/A' if requester is missing
-    acc[requester] = (acc[requester] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Sort requesters by task count descending
-  const sortedRequesters = Object.entries(requesterCounts)
-    .sort(([, countA], [, countB]) => countB - countA);
-
-  // Limit the number of items in normal view but show more in fullscreen
-  const maxItems = isFullscreen ? 30 : 10;
-  const truncatedData = sortedRequesters.slice(0, maxItems);
+  // For normal view, truncate data
+  const maxItems = 10;
   
-  // If we truncated the data and we're not in fullscreen, add an "Others" category
+  // Prepare chart data
   let labels = [];
   let dataCounts = [];
   
-  if (!isFullscreen && sortedRequesters.length > maxItems) {
-    // Get the top items
+  if (isFullscreen) {
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredRequesters.length / requestersPerPage);
+    const indexOfLastRequester = currentPage * requestersPerPage;
+    const indexOfFirstRequester = indexOfLastRequester - requestersPerPage;
+    const currentRequesters = filteredRequesters.slice(indexOfFirstRequester, indexOfLastRequester);
+    
+    // In fullscreen mode, use paginated/filtered data
+    labels = currentRequesters.map(([requester]) => requester);
+    dataCounts = currentRequesters.map(([, count]) => count);
+  } else if (allRequesters.length > maxItems) {
+    // In normal view, use top requesters + Others
+    const truncatedData = allRequesters.slice(0, maxItems);
     labels = truncatedData.map(([requester]) => requester);
     dataCounts = truncatedData.map(([, count]) => count);
     
     // Add "Others" category with the sum of the remaining items
-    const othersSum = sortedRequesters.slice(maxItems).reduce((sum, [, count]) => sum + count, 0);
+    const othersSum = allRequesters.slice(maxItems).reduce((sum, [, count]) => sum + count, 0);
     if (othersSum > 0) {
       labels.push('Others');
       dataCounts.push(othersSum);
     }
   } else {
-    // Use all data if in fullscreen mode or if we have fewer items than the limit
-    labels = truncatedData.map(([requester]) => requester);
-    dataCounts = truncatedData.map(([, count]) => count);
+    // If we have fewer requesters than the limit, show all
+    labels = allRequesters.map(([requester]) => requester);
+    dataCounts = allRequesters.map(([, count]) => count);
   }
   
   // In fullscreen mode, auto-adjust bar height based on number of items
@@ -73,7 +147,7 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
         data: dataCounts,
         backgroundColor: 'rgba(153, 102, 255, 0.6)', // Purple color
         borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: isFullscreen ? 2 : 1,
+        borderWidth: isFullscreen ? 1 : 1,
       },
     ],
   };
@@ -136,7 +210,14 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
           }
         }
       }
-    }
+    },
+    // Add performance optimizations
+    elements: {
+      bar: {
+        borderWidth: isFullscreen ? 1 : 1, // Reduce border width for performance
+      }
+    },
+    devicePixelRatio: 1.5, // Optimize for performance
   };
 
   // Additional options for fullscreen mode
@@ -144,14 +225,13 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
     layout: {
       padding: {
         top: 10,
-        right: 30, // More padding on the right for values
+        right: 30,
         bottom: 10,
-        left: 20  // More padding on the left for labels
+        left: 20
       }
     },
-    animation: {
-      duration: 500
-    }
+    animation: false, // Disable animations in fullscreen mode for better performance
+    responsiveAnimationDuration: 0,
   } : {};
 
   // Merge options
@@ -162,24 +242,99 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
-    ? "w-full h-full"
+    ? "w-full h-full flex flex-col"
     : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
 
+  // If in normal view, render just the chart with a note
+  if (!isFullscreen) {
+    return (
+      <div 
+        id="tasks-by-requester-chart"
+        data-title="Tasks by Requester"
+        className={containerClass}
+        onClick={onClick}
+      >
+        <Bar data={data} options={options} />
+        
+        {allRequesters.length > maxItems && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+            Showing top {maxItems} of {allRequesters.length} requesters. Click to view all.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Calculate pagination stats for display
+  const totalPages = Math.ceil(filteredRequesters.length / requestersPerPage);
+  const indexOfLastRequester = currentPage * requestersPerPage;
+  const indexOfFirstRequester = indexOfLastRequester - requestersPerPage;
+
+  // In fullscreen mode, include search and pagination
   return (
     <div 
-      id="tasks-by-requester-chart"
+      id="tasks-by-requester-chart-fullscreen"
       data-title="Tasks by Requester"
       className={containerClass}
-      onClick={onClick}
+      onClick={(e) => e.stopPropagation()}
     >
-      <Bar data={data} options={options} />
+      {/* Search and info bar */}
+      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            placeholder="Search requesters..."
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-300">
+          Total: {allRequesters.length} requesters | Filtered: {filteredRequesters.length} requesters
+        </div>
+      </div>
       
-      {/* Show a note about truncated data in normal view */}
-      {!isFullscreen && sortedRequesters.length > maxItems && (
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-          Showing top {maxItems} of {sortedRequesters.length} requesters. Click to view all.
+      {/* Chart */}
+      <div className="flex-1 overflow-hidden">
+        <Bar data={data} options={options} />
+      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="p-3 border-t flex justify-between items-center">
+          <button 
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          >
+            Previous
+          </button>
+          
+          <div className="text-sm">
+            Page {currentPage} of {totalPages} | 
+            Showing {indexOfFirstRequester + 1}-{Math.min(indexOfLastRequester, filteredRequesters.length)} of {filteredRequesters.length} requesters
+          </div>
+          
+          <button 
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          >
+            Next
+          </button>
         </div>
       )}
+      
+      {/* Download button */}
+      <div className="p-3 border-t">
+        <button 
+          onClick={handleDownload}
+          className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Download Requester Data (CSV)
+        </button>
+      </div>
     </div>
   );
 } 
