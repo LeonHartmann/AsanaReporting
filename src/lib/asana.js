@@ -119,7 +119,9 @@ export async function getTasks(filters = {}) {
       
       let allTasks = await fetchAllPages(displayUrl);
 
-      // --- Apply Filters After Fetching --- 
+      // --- Apply Filters After Fetching ---
+      console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
+
       if (brand) {
         allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
       }
