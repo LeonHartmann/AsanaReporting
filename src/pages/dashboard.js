@@ -160,9 +160,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       chartContainer.style.backgroundColor = '#ffffff';
 
       const canvas = await html2canvas(chartContainer, {
-          scale: 1.5, // Reduced scale slightly for smaller file size
+          scale: 1.5, // Keep scale for now
           useCORS: true,
-          backgroundColor: '#ffffff' // Keep this option as well
+          // Ensure we capture the full scrollable area
+          width: chartContainer.scrollWidth,
+          height: chartContainer.scrollHeight,
+          // Removed backgroundColor option from here, rely on style change above
+          windowWidth: chartContainer.scrollWidth, // Optional: Try explicitly setting window context width
+          windowHeight: chartContainer.scrollHeight // Optional: Try explicitly setting window context height
       });
 
       // Restore original background color (if any)
@@ -292,7 +297,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
         {/* --- Exportable Content Area (Summary + Charts) --- */}
         {/* Attach the ref here to include TaskSummary and all charts */}
-        <div ref={chartsContainerRef} style={{ backgroundColor: '#ffffff' }}>
+        <div ref={chartsContainerRef}>
             {/* Task Summary Section */} 
             {!isLoading && !error && tasks.length > 0 && (
               <TaskSummary tasks={tasks} />
