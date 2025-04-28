@@ -158,9 +158,11 @@ export async function getTasks(filters = {}) {
                   const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
                   // Use enum_value.name for single-select comparison
                   const taskTypeValue = taskTypeField?.enum_value?.name;
-                  const shouldKeep = taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
+                  // Trim the value from Asana before comparing
+                  const trimmedTaskTypeValue = taskTypeValue?.trim(); 
+                  const shouldKeep = trimmedTaskTypeValue && selectedTaskTypes.includes(trimmedTaskTypeValue); 
                   // Log details for each task being checked
-                  console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: ${taskTypeValue || ''}, Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
+                  console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: '${taskTypeValue || ''}', Trimmed: '${trimmedTaskTypeValue || ''}', Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
                   return shouldKeep;
               });
               console.log(`[Asana Filter Debug] Tasks AFTER Task Type filter: ${allTasks.length}`);
