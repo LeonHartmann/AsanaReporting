@@ -118,7 +118,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   
   // Handler for resetting filters
   const handleResetFilters = () => {
-      const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' };
+      const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: 'all' };
       setFilters(defaultFilters);
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
