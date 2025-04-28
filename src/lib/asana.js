@@ -113,7 +113,7 @@ export async function getTasks(filters = {}) {
 
       // --- Apply Filters After Fetching --- 
       if (brand) {
-        allTasks = allTasks.filter(task => getSafe(() => task.name.match(/^\s*\[(.*?)\]/)?.[1]?.trim().toUpperCase() === brand.toUpperCase()));
+        allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
       }
       if (asset) {
         allTasks = allTasks.filter(task => {
@@ -180,7 +180,7 @@ export async function getTasks(filters = {}) {
         return {
           id: task.gid,
           name: task.name,
-          brand: getSafe(() => task.name.match(/^\s*\[(.*?)\]/)?.[1]?.trim().toUpperCase(), 'N/A'),
+          brand: task.name.toUpperCase(),
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
           assignee: task.assignee?.name || 'Unassigned',
