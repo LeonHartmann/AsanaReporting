@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
+import TaskSummary from '@/components/TaskSummary'; // Import TaskSummary component
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
@@ -119,6 +120,13 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
 
+  // New handler for TaskSummary filtering
+  const handleSummaryFilter = (filterType) => {
+    const newFilters = { ...filters, completionFilter: filterType };
+    setFilters(newFilters);
+    fetchTasksWithFilters(newFilters);
+  };
+
   // Helper to create clickable chart wrappers
   const renderClickableChart = (title, ChartComponent) => {
     // We need to pass tasks to the ChartComponent when rendering it inside the modal
@@ -139,6 +147,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       </Head>
       <div className="container mx-auto px-2 md:px-4">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
+        
+        {/* Task Summary Section */}
+        {!isLoading && !error && tasks.length > 0 && (
+          <TaskSummary tasks={tasks} onFilterChange={handleSummaryFilter} />
+        )}
         
         {/* --- Report Generation Button --- */}
         {!isLoading && !error && tasks.length > 0 && (
