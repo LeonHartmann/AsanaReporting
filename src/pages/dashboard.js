@@ -12,7 +12,6 @@ import TaskTrendChart from '@/components/charts/TaskCreationTrendChart'; // Impo
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
-import ReportGenerator from '@/components/ReportGenerator'; // Import the report generator
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -154,13 +153,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         {/* Task Summary Section */}
         {!isLoading && !error && tasks.length > 0 && (
           <TaskSummary tasks={tasks} />
-        )}
-        
-        {/* --- Report Generation Button --- */}
-        {!isLoading && !error && tasks.length > 0 && (
-          <div className="mb-6">
-            <ReportGenerator tasks={tasks} distinctValues={distinctValues} />
-          </div>
         )}
         
         {/* --- Reporting Section --- */} 
