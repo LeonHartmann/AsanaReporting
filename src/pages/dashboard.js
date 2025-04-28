@@ -140,7 +140,16 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       </Head>
       <div className="container mx-auto px-2 md:px-4">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Asana Reporting</h2>
-        
+
+        {/* --- Moved Filter Section --- */}
+        <FilterPanel
+          filters={filters}
+          setFilters={setFilters}
+          distinctValues={distinctValues} // Pass distinct values (including assignees)
+          onApplyFilters={handleApplyFilters}
+          onResetFilters={handleResetFilters} // Pass reset handler
+        />
+
         {/* Task Summary Section */}
         {!isLoading && !error && tasks.length > 0 && (
           <TaskSummary tasks={tasks} />
@@ -197,14 +206,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         {/* --- Filter and Table Section --- */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
         
-        <FilterPanel 
-          filters={filters} 
-          setFilters={setFilters} 
-          distinctValues={distinctValues} // Pass distinct values (including assignees)
-          onApplyFilters={handleApplyFilters} 
-          onResetFilters={handleResetFilters} // Pass reset handler
-        />
-
         <TaskTable 
           tasks={tasks} 
           isLoading={isLoading && tasks.length === 0} // Show table loading only if tasks array is empty during load

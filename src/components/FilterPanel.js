@@ -24,9 +24,10 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
 
   return (
     <form onSubmit={handleApply} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
+      {/* Use Flexbox for a single row layout, allowing wrapping */}
+      <div className="flex flex-wrap gap-4 items-end">
         {/* Brand Filter */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Brand
           </label>
@@ -45,7 +46,7 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         </div>
 
         {/* Asset Filter */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="asset" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Asset
           </label>
@@ -64,7 +65,7 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         </div>
 
         {/* Requester Filter */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="requester" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Requested By
           </label>
@@ -83,7 +84,7 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         </div>
 
         {/* Assignee Filter */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="assignee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Assignee
           </label>
@@ -101,14 +102,8 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           </select>
         </div>
 
-        {/* Empty column to maintain grid layout with second row */}
-        <div className="md:hidden"></div>
-      </div>
-
-      {/* Date Range Row */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
         {/* Start Date */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             From Date
           </label>
@@ -119,11 +114,12 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             value={filters.startDate || ''}
             onChange={handleInputChange}
             className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="dd.mm.yyyy" /* Added placeholder */
           />
         </div>
 
         {/* End Date */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             To Date
           </label>
@@ -134,35 +130,12 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             value={filters.endDate || ''}
             onChange={handleInputChange}
             className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="dd.mm.yyyy" /* Added placeholder */
           />
         </div>
 
-        {/* Empty columns to align with grid */}
-        <div className="hidden md:block"></div>
-        <div className="hidden md:block"></div>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-2">
-          <button
-            type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex-grow"
-          >
-            Apply Filters
-          </button>
-           <button
-            type="button"
-            onClick={handleReset}
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-      
-      {/* Completion Filter Row */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
         {/* Completion Filter */}
-        <div>
+        <div className="flex-grow md:flex-grow-0 md:w-48"> {/* Adjust width as needed */}
           <label htmlFor="completionFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Completion Status
           </label>
@@ -178,13 +151,24 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             <option value="only_completed">Only Completed</option>
           </select>
         </div>
-        
-        {/* Empty columns to maintain grid layout */}
-        <div className="hidden md:block"></div>
-        <div className="hidden md:block"></div>
-        <div className="hidden md:block"></div>
-        <div className="hidden md:block"></div>
-      </div>
+
+        {/* Action Buttons - aligned to the end */}
+        <div className="flex space-x-2 self-end">
+          <button
+            type="submit"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Apply Filters
+          </button>
+           <button
+            type="button"
+            onClick={handleReset}
+            className="inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Reset
+          </button>
+        </div>
+      </div> {/* End Flexbox container */}
     </form>
   );
 } 
