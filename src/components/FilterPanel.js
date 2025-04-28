@@ -3,8 +3,8 @@ import React from 'react';
 export default function FilterPanel({ filters, setFilters, distinctValues, onApplyFilters, onResetFilters }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Ensure assignee filter remains an array
-    if (name !== 'assignee') {
+    // Ensure assignee and taskType filters remain arrays
+    if (name !== 'assignee' && name !== 'taskType') {
         setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
     }
   };
@@ -28,18 +28,35 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
     // onApplyFilters({ ...filters, assignee: newAssignees }); 
   };
 
+  // Handler for toggling task type selection
+  const handleTaskTypeToggle = (taskTypeToToggle) => {
+    setFilters(prevFilters => {
+      const currentTaskTypes = prevFilters.taskType || []; // Ensure it's an array
+      const isSelected = currentTaskTypes.includes(taskTypeToToggle);
+      let newTaskTypes;
+      if (isSelected) {
+        // Remove task type
+        newTaskTypes = currentTaskTypes.filter(type => type !== taskTypeToToggle);
+      } else {
+        // Add task type
+        newTaskTypes = [...currentTaskTypes, taskTypeToToggle];
+      }
+      return { ...prevFilters, taskType: newTaskTypes };
+    });
+  };
+
 
   const handleApply = (e) => {
       e.preventDefault();
-      onApplyFilters(); // Apply filters including the current assignee array
+      onApplyFilters(); // Apply filters including the current assignee and taskType arrays
   }
 
   const handleReset = () => {
     if (onResetFilters) {
-        onResetFilters(); // Parent handles resetting assignee to []
+        onResetFilters(); // Parent handles resetting assignee and taskType to []
     } else {
         // Fallback shouldn't ideally be needed if dashboard provides handler
-        const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], startDate: '', endDate: '', completionFilter: '' };
+        const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' }; // Added taskType
         setFilters(defaultFilters);
         onApplyFilters(defaultFilters); 
     }
@@ -175,7 +192,7 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
       </div> {/* End Row 1 */}
 
       {/* Row 2: Assignee Multi-Select Buttons */}
-      <div>
+      <div className="mb-4"> {/* Added margin bottom */}
          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {/* Added mb-2 */}
             Assignee (select multiple)
          </label>
@@ -199,6 +216,31 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             })}
          </div>
       </div> {/* End Row 2 */}
+
+      {/* Row 3: Task Type Multi-Select Buttons */}
+      <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Task Type (select multiple)
+          </label>
+          <div className="flex flex-wrap gap-2">
+              {(distinctValues.taskTypes || []).map((taskType) => {
+                  const isSelected = (filters.taskType || []).includes(taskType);
+                  return (
+                      <button
+                          key={taskType}
+                          type="button" // Important: prevent form submission
+                          onClick={() => handleTaskTypeToggle(taskType)}
+                          className={`py-1 px-3 rounded-md text-sm border ${isSelected
+                                  ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                              }`}
+                      >
+                          {taskType}
+                      </button>
+                  );
+              })}
+          </div>
+      </div> {/* End Row 3 */}
 
     </form>
   );

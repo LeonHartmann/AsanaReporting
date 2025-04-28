@@ -49,7 +49,7 @@ const getSafe = (fn, defaultValue = null) => {
 };
 
 export async function getTasks(filters = {}) {
-  const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter } = filters;
+  const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = filters;
 
   if (!ASANA_PAT || !ASANA_PROJECT_ID) {
     console.error('Asana PAT or Project ID is missing in environment variables.');
@@ -71,6 +71,7 @@ export async function getTasks(filters = {}) {
       const distinctAssets = new Set();
       const distinctRequesters = new Set();
       const distinctAssignees = new Set(); // Added for assignees
+      const distinctTaskTypes = new Set(); // Added for task types
 
       allTasksData.forEach(task => {
         // Brand from task name
@@ -96,6 +97,14 @@ export async function getTasks(filters = {}) {
         if (task.assignee?.name) {
           distinctAssignees.add(task.assignee.name);
         }
+
+        // Task Type from custom field
+        const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
+        if (taskTypeField?.display_value) { // Using display_value, assuming single select or text
+            distinctTaskTypes.add(taskTypeField.display_value);
+        } else if (taskTypeField?.enum_value?.name) { // Fallback for single-select enum
+             distinctTaskTypes.add(taskTypeField.enum_value.name);
+        }
       });
 
       return {
@@ -103,10 +112,11 @@ export async function getTasks(filters = {}) {
         assets: Array.from(distinctAssets).sort(),
         requesters: Array.from(distinctRequesters).sort(),
         assignees: Array.from(distinctAssignees).sort(), // Added assignees
+        taskTypes: Array.from(distinctTaskTypes).sort(), // Added task types
       };
     } else {
       // --- Fetch All Tasks for Display --- 
-      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
+      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
       const displayUrl = `${projectTasksEndpoint}?opt_fields=${displayFields}&limit=${limit}`;
       
       let allTasks = await fetchAllPages(displayUrl);
@@ -137,6 +147,19 @@ export async function getTasks(filters = {}) {
              return taskAssigneeName && selectedAssignees.includes(taskAssigneeName);
            });
         }
+      }
+      
+      // Task Type filtering (similar to assignee, handles comma-separated list for OR logic)
+      if (taskType) {
+          const selectedTaskTypes = taskType.split(',');
+          if (selectedTaskTypes.length > 0) {
+              allTasks = allTasks.filter(task => {
+                  const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
+                  // Check both display_value (text/multi-select) and enum_value.name (single-select)
+                  const taskTypeValue = taskTypeField?.display_value || taskTypeField?.enum_value?.name;
+                  return taskTypeValue && selectedTaskTypes.includes(taskTypeValue);
+              });
+          }
       }
       
       // Date range filtering
@@ -173,8 +196,11 @@ export async function getTasks(filters = {}) {
       const formattedTasks = allTasks.map(task => {
         const assetField = task.custom_fields?.find(f => f.name === 'Assets');
         const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
+        const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type'); // Find Task Type field
         const assetValue = assetField?.display_value;
         const requesterValue = requesterField?.display_value;
+        // Get Task Type value (check display_value first, then enum_value.name)
+        const taskTypeValue = taskTypeField?.display_value || taskTypeField?.enum_value?.name;
         
         // Get task status from section if available
         const section = getSafe(() => task.memberships?.[0]?.section?.name);
@@ -189,6 +215,7 @@ export async function getTasks(filters = {}) {
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
           assignee: task.assignee?.name || 'Unassigned',
+          taskType: taskTypeValue || 'N/A', // Include task type
           completed: task.completed, // Completion status
           status: section || 'No Status', // Section can be used as status
           deadline: deadline, // Task deadline
@@ -212,6 +239,6 @@ export async function getTasks(filters = {}) {
   } catch (error) {
     console.error('Error fetching or processing Asana tasks:', error);
     // Ensure consistent return type on error
-    return distinct ? { brands: [], assets: [], requesters: [], assignees: [] } : [];
+    return distinct ? { brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] } : [];
   }
 } 

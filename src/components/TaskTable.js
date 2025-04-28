@@ -71,6 +71,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 Assignee
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Task Type
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Task Name
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -87,7 +90,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan="8" className="text-center py-10">
+                <td colSpan="9" className="text-center py-10">
                    <div className="flex justify-center items-center">
                       <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -99,7 +102,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
             )}
             {!isLoading && tasks.length === 0 && (
               <tr>
-                <td colSpan="8" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan="9" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -117,6 +120,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {task.assignee}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {task.taskType}
                 </td>
                 <td className="px-6 py-4 whitespace-normal text-sm text-gray-900 dark:text-white">
                   {task.name} 

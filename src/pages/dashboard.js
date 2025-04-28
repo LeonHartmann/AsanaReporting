@@ -15,8 +15,8 @@ import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
-  const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [] }); 
-  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], startDate: '', endDate: '', completionFilter: '' });
+  const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] });
+  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -45,7 +45,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         throw new Error(`Failed to fetch distinct values: ${distinctRes.statusText}`);
       }
       const distinctData = await distinctRes.json();
-      setDistinctValues(distinctData); // Update distinct values including assignees
+      setDistinctValues(distinctData); // Update distinct values including assignees and taskTypes
 
       // Fetch initial tasks (no filters applied yet)
       const tasksRes = await fetch('/api/tasks');
@@ -60,7 +60,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       console.error('Error during initial fetch:', err);
       setError(err.message || 'Could not load dashboard data. Please refresh.');
       setTasks([]); // Clear tasks on error
-      setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [] }); // Clear distinct values
+      setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] }); // Clear distinct values including taskTypes
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +83,9 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     if (currentFilters.requester) queryParams.append('requester', currentFilters.requester);
     if (currentFilters.assignee && currentFilters.assignee.length > 0) {
         queryParams.append('assignee', currentFilters.assignee.join(','));
+    }
+    if (currentFilters.taskType && currentFilters.taskType.length > 0) {
+        queryParams.append('taskType', currentFilters.taskType.join(','));
     }
     if (currentFilters.startDate) queryParams.append('startDate', currentFilters.startDate);
     if (currentFilters.endDate) queryParams.append('endDate', currentFilters.endDate);
@@ -115,7 +118,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   
   // Handler for resetting filters
   const handleResetFilters = () => {
-      const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], startDate: '', endDate: '', completionFilter: '' };
+      const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' };
       setFilters(defaultFilters);
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
@@ -145,7 +148,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <FilterPanel
           filters={filters}
           setFilters={setFilters}
-          distinctValues={distinctValues} // Pass distinct values (including assignees)
+          distinctValues={distinctValues} // Pass distinct values (including assignees and taskTypes)
           onApplyFilters={handleApplyFilters}
           onResetFilters={handleResetFilters} // Pass reset handler
         />
