@@ -62,7 +62,7 @@ export default function TaskSummary({ tasks }) {
         <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.incomplete}</div>
       </div>
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Waiting for Feedback</h3>
+        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Waiting for Feedback from Sales</h3>
         <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.waitingFeedback}</div>
       </div>
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
