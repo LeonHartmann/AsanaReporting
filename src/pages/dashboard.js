@@ -151,12 +151,23 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     const dateTimeString = now.toLocaleString();
 
     try {
+      // Introduce a small delay to allow rendering to stabilize
+      await new Promise(resolve => setTimeout(resolve, 100)); // e.g., 100ms delay
+
       console.log("Capturing content with html2canvas...");
+      // Explicitly set background color on the container for capture consistency
+      const originalStyle = chartContainer.style.backgroundColor;
+      chartContainer.style.backgroundColor = '#ffffff';
+
       const canvas = await html2canvas(chartContainer, {
           scale: 1.5, // Reduced scale slightly for smaller file size
           useCORS: true,
-          backgroundColor: '#ffffff' // Ensure background is white for capture
+          backgroundColor: '#ffffff' // Keep this option as well
       });
+
+      // Restore original background color (if any)
+      chartContainer.style.backgroundColor = originalStyle;
+
       console.log("Canvas generated, converting to JPEG...");
       const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG format with 80% quality
       
@@ -227,6 +238,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       console.log("PDF Saved.");
 
     } catch (err) {
+        // Restore original background color in case of error during canvas generation
+        if (chartContainer) {
+          chartContainer.style.backgroundColor = originalStyle; // Make sure to restore even on error
+        }
         console.error("Error generating PDF:", err);
         setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
     } finally {
@@ -277,7 +292,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
         {/* --- Exportable Content Area (Summary + Charts) --- */}
         {/* Attach the ref here to include TaskSummary and all charts */}
-        <div ref={chartsContainerRef}>
+        <div ref={chartsContainerRef} style={{ backgroundColor: '#ffffff' }}>
             {/* Task Summary Section */} 
             {!isLoading && !error && tasks.length > 0 && (
               <TaskSummary tasks={tasks} />
