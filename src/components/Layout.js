@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
-export default function Layout({ children, title = 'Asana Dashboard' }) {
+export default function Layout({ children, title = 'SPORTFIVE' }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -34,7 +34,7 @@ export default function Layout({ children, title = 'Asana Dashboard' }) {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Asana Dashboard
+                SPORTFIVE
               </h1>
             </div>
             {showLogout && (
@@ -59,7 +59,7 @@ export default function Layout({ children, title = 'Asana Dashboard' }) {
 
       <footer className="bg-white dark:bg-gray-800 mt-6 py-4">
           <div className="w-full mx-auto px-2 sm:px-4 lg:px-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-              © {new Date().getFullYear()} Asana Dashboard
+              © {new Date().getFullYear()} Leon Hartmann
           </div>
       </footer>
     </div>
