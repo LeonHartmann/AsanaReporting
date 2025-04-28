@@ -62,7 +62,7 @@ export async function getTasks(filters = {}) {
   try {
     if (distinct) {
       // --- Fetch All Tasks for Distinct Values --- 
-      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,completed'; // Added completed
+      const distinctFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name,custom_fields.text_value,completed'; 
       const distinctUrl = `${projectTasksEndpoint}?opt_fields=${distinctFields}&limit=${limit}`;
       
       const allTasksData = await fetchAllPages(distinctUrl);
@@ -73,10 +73,14 @@ export async function getTasks(filters = {}) {
       const distinctAssignees = new Set(); // Added for assignees
 
       allTasksData.forEach(task => {
-        // Brand from task name
-        const brandMatch = task.name.match(/^\s*\[(.*?)\]/);
-        if (brandMatch && brandMatch[1]) {
-          distinctBrands.add(brandMatch[1].trim());
+        // Brand from custom field "Brand"
+        const brandField = task.custom_fields?.find(f => f.name === 'Brand');
+        // Use display_value as a general fallback, check enum/text if needed
+        const brandValue = brandField?.display_value; 
+        if (brandValue) {
+            // Handle potential multi-select or simple values if display_value contains commas
+            // For simplicity, assuming single value or correctly formatted display_value for now.
+             brandValue.split(', ').forEach(b => distinctBrands.add(b.trim()));
         }
 
         // Assets from custom field (multi-select handled)
@@ -106,14 +110,21 @@ export async function getTasks(filters = {}) {
       };
     } else {
       // --- Fetch All Tasks for Display --- 
-      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
+      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name,custom_fields.text_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
       const displayUrl = `${projectTasksEndpoint}?opt_fields=${displayFields}&limit=${limit}`;
       
       let allTasks = await fetchAllPages(displayUrl);
 
       // --- Apply Filters After Fetching --- 
       if (brand) {
-        allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
+         // Filter by "Brand" custom field instead of task name
+         allTasks = allTasks.filter(task => {
+           const brandField = getSafe(() => task.custom_fields?.find(f => f.name === 'Brand'));
+           // Check display_value which often works for single-select, text, or enums
+           const brandValue = brandField?.display_value; 
+           // Simple check if the selected brand is included in the task's brand field value
+           return brandValue?.includes(brand); 
+         });
       }
       if (asset) {
         allTasks = allTasks.filter(task => {
@@ -173,8 +184,10 @@ export async function getTasks(filters = {}) {
       const formattedTasks = allTasks.map(task => {
         const assetField = task.custom_fields?.find(f => f.name === 'Assets');
         const requesterField = task.custom_fields?.find(f => f.name === 'Requested by');
+        const brandField = task.custom_fields?.find(f => f.name === 'Brand'); // Find Brand field
         const assetValue = assetField?.display_value;
         const requesterValue = requesterField?.display_value;
+        const brandValue = brandField?.display_value; // Get Brand display value
         
         // Get task status from section if available
         const section = getSafe(() => task.memberships?.[0]?.section?.name);
@@ -185,7 +198,7 @@ export async function getTasks(filters = {}) {
         return {
           id: task.gid,
           name: task.name,
-          brand: task.name.toUpperCase(),
+          brand: brandValue || 'N/A', // Use Brand custom field value, fallback to 'N/A'
           asset: assetValue || 'N/A',
           requester: requesterValue || 'N/A',
           assignee: task.assignee?.name || 'Unassigned',
