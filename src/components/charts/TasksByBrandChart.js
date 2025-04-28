@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -23,82 +23,115 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredBrands, setFilteredBrands] = useState([]);
+  const [allBrands, setAllBrands] = useState([]);
   const brandsPerPage = 15; // Reduced from 20 to 15 for better performance
+
+  // Calculate task counts per brand
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) return;
+    
+    const brandCounts = tasks.reduce((acc, task) => {
+      const brand = task.brand || 'N/A'; // Use 'N/A' if brand is missing
+      acc[brand] = (acc[brand] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Sort brands by task count descending
+    const sorted = Object.entries(brandCounts)
+      .sort(([, countA], [, countB]) => countB - countA);
+    
+    setAllBrands(sorted);
+    setFilteredBrands(sorted);
+  }, [tasks]);
+
+  // Handle search input changes
+  const handleSearchChange = useCallback((e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    
+    if (term.trim() === '') {
+      setFilteredBrands(allBrands);
+    } else {
+      const results = allBrands.filter(([brand]) => 
+        brand.toString().toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredBrands(results);
+    }
+    
+    setCurrentPage(1); // Reset to first page on search
+  }, [allBrands]);
+
+  // Pagination handlers
+  const handlePrevPage = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+
+  const handleNextPage = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const totalPages = Math.ceil(filteredBrands.length / brandsPerPage);
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [filteredBrands.length, brandsPerPage]);
+  
+  // Handle download
+  const handleDownload = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Create CSV content for all brands
+    const csvContent = 'Brand,Tasks\n' + 
+      allBrands.map(([brand, count]) => `"${brand}",${count}`).join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'brands_tasks.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [allBrands]);
 
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
   }
 
-  // Calculate task counts per brand
-  const brandCounts = tasks.reduce((acc, task) => {
-    const brand = task.brand || 'N/A'; // Use 'N/A' if brand is missing
-    acc[brand] = (acc[brand] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Sort brands by task count descending
-  const sortedBrands = Object.entries(brandCounts)
-    .sort(([, countA], [, countB]) => countB - countA);
-
-  // Handle search/filtering for fullscreen mode
-  useEffect(() => {
-    if (isFullscreen) {
-      console.log("Filtering brands with search term:", searchTerm);
-      const filtered = sortedBrands.filter(([brand]) => 
-        brand.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredBrands(filtered);
-      setCurrentPage(1); // Reset to first page when search changes
-    }
-  }, [searchTerm, isFullscreen, sortedBrands]);
-
-  // Set up initial filtered brands on mount or when fullscreen changes
-  useEffect(() => {
-    if (isFullscreen) {
-      setFilteredBrands(sortedBrands);
-    }
-  }, [isFullscreen, sortedBrands]);
-
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredBrands.length / brandsPerPage);
-
-  // Get current brands for pagination
-  const indexOfLastBrand = currentPage * brandsPerPage;
-  const indexOfFirstBrand = indexOfLastBrand - brandsPerPage;
-  const currentBrands = filteredBrands.slice(indexOfFirstBrand, indexOfLastBrand);
-
-  // Handle pagination
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-
   // For normal view, truncate data
   const maxItems = 10;
-  const truncatedData = sortedBrands.slice(0, maxItems);
   
   // Prepare chart data
   let labels = [];
   let dataCounts = [];
   
   if (isFullscreen) {
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredBrands.length / brandsPerPage);
+    const indexOfLastBrand = currentPage * brandsPerPage;
+    const indexOfFirstBrand = indexOfLastBrand - brandsPerPage;
+    const currentBrands = filteredBrands.slice(indexOfFirstBrand, indexOfLastBrand);
+    
     // In fullscreen mode, use paginated/filtered data
     labels = currentBrands.map(([brand]) => brand);
     dataCounts = currentBrands.map(([, count]) => count);
-  } else if (sortedBrands.length > maxItems) {
+  } else if (allBrands.length > maxItems) {
     // In normal view, use top brands + Others
+    const truncatedData = allBrands.slice(0, maxItems);
     labels = truncatedData.map(([brand]) => brand);
     dataCounts = truncatedData.map(([, count]) => count);
     
     // Add "Others" category with the sum of the remaining items
-    const othersSum = sortedBrands.slice(maxItems).reduce((sum, [, count]) => sum + count, 0);
+    const othersSum = allBrands.slice(maxItems).reduce((sum, [, count]) => sum + count, 0);
     if (othersSum > 0) {
       labels.push('Others');
       dataCounts.push(othersSum);
     }
   } else {
     // If we have fewer brands than the limit, show all
-    labels = sortedBrands.map(([brand]) => brand);
-    dataCounts = sortedBrands.map(([, count]) => count);
+    labels = allBrands.map(([brand]) => brand);
+    dataCounts = allBrands.map(([, count]) => count);
   }
   
   // In fullscreen mode, auto-adjust bar height based on number of items
@@ -114,7 +147,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
         data: dataCounts,
         backgroundColor: 'rgba(54, 162, 235, 0.6)', // Blue color
         borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: isFullscreen ? 2 : 1,
+        borderWidth: isFullscreen ? 1 : 1,
       },
     ],
   };
@@ -223,56 +256,55 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       >
         <Bar data={data} options={options} />
         
-        {sortedBrands.length > maxItems && (
+        {allBrands.length > maxItems && (
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Showing top {maxItems} of {sortedBrands.length} brands. Click to view all.
+            Showing top {maxItems} of {allBrands.length} brands. Click to view all.
           </div>
         )}
       </div>
     );
   }
 
-  // In fullscreen mode, include search and pagination
-  const handleChartContainerClick = (e) => {
-    e.stopPropagation(); // Prevent the modal from closing when clicking inside
-  };
+  // Calculate pagination stats for display
+  const totalPages = Math.ceil(filteredBrands.length / brandsPerPage);
+  const indexOfLastBrand = currentPage * brandsPerPage;
+  const indexOfFirstBrand = indexOfLastBrand - brandsPerPage;
 
+  // In fullscreen mode, include search and pagination
   return (
     <div 
       id="tasks-by-brand-chart-fullscreen"
       data-title="Tasks by Brand"
       className={containerClass}
-      onClick={handleChartContainerClick}
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Search and info bar */}
-      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4" onClick={(e) => e.stopPropagation()}>
+      <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4">
         <div className="flex-1 min-w-[200px]">
           <input
             type="text"
             placeholder="Search brands..."
             className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-300">
-          Total: {sortedBrands.length} brands | Filtered: {filteredBrands.length} brands
+          Total: {allBrands.length} brands | Filtered: {filteredBrands.length} brands
         </div>
       </div>
       
       {/* Chart */}
-      <div className="flex-1 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 overflow-hidden">
         <Bar data={data} options={options} />
       </div>
       
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-3 border-t flex justify-between items-center" onClick={(e) => e.stopPropagation()}>
+        <div className="p-3 border-t flex justify-between items-center">
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              prevPage();
-            }}
+            onClick={handlePrevPage}
             disabled={currentPage === 1}
             className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
           >
@@ -285,10 +317,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
           </div>
           
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              nextPage();
-            }}
+            onClick={handleNextPage}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
           >
@@ -298,24 +327,9 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
       )}
       
       {/* Download button */}
-      <div className="p-3 border-t" onClick={(e) => e.stopPropagation()}>
+      <div className="p-3 border-t">
         <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            // Create CSV content for all brands
-            const csvContent = 'Brand,Tasks\n' + 
-              sortedBrands.map(([brand, count]) => `"${brand}",${count}`).join('\n');
-            
-            // Create download link
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'brands_tasks.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
+          onClick={handleDownload}
           className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
         >
           Download Brand Data (CSV)
