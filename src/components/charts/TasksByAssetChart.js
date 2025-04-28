@@ -275,7 +275,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
         
         {allAssets.length > maxItems && (
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-            Showing top {maxItems} of {allAssets.length} asset types. Click to view all.
+            Showing top {maxItems} of {allAssets.length} asset types. Click on the icon on the top to view all.
           </div>
         )}
       </div>
