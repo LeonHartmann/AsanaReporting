@@ -151,27 +151,22 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     const dateTimeString = now.toLocaleString();
 
     try {
-      // Introduce a small delay to allow rendering to stabilize
-      await new Promise(resolve => setTimeout(resolve, 100)); // e.g., 100ms delay
+      // Increase delay significantly
+      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
 
       console.log("Capturing content with html2canvas...");
-      // Explicitly set background color on the container for capture consistency
-      const originalStyle = chartContainer.style.backgroundColor;
-      chartContainer.style.backgroundColor = '#ffffff';
+      // Remove manual style changes
+      // const originalStyle = chartContainer.style.backgroundColor;
+      // chartContainer.style.backgroundColor = '#ffffff';
 
+      // Simplify options: remove scale, width, height, window*; use html2canvas background option
       const canvas = await html2canvas(chartContainer, {
-          scale: 1.5, // Keep scale for now
           useCORS: true,
-          // Ensure we capture the full scrollable area
-          width: chartContainer.scrollWidth,
-          height: chartContainer.scrollHeight,
-          // Removed backgroundColor option from here, rely on style change above
-          windowWidth: chartContainer.scrollWidth, // Optional: Try explicitly setting window context width
-          windowHeight: chartContainer.scrollHeight // Optional: Try explicitly setting window context height
+          backgroundColor: '#ffffff' // Use the built-in option for background
       });
 
-      // Restore original background color (if any)
-      chartContainer.style.backgroundColor = originalStyle;
+      // Remove style restoration
+      // chartContainer.style.backgroundColor = originalStyle;
 
       console.log("Canvas generated, converting to JPEG...");
       const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG format with 80% quality
@@ -243,10 +238,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       console.log("PDF Saved.");
 
     } catch (err) {
-        // Restore original background color in case of error during canvas generation
-        if (chartContainer) {
-          chartContainer.style.backgroundColor = originalStyle; // Make sure to restore even on error
-        }
+        // Remove style restoration from catch block as well
+        // if (chartContainer) {
+        //   chartContainer.style.backgroundColor = originalStyle;
+        // }
         console.error("Error generating PDF:", err);
         setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
     } finally {
