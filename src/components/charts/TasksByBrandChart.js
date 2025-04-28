@@ -23,7 +23,7 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredBrands, setFilteredBrands] = useState([]);
-  const brandsPerPage = 20; // Number of brands to show per page in fullscreen
+  const brandsPerPage = 15; // Reduced from 20 to 15 for better performance
 
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-gray-500 dark:text-gray-400">No task data available for chart.</div>;
@@ -176,7 +176,14 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
           }
         }
       }
-    }
+    },
+    // Add performance optimizations
+    elements: {
+      bar: {
+        borderWidth: isFullscreen ? 1 : 1, // Reduce border width for performance
+      }
+    },
+    devicePixelRatio: 1.5, // Optimize for performance
   };
 
   // Additional options for fullscreen mode
@@ -189,9 +196,8 @@ export default function TasksByBrandChart({ tasks, onClick, isFullscreen }) {
         left: 20
       }
     },
-    animation: {
-      duration: 500
-    }
+    animation: false, // Disable animations in fullscreen mode for better performance
+    responsiveAnimationDuration: 0,
   } : {};
 
   // Merge options
