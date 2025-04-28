@@ -158,6 +158,33 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           </button>
         </div>
       </div>
+      
+      {/* Completion Filter Row */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        {/* Completion Filter */}
+        <div>
+          <label htmlFor="completionFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Completion Status
+          </label>
+          <select
+            id="completionFilter"
+            name="completionFilter"
+            value={filters.completionFilter || ''}
+            onChange={handleInputChange}
+            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="">All Tasks</option>
+            <option value="hide_completed">Hide Completed</option>
+            <option value="only_completed">Only Completed</option>
+          </select>
+        </div>
+        
+        {/* Empty columns to maintain grid layout */}
+        <div className="hidden md:block"></div>
+        <div className="hidden md:block"></div>
+        <div className="hidden md:block"></div>
+        <div className="hidden md:block"></div>
+      </div>
     </form>
   );
 } 

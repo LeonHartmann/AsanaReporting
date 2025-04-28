@@ -17,7 +17,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
   // Include assignees in distinct values state
   const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [] }); 
-  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '' });
+  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true); // Start loading true
   const [error, setError] = useState('');
 
@@ -85,6 +85,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     if (currentFilters.assignee) queryParams.append('assignee', currentFilters.assignee);
     if (currentFilters.startDate) queryParams.append('startDate', currentFilters.startDate);
     if (currentFilters.endDate) queryParams.append('endDate', currentFilters.endDate);
+    if (currentFilters.completionFilter) queryParams.append('completionFilter', currentFilters.completionFilter);
     
     const url = `/api/tasks?${queryParams.toString()}`;
 
@@ -113,7 +114,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   
   // Handler for resetting filters
   const handleResetFilters = () => {
-      const defaultFilters = { brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '' };
+      const defaultFilters = { brand: '', asset: '', requester: '', assignee: '', startDate: '', endDate: '', completionFilter: '' };
       setFilters(defaultFilters);
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };

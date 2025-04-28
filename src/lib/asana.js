@@ -49,7 +49,7 @@ const getSafe = (fn, defaultValue = null) => {
 };
 
 export async function getTasks(filters = {}) {
-  const { brand, asset, requester, assignee, startDate, endDate, distinct } = filters;
+  const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter } = filters;
 
   if (!ASANA_PAT || !ASANA_PROJECT_ID) {
     console.error('Asana PAT or Project ID is missing in environment variables.');
@@ -193,8 +193,16 @@ export async function getTasks(filters = {}) {
       
       // Filter out tasks with status '📍 Resources'
       const filteredTasks = formattedTasks.filter(task => task.status !== '📍 Resources');
+      
+      // Apply completion filter if specified
+      let finalTasks = filteredTasks;
+      if (completionFilter === 'hide_completed') {
+        finalTasks = filteredTasks.filter(task => !task.completed);
+      } else if (completionFilter === 'only_completed') {
+        finalTasks = filteredTasks.filter(task => task.completed);
+      }
 
-      return filteredTasks;
+      return finalTasks;
     }
   } catch (error) {
     console.error('Error fetching or processing Asana tasks:', error);
