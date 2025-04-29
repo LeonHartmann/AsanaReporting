@@ -39,10 +39,8 @@ export default async function handler(req, res) {
             return acc;
         }, {});
 
-        // Filter out specific statuses (can be done here or in the frontend)
-        // Note: Filtering in the frontend (as it was) allows flexibility
-        // but filtering here might be slightly more efficient if the list is static.
-        const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources']; // Keep using frontend values
+        // Filter out specific statuses
+        const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources'];
         const filteredAverageDurations = Object.entries(averageDurations)
             .filter(([status]) => !statusesToExclude.includes(status))
             .reduce((obj, [key, value]) => {
@@ -50,7 +48,31 @@ export default async function handler(req, res) {
                 return obj;
             }, {});
 
-        return res.status(200).json(filteredAverageDurations);
+        // Order the statuses according to the specified sequence
+        const statusOrder = [
+            '📃 To Do',
+            '☕️ Awaiting Info',
+            '🎨 In progress',
+            '📩 In Review',
+            '🌀 Completed/Feedback'
+        ];
+        
+        // Create ordered result object
+        const orderedDurations = {};
+        statusOrder.forEach(status => {
+            if (filteredAverageDurations[status] !== undefined) {
+                orderedDurations[status] = filteredAverageDurations[status];
+            }
+        });
+        
+        // Add any remaining statuses that weren't in the specified order
+        Object.entries(filteredAverageDurations).forEach(([status, duration]) => {
+            if (orderedDurations[status] === undefined) {
+                orderedDurations[status] = duration;
+            }
+        });
+
+        return res.status(200).json(orderedDurations);
 
     } catch (error) {
         console.error('API Error fetching average status durations:', error);
