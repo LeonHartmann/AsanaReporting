@@ -21,6 +21,8 @@ import CompletionRateSummary from '@/components/CompletionRateSummary';
 import AverageTimeInStatus from '@/components/AverageTimeInStatus'; 
 import TaskStatusDurations from '@/components/TaskStatusDurations';
 // --- END NEW IMPORTS ---
+// --- NEW: Import for date formatting ---
+import { format } from 'date-fns'; 
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
@@ -32,6 +34,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false); // Add state for export loading
+
+  // --- Sync State ---
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null); // Store timestamp or null
+  const [syncMessage, setSyncMessage] = useState(''); // Feedback message
+  // --- End Sync State ---
 
   // --- Calculated Metrics State --- 
   const [avgCycleTime, setAvgCycleTime] = useState(null);
@@ -342,6 +350,42 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     );
   }
 
+  // --- NEW: Asana Sync Function ---
+  const handleSyncNow = async () => {
+    setIsSyncing(true);
+    setSyncMessage('');
+    setError(''); // Clear general errors before sync
+
+    try {
+      console.log("Attempting to call /api/sync-asana...");
+      // Using GET, as POST might require a body even if empty, and GET is fine for triggers
+      const res = await fetch('/api/sync-asana', { method: 'GET' }); 
+      console.log("Sync API Response Status:", res.status);
+      const data = await res.json();
+      console.log("Sync API Response Data:", data);
+
+      if (!res.ok) {
+        throw new Error(data.message || `Sync failed with status: ${res.status}`);
+      }
+
+      setLastSyncTime(new Date()); // Record successful sync time
+      setSyncMessage(data.message || 'Sync completed successfully!');
+      
+      // Optionally, refresh dashboard data after sync
+      console.log("Sync successful, refreshing dashboard data...");
+      initialFetch(); // Re-fetch all dashboard data
+
+    } catch (err) {
+      console.error('Error during manual Asana sync:', err);
+      setSyncMessage(`Sync failed: ${err.message}`);
+      setError(`Sync failed: ${err.message}`); // Also set general error if desired
+      setLastSyncTime(null); // Indicate failure potentially
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+  // --- END Asana Sync Function ---
+
   return (
     <>
       <Head>
@@ -360,6 +404,32 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           onApplyFilters={handleApplyFilters}
           onResetFilters={handleResetFilters}
         />
+
+        {/* --- Sync Button and Info Section --- */}
+        <div className="my-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <button
+                    onClick={handleSyncNow}
+                    disabled={isSyncing || isLoading} // Disable if loading data or syncing
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                    {isSyncing ? 'Syncing Asana Data...' : 'Sync Asana Data Now'}
+                </button>
+                {syncMessage && (
+                    <p className={`mt-2 text-sm ${syncMessage.startsWith('Sync failed') ? 'text-red-600' : 'text-green-700'} dark:text-gray-300`}>
+                        {syncMessage}
+                    </p>
+                )}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 text-right">
+                {lastSyncTime ? (
+                    `Last successful sync: ${format(lastSyncTime, 'PPpp')}` // Format date nicely
+                ) : (
+                    'Data has not been synced in this session.'
+                )}
+            </div>
+        </div>
+        {/* --- End Sync Button Section --- */}
 
         {/* Export Button */}
         <div className="my-4 text-right">
