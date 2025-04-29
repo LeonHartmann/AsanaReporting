@@ -1,4 +1,5 @@
 import React from 'react';
+import Select from 'react-select'; // Import react-select
 
 export default function FilterPanel({ filters, setFilters, distinctValues, onApplyFilters, onResetFilters }) {
   const handleInputChange = (e) => {
@@ -7,6 +8,13 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
     if (name !== 'assignee' && name !== 'taskType') {
         setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
     }
+  };
+
+  // Handler for react-select change (used for Brand)
+  const handleSelectChange = (selectedOption, actionMeta) => {
+    const { name } = actionMeta;
+    const value = selectedOption ? selectedOption.value : ''; // Handle clear action
+    setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
   };
 
   // New handler for toggling assignee selection
@@ -66,23 +74,69 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
     <form onSubmit={handleApply} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
       {/* Row 1: Original Filters (excluding assignee dropdown) + Buttons */}
       <div className="flex flex-wrap gap-4 items-end mb-4"> {/* Added mb-4 for spacing */}
-        {/* Brand Filter */}
+        {/* Brand Filter (using react-select) */}
         <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="brand" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="brand-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Brand
           </label>
-          <select
-            id="brand"
+          <Select
+            inputId="brand-select"
             name="brand"
-            value={filters.brand}
-            onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          >
-            <option value="">All Brands</option>
-            {distinctValues.brands?.map((brand) => (
-              <option key={brand} value={brand}>{brand}</option>
-            ))}
-          </select>
+            options={[
+                { value: '', label: 'All Brands' }, // Add 'All Brands' option
+                ...(distinctValues.brands || []).map(brand => ({ value: brand, label: brand }))
+            ]}
+            value={filters.brand ? { value: filters.brand, label: filters.brand } : { value: '', label: 'All Brands' }}
+            onChange={handleSelectChange}
+            isClearable
+            isSearchable
+            placeholder="Search or select..."
+            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            classNamePrefix="react-select"
+            // Basic styling for dark mode compatibility (can be customized further)
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                backgroundColor: 'var(--select-bg, white)', // Use CSS variable or default
+                borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)',
+                boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow,
+                '&:hover': {
+                    borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)',
+                }
+              }),
+              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: 'var(--select-menu-bg, white)',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)',
+                color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)',
+                '&:active': {
+                    backgroundColor: 'var(--select-option-active-bg, #4338ca)',
+                },
+              }),
+              placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+            }}
+          />
+          {/* CSS Variables for dark mode - Add to your global CSS or layout */}
+          <style jsx global>{`
+            html.dark {
+                --select-bg: #374151; /* gray-700 */
+                --select-border: #4b5563; /* gray-600 */
+                --select-border-focus: #6366f1; /* indigo-500 */
+                --select-border-hover: #6b7280; /* gray-500 */
+                --select-text: #d1d5db; /* gray-300 */
+                --select-menu-bg: #374151; /* gray-700 */
+                --select-option-selected-bg: #4f46e5; /* indigo-600 */
+                --select-option-focus-bg: #4b5563; /* gray-600 */
+                --select-option-selected-text: white;
+                --select-option-active-bg: #4338ca; /* indigo-700 */
+                --select-placeholder-text: #9ca3af; /* gray-400 */
+            }
+          `}</style>
         </div>
 
         {/* Asset Filter */}

@@ -74,10 +74,9 @@ export async function getTasks(filters = {}) {
       const distinctTaskTypes = new Set(); // Added for task types
 
       allTasksData.forEach(task => {
-        // Brand from task name
-        const brandMatch = task.name.match(/^\s*\[(.*?)\]/);
-        if (brandMatch && brandMatch[1]) {
-          distinctBrands.add(brandMatch[1].trim());
+        // Brand from task name (use entire name in uppercase)
+        if (task.name) { // Ensure name exists
+           distinctBrands.add(task.name.toUpperCase());
         }
 
         // Assets from custom field (multi-select handled)
@@ -123,7 +122,8 @@ export async function getTasks(filters = {}) {
       // console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
 
       if (brand) {
-        allTasks = allTasks.filter(task => task.name.toUpperCase().includes(brand.toUpperCase()));
+        // Exact match for brand filtering
+        allTasks = allTasks.filter(task => task.name.toUpperCase() === brand.toUpperCase());
       }
       if (asset) {
         allTasks = allTasks.filter(task => {
