@@ -53,22 +53,30 @@ function AverageTimeInStatus() {
     const sortedStatuses = Object.entries(avgDurations).sort(([statusA], [statusB]) => statusA.localeCompare(statusB));
 
     return (
-        <div className="p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800">
-            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Average Time in Status</h3>
-            {isLoading && <div className="text-center text-gray-500 dark:text-gray-400">Loading averages...</div>}
-            {error && <div className="text-red-600">Error: {error}</div>}
+        <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Average Time in Status</h3>
+            {isLoading && (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-4">Loading averages...</div>
+            )}
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    Error: {error}
+                </div>
+            )}
             {!isLoading && !error && sortedStatuses.length === 0 && (
-                <div className="text-gray-500 dark:text-gray-400">No average duration data available.</div>
+                <div className="text-gray-500 dark:text-gray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800 text-center">No average duration data available.</div>
             )}
             {!isLoading && !error && sortedStatuses.length > 0 && (
-                <ul className="space-y-2">
+                 // Use a grid layout similar to TaskSummary - adjust cols as needed
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {sortedStatuses.map(([status, avgSeconds]) => (
-                        <li key={status} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-700 dark:text-gray-300">{status}:</span>
-                            <span className="font-medium text-gray-900 dark:text-white">{formatSeconds(avgSeconds)}</span>
-                        </li>
+                        <div key={status} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+                            {/* Limit status text length if necessary */}
+                            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status}>{status}</h3>
+                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatSeconds(avgSeconds)}</div>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
         </div>
     );

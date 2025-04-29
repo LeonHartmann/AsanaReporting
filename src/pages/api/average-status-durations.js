@@ -124,7 +124,17 @@ export default async function handler(req, res) {
             }
         }
 
-        return res.status(200).json(averageDurations); // Returns { status: averageDurationSeconds }
+        // --- NEW: Filter out specific statuses ---
+        const statusesToExclude = ['Completed', 'CLOSED LOST', 'CLOSED WON', 'Resources'];
+        const filteredAverageDurations = Object.entries(averageDurations)
+            .filter(([status]) => !statusesToExclude.includes(status))
+            .reduce((obj, [key, value]) => {
+                obj[key] = value;
+                return obj;
+            }, {});
+        // --- END NEW ---
+
+        return res.status(200).json(filteredAverageDurations); // Return filtered data
 
     } catch (error) {
         console.error('API Error fetching average status durations:', error);
