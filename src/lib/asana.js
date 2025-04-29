@@ -121,24 +121,44 @@ export async function getTasks(filters = {}) {
       // --- Apply Filters After Fetching ---
       // console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
 
+      // Brand Filtering (Handles comma-separated string for OR logic)
       if (brand) {
-        // Exact match for brand filtering
-        allTasks = allTasks.filter(task => task.name.toUpperCase() === brand.toUpperCase());
+        const selectedBrands = brand.split(',').map(b => b.trim().toUpperCase()); // Split, trim, and uppercase
+        if (selectedBrands.length > 0) {
+          allTasks = allTasks.filter(task => {
+            const taskBrand = task.name.toUpperCase();
+            return selectedBrands.includes(taskBrand);
+          });
+        }
       }
+
+      // Asset Filtering (Handles comma-separated string for OR logic on both filter and task data)
       if (asset) {
-        allTasks = allTasks.filter(task => {
-          const displayValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Assets')?.display_value);
-          return displayValue?.includes(asset);
-        });
+        const selectedAssets = asset.split(',').map(a => a.trim()); // Split and trim selected assets
+        if (selectedAssets.length > 0) {
+          allTasks = allTasks.filter(task => {
+            const taskAssetsString = getSafe(() => task.custom_fields?.find(f => f.name === 'Assets')?.display_value);
+            if (!taskAssetsString) return false; // Task has no asset
+            // Split the task's assets and check if any match the selected assets
+            const taskAssetsArray = taskAssetsString.split(',').map(a => a.trim());
+            return taskAssetsArray.some(taskAsset => selectedAssets.includes(taskAsset));
+          });
+        }
       }
+
+      // Requester Filtering (Handles comma-separated string for OR logic)
       if (requester) {
-        allTasks = allTasks.filter(task => {
-          const displayValue = getSafe(() => task.custom_fields?.find(f => f.name === 'Requested by')?.display_value);
-          return displayValue === requester; // Exact match for requester
-        });
+        const selectedRequesters = requester.split(',').map(r => r.trim()); // Split and trim
+        if (selectedRequesters.length > 0) {
+          allTasks = allTasks.filter(task => {
+            const taskRequester = getSafe(() => task.custom_fields?.find(f => f.name === 'Requested by')?.display_value);
+            return taskRequester && selectedRequesters.includes(taskRequester);
+          });
+        }
       }
+
+      // Assignee Filtering (Already handles comma-separated list)
       if (assignee) {
-        // Assignee filter now handles comma-separated list for OR logic
         const selectedAssignees = assignee.split(',');
         if (selectedAssignees.length > 0) {
            allTasks = allTasks.filter(task => {

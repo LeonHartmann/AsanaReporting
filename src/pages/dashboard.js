@@ -24,7 +24,7 @@ import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fn
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
   const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] });
-  const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
+  const [filters, setFilters] = useState({ brand: [], asset: [], requester: [], assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false); // Add state for export loading
@@ -118,9 +118,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     setError('');
     
     const queryParams = new URLSearchParams();
-    if (currentFilters.brand) queryParams.append('brand', currentFilters.brand);
-    if (currentFilters.asset) queryParams.append('asset', currentFilters.asset);
-    if (currentFilters.requester) queryParams.append('requester', currentFilters.requester);
+    if (currentFilters.brand && currentFilters.brand.length > 0) {
+        queryParams.append('brand', currentFilters.brand.join(','));
+    }
+    if (currentFilters.asset && currentFilters.asset.length > 0) {
+        queryParams.append('asset', currentFilters.asset.join(','));
+    }
+    if (currentFilters.requester && currentFilters.requester.length > 0) {
+        queryParams.append('requester', currentFilters.requester.join(','));
+    }
     if (currentFilters.assignee && currentFilters.assignee.length > 0) {
         queryParams.append('assignee', currentFilters.assignee.join(','));
     }
@@ -158,7 +164,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   
   // Handler for resetting filters
   const handleResetFilters = () => {
-      const defaultFilters = { brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: 'all' };
+      const defaultFilters = { brand: [], asset: [], requester: [], assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: 'all' };
       setFilters(defaultFilters);
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };

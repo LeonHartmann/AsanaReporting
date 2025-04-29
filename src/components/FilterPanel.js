@@ -10,10 +10,17 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
     }
   };
 
-  // Handler for react-select change (used for Brand)
+  // Updated handler for react-select (multi and single)
   const handleSelectChange = (selectedOption, actionMeta) => {
     const { name } = actionMeta;
-    const value = selectedOption ? selectedOption.value : ''; // Handle clear action
+    let value;
+    if (Array.isArray(selectedOption)) {
+      // Handle multi-select: map selected options to an array of their values
+      value = selectedOption.map(option => option.value);
+    } else {
+      // Handle single-select (or clear action): get the value or empty string
+      value = selectedOption ? selectedOption.value : '';
+    }
     setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
   };
 
@@ -81,12 +88,13 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           </label>
           <Select
             inputId="brand-select"
+            isMulti // Enable multi-select
             name="brand"
-            options={[
-                { value: '', label: 'All Brands' }, // Add 'All Brands' option
-                ...(distinctValues.brands || []).map(brand => ({ value: brand, label: brand }))
-            ]}
-            value={filters.brand ? { value: filters.brand, label: filters.brand } : { value: '', label: 'All Brands' }}
+            options={ // No 'All Brands' needed for multi-select
+                (distinctValues.brands || []).map(brand => ({ value: brand, label: brand }))
+            }
+            // Value is now an array of {value, label} objects
+            value={(filters.brand || []).map(b => ({ value: b, label: b }))}
             onChange={handleSelectChange}
             isClearable
             isSearchable
@@ -146,12 +154,13 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           </label>
           <Select
             inputId="asset-select"
+            isMulti // Enable multi-select
             name="asset"
-            options={[
-                { value: '', label: 'All Assets' },
-                ...(distinctValues.assets || []).map(asset => ({ value: asset, label: asset }))
-            ]}
-            value={filters.asset ? { value: filters.asset, label: filters.asset } : { value: '', label: 'All Assets' }}
+            options={ // No 'All Assets' needed for multi-select
+                (distinctValues.assets || []).map(asset => ({ value: asset, label: asset }))
+            }
+            // Value is now an array of {value, label} objects
+            value={(filters.asset || []).map(a => ({ value: a, label: a }))}
             onChange={handleSelectChange}
             isClearable
             isSearchable
@@ -176,12 +185,13 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           </label>
           <Select
             inputId="requester-select"
+            isMulti // Enable multi-select
             name="requester"
-            options={[
-                { value: '', label: 'All Requesters' },
-                ...(distinctValues.requesters || []).map(requester => ({ value: requester, label: requester }))
-            ]}
-            value={filters.requester ? { value: filters.requester, label: filters.requester } : { value: '', label: 'All Requesters' }}
+            options={ // No 'All Requesters' needed for multi-select
+                (distinctValues.requesters || []).map(requester => ({ value: requester, label: requester }))
+            }
+            // Value is now an array of {value, label} objects
+            value={(filters.requester || []).map(r => ({ value: r, label: r }))}
             onChange={handleSelectChange}
             isClearable
             isSearchable
