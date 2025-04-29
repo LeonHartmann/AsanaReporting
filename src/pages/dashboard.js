@@ -85,6 +85,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         throw new Error(errorData.message || `Failed to fetch stories: ${storiesRes.statusText}`);
       }
       const storiesData = await storiesRes.json();
+      console.log('[Dashboard Debug] Raw stories received:', storiesData); // <-- Log raw stories
       setStories(storiesData);
       setIsLoadingStories(false); // <-- Finish stories loading
 
@@ -109,6 +110,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   useEffect(() => {
     if (isLoading || isLoadingStories) return; // Wait for both tasks and stories to load
 
+    console.log('[Dashboard Debug] Stories state before calculation:', stories); // <-- Log stories state
+
     // 1. Calculate Project Activity (Weekly)
     const weeklyActivity = {};
     stories.forEach(story => {
@@ -123,6 +126,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     const activityChartData = Object.entries(weeklyActivity)
       .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
       .map(([date, count]) => ({ date, count }));
+    console.log('[Dashboard Debug] Calculated projectActivityData:', activityChartData); // <-- Log calculated data
     setProjectActivityData(activityChartData);
 
     // Filter completed tasks for Throughput and Cycle Time
