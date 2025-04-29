@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase Client (Ensure these are set in your .env.local)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // Use NEXT_PUBLIC_ if needed on client, otherwise just SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Use Service Key for backend operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // Use NEXT_PUBLIC_ for URL if needed client-side too
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role Key for backend operations
 const asanaPAT = process.env.ASANA_PAT;
 const asanaProjectId = process.env.ASANA_PROJECT_ID;
 
