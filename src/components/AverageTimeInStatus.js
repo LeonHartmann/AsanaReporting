@@ -92,10 +92,9 @@ function AverageTimeInStatus() {
         };
     }, []); // Empty dependency array = only on mount
 
-    // Filter and Sort Statuses Here
-    const filteredAndSortedStatuses = Object.entries(avgDurations);
-    // No need to filter or sort here since it's done in the API
-    // We'll just use the data as is, since it already comes ordered from the API
+    // The data from the API (avgDurations) is now an array of {status, duration} objects
+    // No filtering or sorting needed here as the API handles it.
+    const orderedStatusData = avgDurations; // Rename for clarity, it's already ordered
 
     return (
         <div className="mb-8">
@@ -122,17 +121,17 @@ function AverageTimeInStatus() {
                     Error: {error}
                 </div>
             )}
-            {!isLoading && !error && filteredAndSortedStatuses.length === 0 && (
+            {!isLoading && !error && (!orderedStatusData || orderedStatusData.length === 0) && (
                 <div className="text-gray-500 dark:text-gray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800 text-center">No average duration data available for active statuses.</div>
             )}
-            {!isLoading && !error && filteredAndSortedStatuses.length > 0 && (
+            {!isLoading && !error && orderedStatusData && orderedStatusData.length > 0 && (
                  // Use a grid layout similar to TaskSummary - adjust cols as needed
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {filteredAndSortedStatuses.map(([status, avgSeconds]) => (
+                    {orderedStatusData.map(({ status, duration }) => (
                         <div key={status} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
                             {/* Limit status text length if necessary */}
                             <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status}>{status}</h3>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatSeconds(avgSeconds)}</div>
+                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatSeconds(duration)}</div>
                         </div>
                     ))}
                 </div>

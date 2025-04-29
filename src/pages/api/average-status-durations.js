@@ -57,22 +57,23 @@ export default async function handler(req, res) {
             '🌀 Completed/Feedback'
         ];
         
-        // Create ordered result object
-        const orderedDurations = {};
+        // Create an ordered array of objects
+        const orderedDurationsArray = [];
         statusOrder.forEach(status => {
             if (filteredAverageDurations[status] !== undefined) {
-                orderedDurations[status] = filteredAverageDurations[status];
+                orderedDurationsArray.push({ status: status, duration: filteredAverageDurations[status] });
             }
         });
         
         // Add any remaining statuses that weren't in the specified order
         Object.entries(filteredAverageDurations).forEach(([status, duration]) => {
-            if (orderedDurations[status] === undefined) {
-                orderedDurations[status] = duration;
+            // Check if the status was already added based on the specific order
+            if (!orderedDurationsArray.some(item => item.status === status)) {
+                 orderedDurationsArray.push({ status: status, duration: duration });
             }
         });
 
-        return res.status(200).json(orderedDurations);
+        return res.status(200).json(orderedDurationsArray);
 
     } catch (error) {
         console.error('API Error fetching average status durations:', error);
