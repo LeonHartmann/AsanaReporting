@@ -291,31 +291,4 @@ export async function getTasks(filters = {}) {
   }
 }
 
-// New function to fetch stories for the project
-export async function getProjectStories() {
-  if (!ASANA_PAT || !ASANA_PROJECT_ID) {
-    console.error('Asana PAT or Project ID is missing in environment variables.');
-    throw new Error('Asana configuration missing.');
-  }
-
-  const storiesEndpoint = `${ASANA_API_BASE}/projects/${ASANA_PROJECT_ID}/stories`;
-  const limit = 100;
-  const url = `${storiesEndpoint}?limit=${limit}`;
-
-  try {
-    console.log('[Asana API] Fetching project stories...');
-    const allStories = await fetchAllPages(url);
-    console.log(`[Asana API] Fetched ${allStories.length} stories.`);
-    // Simple formatting, adapt based on fields actually returned now
-    return allStories.map(story => ({
-      id: story.gid,
-      createdAt: story.created_at, // May need adjustment if field name differs in default response
-      text: story.text, // May need adjustment
-      type: story.type, // May need adjustment
-      creator: story.created_by?.name || 'Unknown', // May need adjustment
-    }));
-  } catch (error) {
-    console.error('Error fetching Asana project stories:', error);
-    throw error; // Re-throw error to be handled by the caller
-  }
-} 
+// Removed getProjectStories function 

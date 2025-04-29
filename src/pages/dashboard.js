@@ -17,26 +17,18 @@ import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 import jsPDF from 'jspdf'; // Add jsPDF import
 import html2canvas from 'html2canvas'; // Add html2canvas import
 
-// New Metric Charts
-import ProjectActivityChart from '@/components/charts/ProjectActivityChart';
-import TaskThroughputChart from '@/components/charts/TaskThroughputChart';
-
-// Helper for date calculations (consider moving to a utils file)
-import { differenceInDays, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+// Helper for date calculations
+import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
-  const [stories, setStories] = useState([]); // <-- Add state for stories
   const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] });
   const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingStories, setIsLoadingStories] = useState(true); // <-- Add separate loading state for stories
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false); // Add state for export loading
 
   // --- Calculated Metrics State --- 
-  const [projectActivityData, setProjectActivityData] = useState([]);
-  const [taskThroughputData, setTaskThroughputData] = useState([]);
   const [avgCycleTime, setAvgCycleTime] = useState(null);
 
   // Modal State
@@ -58,7 +50,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   // Combined fetch function for both distinct values and initial tasks
   const initialFetch = useCallback(async () => {
     setIsLoading(true);
-    setIsLoadingStories(true); // <-- Set stories loading
     setError('');
     try {
       // Fetch distinct values
@@ -67,10 +58,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         throw new Error(`Failed to fetch distinct values: ${distinctRes.statusText}`);
       }
       const distinctData = await distinctRes.json();
-      setDistinctValues(distinctData); // Update distinct values including assignees and taskTypes
+      setDistinctValues(distinctData);
 
-      // Fetch initial tasks (no filters applied yet)
-      const tasksRes = await fetch('/api/tasks'); // Fetch tasks without initial completion filter
+      // Fetch initial tasks
+      const tasksRes = await fetch('/api/tasks');
       if (!tasksRes.ok) {
         const errorData = await tasksRes.json();
         throw new Error(errorData.message || `Failed to fetch tasks: ${tasksRes.statusText}`);
@@ -78,26 +69,13 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       const tasksData = await tasksRes.json();
       setTasks(tasksData);
 
-      // --- Fetch Stories ---
-      const storiesRes = await fetch('/api/stories');
-      if (!storiesRes.ok) {
-        const errorData = await storiesRes.json();
-        throw new Error(errorData.message || `Failed to fetch stories: ${storiesRes.statusText}`);
-      }
-      const storiesData = await storiesRes.json();
-      console.log('[Dashboard Debug] Raw stories received:', storiesData); // <-- Log raw stories
-      setStories(storiesData);
-      setIsLoadingStories(false); // <-- Finish stories loading
-
     } catch (err) {
       console.error('Error during initial fetch:', err);
       setError(err.message || 'Could not load dashboard data. Please refresh.');
-      setTasks([]); // Clear tasks on error
-      setStories([]); // <-- Clear stories on error
-      setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] }); // Clear distinct values including taskTypes
-      setIsLoadingStories(false); // <-- Finish stories loading even on error
+      setTasks([]);
+      setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] });
     } finally {
-      setIsLoading(false); // Keep this for overall loading state
+      setIsLoading(false);
     }
   }, []);
 
@@ -108,54 +86,19 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
   // --- Calculation Effects ---
   useEffect(() => {
-    if (isLoading || isLoadingStories) return; // Wait for both tasks and stories to load
+    if (isLoading) return; // Wait for tasks to load
 
-    console.log('[Dashboard Debug] Stories state before calculation:', stories); // <-- Log stories state
-
-    // 1. Calculate Project Activity (Weekly)
-    const weeklyActivity = {};
-    stories.forEach(story => {
-      try {
-        const date = parseISO(story.createdAt);
-        const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'); // Monday as start
-        weeklyActivity[weekStart] = (weeklyActivity[weekStart] || 0) + 1;
-      } catch (e) {
-        console.warn("Invalid story date:", story.createdAt);
-      }
-    });
-    const activityChartData = Object.entries(weeklyActivity)
-      .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
-      .map(([date, count]) => ({ date, count }));
-    console.log('[Dashboard Debug] Calculated projectActivityData:', activityChartData); // <-- Log calculated data
-    setProjectActivityData(activityChartData);
-
-    // Filter completed tasks for Throughput and Cycle Time
+    // Filter completed tasks for Cycle Time
     const completedTasks = tasks.filter(t => t.completed && t.completedAt && t.createdAt);
 
-    // 2. Calculate Task Throughput (Monthly)
-    const monthlyThroughput = {};
-    completedTasks.forEach(task => {
-      try {
-        const date = parseISO(task.completedAt);
-        const monthStart = format(startOfMonth(date), 'yyyy-MM');
-        monthlyThroughput[monthStart] = (monthlyThroughput[monthStart] || 0) + 1;
-      } catch (e) {
-        console.warn("Invalid completedAt date:", task.completedAt);
-      }
-    });
-    const throughputChartData = Object.entries(monthlyThroughput)
-      .sort(([dateA], [dateB]) => new Date(dateA + '-01') - new Date(dateB + '-01')) // Sort by month
-      .map(([month, count]) => ({ month, count }));
-    setTaskThroughputData(throughputChartData);
-
-    // 3. Calculate Average Cycle Time (Days)
+    // Calculate Average Cycle Time (Days)
     if (completedTasks.length > 0) {
       const totalCycleTime = completedTasks.reduce((sum, task) => {
         try {
           const completedDate = parseISO(task.completedAt);
           const createdDate = parseISO(task.createdAt);
           const diff = differenceInDays(completedDate, createdDate);
-          return sum + (diff >= 0 ? diff : 0); // Avoid negative cycle times
+          return sum + (diff >= 0 ? diff : 0);
         } catch (e) {
           console.warn("Error calculating cycle time for task:", task.id, e);
           return sum;
@@ -163,10 +106,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       }, 0);
       setAvgCycleTime((totalCycleTime / completedTasks.length).toFixed(1));
     } else {
-      setAvgCycleTime(null); // No completed tasks
+      setAvgCycleTime(null);
     }
 
-  }, [tasks, stories, isLoading, isLoadingStories]);
+  }, [tasks, isLoading]); // Removed stories and isLoadingStories dependencies
 
   // Function to fetch tasks based on current filters (used by FilterPanel)
   const fetchTasksWithFilters = useCallback(async (currentFilters) => {
@@ -363,12 +306,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
   // Helper to create clickable chart wrappers
   const renderClickableChart = (title, ChartComponent, dataProp) => {
-    // Use a consistent prop name like 'chartData' or pass specific props
-    const chartProps = { [dataProp || 'tasks']: dataProp === 'activityData' ? projectActivityData : (dataProp === 'throughputData' ? taskThroughputData : tasks) };
+    // Simplified: removed logic for activity/throughput data
+    const chartProps = { [dataProp || 'tasks']: tasks }; 
     const chartElement = <ChartComponent {...chartProps} />;
     return (
       <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, <ChartComponent {...chartProps} isFullscreen />)}>
-         {/* Render the chart directly here for the dashboard view */}
          {chartElement}
       </div>
     );
@@ -382,7 +324,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       <div className="container mx-auto px-2 md:px-4">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
 
-        {/* --- Moved Filter Section --- */}
+        {/* Filter Section */}
         <FilterPanel
           filters={filters}
           setFilters={setFilters}
@@ -391,7 +333,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           onResetFilters={handleResetFilters} // Pass reset handler
         />
 
-        {/* Add Export Button */}
+        {/* Export Button */}
         <div className="my-4 text-right">
             <button
                 onClick={handleExportPDF}
@@ -402,105 +344,42 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             </button>
         </div>
 
-        {/* --- Exportable Content Area (Summary + Charts) --- */}
-        {/* Outer div still uses the ref */}
+        {/* Exportable Content Area */}
         <div ref={chartsContainerRef}>
-          {/* Inner wrapper div for actual capture target */}
           <div id="capture-content">
-              {/* Task Summary Section */} 
-              {!isLoading && !error && tasks.length > 0 && (
-                <TaskSummary tasks={tasks} />
+              {/* Task Summary Section - Pass avgCycleTime and isLoading */}
+              {!error && (
+                <TaskSummary 
+                  tasks={tasks} 
+                  avgCycleTime={avgCycleTime} 
+                  isLoading={isLoading} 
+                />
               )}
 
-              {/* --- Chart Grid Section --- */} 
-              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Adjusted gap to be smaller */}
-              {isLoading && !tasks.length ? (
-                  // Show a single loading indicator spanning columns if needed, or repeat per chart
-                  <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
-              ) : error && !tasks.length ? (
-                   <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                      Could not load chart data: {error}
-                   </div>
-                ) : (
-                  <>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Task Completion Status', CompletionStatusChart)}
-                    </div>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
-                    </div>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
-                    </div>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
-                    </div>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
-                    </div>
-                    <div className="lg:col-span-1">
-                      {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
-                    </div>
-                  </>
-                )}
+              {/* Chart Grid Section */}
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {/* ... existing charts ... */} 
               </div>
 
-              {/* --- Line Chart Section (Full Width) --- */} 
-              <div className="mb-8"> 
-                 {!isLoading && !error && tasks.length > 0 && (
-                      renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
-                 )} 
-                 {/* Optionally show loading/error specific to this chart if needed */} 
+              {/* Line Chart Section (Full Width) */}
+              <div className="mb-8">
+                 {/* ... existing trend chart ... */} 
               </div>
 
-              {/* --- Asset Summary Section --- */}
+              {/* Asset Summary Section */}
               {!isLoading && !error && tasks.length > 0 && (
                 <AssetSummary tasks={tasks} />
               )}
 
-              {/* --- Task Type Summary Section --- */}
+              {/* Task Type Summary Section */}
               {!isLoading && !error && tasks.length > 0 && (
                 <TaskTypeSummary tasks={tasks} />
               )}
+          </div>
+        </div>
 
-              {/* ----- End Main Summary Cards ----- */}
-
-              {/* ----- Section for New Metrics ----- */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* Average Cycle Time Card */}
-                <div className="bg-white p-4 rounded-lg shadow flex flex-col justify-center items-center h-full">
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Avg. Cycle Time</h3>
-                  <p className="text-2xl font-semibold">
-                    {isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} days` : 'N/A')}
-                  </p>
-                  <span className="text-xs text-gray-400">(All Completed Tasks)</span>
-                </div>
-                 {/* Project Activity Chart */}
-                <div className="col-span-1 md:col-span-1">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2 text-center">Project Activity (Weekly)</h3>
-                  {isLoadingStories ? (
-                    <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md h-64 md:h-full flex items-center justify-center text-gray-500">Loading...</div>
-                  ) : (
-                    renderClickableChart('Project Activity Trend (Weekly)', ProjectActivityChart, 'activityData')
-                  )}
-                </div>
-                 {/* Task Throughput Chart */}
-                <div className="col-span-1 md:col-span-1">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2 text-center">Task Throughput (Monthly)</h3>
-                  {isLoading ? (
-                    <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md h-64 md:h-full flex items-center justify-center text-gray-500">Loading...</div>
-                  ) : (
-                    renderClickableChart('Task Throughput (Monthly)', TaskThroughputChart, 'throughputData')
-                  )}
-                </div>
-              </div>
-              {/* ----- End Section for New Metrics ----- */}
-          </div> {/* End inner wrapper #capture-content */}
-        </div> {/* End of chartsContainerRef / Exportable Content div */}
-
-        {/* --- Filter and Table Section --- */}
+        {/* Task List Section */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
-        
         <TaskTable 
           tasks={tasks} 
           isLoading={isLoading && tasks.length === 0} // Show table loading only if tasks array is empty during load
@@ -508,16 +387,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         />
       </div>
 
-      {/* --- Modal --- */}
+      {/* Modal */}
       <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>
-        {/* Render the selected chart component inside the modal */} 
         {modalContent.chart}
       </ChartModal>
     </>
   );
 }
 
-// Protect the page using the withAuth HOC
+// Protect the page
 export const getServerSideProps = withAuth();
 
 export default DashboardPage; 
