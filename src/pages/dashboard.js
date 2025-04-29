@@ -120,10 +120,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     
     // Check if the global sync object exists
     if (window.__DASHBOARD_SYNC__) {
+      console.log("Dashboard registering sync handler");
+      // Make this function available to the global sync object
+      const syncHandlerObj = {
+        handleSyncNow: handleSyncNow
+      };
       // Register this component instance
-      window.__DASHBOARD_SYNC__.register({
-        handleSyncNow // Expose the sync handler
-      });
+      window.__DASHBOARD_SYNC__.register(syncHandlerObj);
+    } else {
+      console.warn("Dashboard sync object not found - sync button won't work");
     }
     
     // Clean up on unmount
@@ -402,7 +407,19 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         throw new Error(data.message || `Sync failed with status: ${res.status}`);
       }
 
-      setLastSyncTime(new Date()); // Record successful sync time
+      // Record successful sync time
+      const syncTime = new Date();
+      setLastSyncTime(syncTime); 
+      
+      // Store in localStorage for other components
+      try {
+        localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
+        // Dispatch an event so other components can react
+        window.dispatchEvent(new CustomEvent('asana-sync-completed'));
+      } catch (storageErr) {
+        console.warn("Could not store sync time in localStorage:", storageErr);
+      }
+      
       setSyncMessage(data.message || 'Sync completed successfully!');
       
       // Optionally, refresh dashboard data after sync

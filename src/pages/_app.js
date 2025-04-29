@@ -27,9 +27,13 @@ function MyApp({ Component, pageProps }) {
         lastSyncTime: null, // Will be updated by dashboard component 
         syncMessage: '',
         onSyncNow: () => {
-          // If dashboardInstance exists and exposes handleSyncNow, call it
-          if (dashboardInstance && dashboardInstance.handleSyncNow) {
+          // Call the dashboard's sync function
+          console.log("Sync button clicked, dashboard instance:", dashboardInstance);
+          if (dashboardInstance) {
+            console.log("Attempting to call handleSyncNow");
             dashboardInstance.handleSyncNow();
+          } else {
+            console.error("Dashboard instance not available for sync");
           }
         }
       });
