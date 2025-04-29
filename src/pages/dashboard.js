@@ -37,13 +37,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false); // Add state for export loading
 
-  // --- Sync State ---
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState(null); // Store timestamp or null
-  const [syncMessage, setSyncMessage] = useState(''); // Feedback message
-  // --- End Sync State ---
-
-  // --- Calculated Metrics State --- 
+  // --- Calculated Metrics State ---
   const [avgCycleTime, setAvgCycleTime] = useState(null);
 
   // --- Modal State ---
@@ -62,13 +56,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     setIsModalOpen(true);
   };
 
-  // --- NEW: Function to open modal for Task Status Durations ---
+  // --- Function to open modal for Task Status Durations ---
   const openTaskStatusModal = (taskId, taskName) => {
     setModalContent({ title: `Status History: ${taskName || taskId}`, chart: null }); // Set title, clear chart
     setSelectedTaskId(taskId); // Set the selected task ID
     setIsModalOpen(true);
   };
-  // --- END NEW ---
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -112,95 +105,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   useEffect(() => {
     initialFetch();
   }, [initialFetch]);
-
-  // Connect this dashboard instance to the global sync handler
-  useEffect(() => {
-    // Skip during SSR
-    if (typeof window === 'undefined') return;
-    
-    // Don't reference handleSyncNow directly to avoid initialization issues
-    const syncHandler = {
-      handleSyncNow: () => {
-        console.log("Dashboard sync handler called!");
-        // Use the function defined below by directly calling it on the component
-        if (typeof window !== 'undefined') {
-          // We'll use a direct call to the API instead
-          manualSyncTrigger();
-        }
-      }
-    };
-    
-    // Register this component instance
-    if (window.__DASHBOARD_SYNC__) {
-      console.log("Dashboard registering sync handler");
-      window.__DASHBOARD_SYNC__.register(syncHandler);
-    } else {
-      console.warn("Dashboard sync object not found - sync button won't work");
-    }
-    
-    // Function to trigger sync manually without using handleSyncNow reference
-    async function manualSyncTrigger() {
-      console.log("Manual sync triggered");
-      
-      // Set states
-      setIsSyncing(true);
-      setSyncMessage('');
-      setError(''); // Clear errors before sync
-
-      try {
-        console.log("Calling /api/sync-asana endpoint...");
-        const res = await fetch('/api/sync-asana', { method: 'GET' });
-        console.log("Response received:", res.status);
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.message || `Sync failed with status: ${res.status}`);
-        }
-
-        // Handle success
-        const syncTime = new Date();
-        setLastSyncTime(syncTime);
-        
-        // Store in localStorage
-        try {
-          localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
-          window.dispatchEvent(new CustomEvent('asana-sync-completed'));
-        } catch (err) {
-          console.warn("localStorage error:", err);
-        }
-        
-        setSyncMessage(data.message || 'Sync completed successfully!');
-        initialFetch(); // Refresh data
-        
-      } catch (err) {
-        console.error('Sync error:', err);
-        setSyncMessage(`Sync failed: ${err.message}`);
-        setError(`Sync failed: ${err.message}`);
-        setLastSyncTime(null);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
-    
-    // Clean up on unmount
-    return () => {
-      if (window.__DASHBOARD_SYNC__) {
-        window.__DASHBOARD_SYNC__.register(null);
-      }
-    };
-  }, []); // No dependencies to avoid initialization issues
-
-  // Update global sync status when local state changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__DASHBOARD_SYNC__) {
-      window.__DASHBOARD_SYNC__.updateStatus({
-        isSyncing,
-        lastSyncTime,
-        syncMessage
-      });
-    }
-  }, [isSyncing, lastSyncTime, syncMessage]); // Update when these change
 
   // --- Calculation Effects ---
   useEffect(() => {
@@ -574,11 +478,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   );
 }
 
-// Add sync state and handler to the component for use in _app.js
-// This avoids prop drilling through the component hierarchy
-DashboardPage.syncState = {
-  isSyncAvailable: true
-};
+// Set component display name for title in Layout
+DashboardPage.displayName = 'GGBC Reporting Dashboard';
 
 // Protect the page
 export const getServerSideProps = withAuth();

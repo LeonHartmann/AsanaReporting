@@ -1,9 +1,79 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { format } from 'date-fns';
+import { useState, useEffect } from 'react';
 
-export default function Layout({ children, title = 'SPORTFIVE', isSyncing = false, lastSyncTime = null, syncMessage = '', onSyncNow = null }) {
+export default function Layout({ children, title = 'SPORTFIVE' }) {
   const router = useRouter();
+  
+  // Only show logout button and sync options if not on the login page
+  const showLogout = router.pathname !== '/';
+  // Only show sync button on dashboard page
+  const showSync = router.pathname === '/dashboard';
+  
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [syncMessage, setSyncMessage] = useState('');
+  
+  // Load last sync time from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
+        if (storedSyncTime) {
+          setLastSyncTime(new Date(storedSyncTime));
+        }
+      } catch (err) {
+        console.warn("Error loading sync time from localStorage:", err);
+      }
+    }
+  }, []);
+  
+  // Direct sync handler
+  const handleSyncNow = async () => {
+    if (isSyncing) return; // Prevent multiple clicks
+    
+    console.log("Layout: Starting direct sync...");
+    setIsSyncing(true);
+    setSyncMessage('');
+    
+    try {
+      const res = await fetch('/api/sync-asana', { method: 'GET' });
+      console.log("Sync API response status:", res.status);
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || `Sync failed with status: ${res.status}`);
+      }
+      
+      // Record successful sync time
+      const syncTime = new Date();
+      setLastSyncTime(syncTime);
+      
+      // Store in localStorage and trigger event for other components
+      try {
+        localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
+        window.dispatchEvent(new CustomEvent('asana-sync-completed'));
+      } catch (storageErr) {
+        console.warn("Error storing sync time:", storageErr);
+      }
+      
+      setSyncMessage(data.message || 'Sync completed successfully!');
+      
+      // Reload page to refresh data after sync (optional, can be removed if not desired)
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
+    } catch (err) {
+      console.error("Sync error:", err);
+      setSyncMessage(`Error: ${err.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -20,9 +90,6 @@ export default function Layout({ children, title = 'SPORTFIVE', isSyncing = fals
     }
   };
 
-  // Only show logout button if not on the login page
-  const showLogout = router.pathname !== '/';
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Head>
@@ -37,19 +104,20 @@ export default function Layout({ children, title = 'SPORTFIVE', isSyncing = fals
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 SPORTFIVE
               </h1>
+              {/* Show sync message if there is one */}
+              {syncMessage && (
+                <span className={`ml-4 text-sm ${syncMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                  {syncMessage}
+                </span>
+              )}
             </div>
             <div className="flex items-center space-x-4">
-              {onSyncNow && (
+              {showSync && (
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => {
-                      console.log("Sync button clicked in Layout");
-                      if (onSyncNow) {
-                        console.log("Calling onSyncNow function");
-                        onSyncNow();
-                      } else {
-                        console.error("onSyncNow function is not available!");
-                      }
+                      console.log("Sync button clicked in Layout - using direct handler");
+                      handleSyncNow();
                     }}
                     disabled={isSyncing}
                     className="px-3 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
