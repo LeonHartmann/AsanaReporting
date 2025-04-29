@@ -286,6 +286,9 @@ export async function getTasks(filters = {}) {
               );
               break;
           // New Status Cases
+          case 'only_completed_feedback_status': // New: Added based on user feedback
+              tasksAfterFilter = filteredTasks.filter(task => task.status?.trim() === completedFeedbackStatus);
+              break;
           case 'only_closed_won':
               tasksAfterFilter = filteredTasks.filter(task => task.status?.trim() === '🟢 CLOSED WON');
               break;
