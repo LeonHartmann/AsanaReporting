@@ -93,22 +93,9 @@ function AverageTimeInStatus() {
     }, []); // Empty dependency array = only on mount
 
     // Filter and Sort Statuses Here
-    const filteredAndSortedStatuses = Object.entries(avgDurations)
-        .filter(([status]) => !statusesToExclude.includes(status)) // Filter based on the exclude list
-        .sort(([statusA], [statusB]) => {
-            const indexA = statusOrder.indexOf(statusA);
-            const indexB = statusOrder.indexOf(statusB);
-            
-            // If both statuses are in our order list, use that order
-            if (indexA !== -1 && indexB !== -1) {
-                return indexA - indexB;
-            }
-            // If one status is in the order list, prioritize it
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            // For any other statuses, fall back to alphabetical order
-            return statusA.localeCompare(statusB);
-        });
+    const filteredAndSortedStatuses = Object.entries(avgDurations);
+    // No need to filter or sort here since it's done in the API
+    // We'll just use the data as is, since it already comes ordered from the API
 
     return (
         <div className="mb-8">
