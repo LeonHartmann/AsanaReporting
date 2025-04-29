@@ -5,16 +5,52 @@ export default function TaskTable({ tasks, isLoading, error }) {
 
   const sortedTasks = useMemo(() => {
     let sortableItems = [...tasks];
+    const now = new Date(); // Get current time once for consistency in this sort run
+
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         // Ensure values exist for sorting, default to empty string or 0 if null/undefined
-        const aValue = a[sortConfig.key] ?? (typeof a[sortConfig.key] === 'number' ? 0 : '');
-        const bValue = b[sortConfig.key] ?? (typeof b[sortConfig.key] === 'number' ? 0 : '');
+        const aValue = a[sortConfig.key]; // Get raw value for potential date/duration calculation
+        const bValue = b[sortConfig.key];
+
+        // Special handling for Open Duration sorting
+        if (sortConfig.key === 'openDuration') {
+          const getDurationMillis = (task) => {
+            if (!task.createdAt) return 0; // No creation date, treat as 0 duration
+            const creationDate = new Date(task.createdAt);
+            let comparisonDate;
+            if (task.completed && task.completedAt) {
+              comparisonDate = new Date(task.completedAt);
+            } else if (!task.completed) {
+              comparisonDate = now; // Use 'now' for open tasks
+            } else {
+              return 0; // Completed but no completedAt date, treat as 0 duration for sorting
+            }
+            // Handle potential invalid dates or future creation dates
+            if (isNaN(creationDate.getTime()) || isNaN(comparisonDate.getTime()) || creationDate > comparisonDate) {
+              return 0; 
+            }
+            return comparisonDate.getTime() - creationDate.getTime(); // Duration in milliseconds
+          };
+
+          const durationA = getDurationMillis(a);
+          const durationB = getDurationMillis(b);
+
+          if (durationA < durationB) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (durationA > durationB) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+        }
 
         // Handle date sorting specifically for 'deadline' and 'createdAt'
         if (sortConfig.key === 'deadline' || sortConfig.key === 'createdAt') {
-            const dateA = aValue ? new Date(aValue) : new Date(0); // Use epoch if null
-            const dateB = bValue ? new Date(bValue) : new Date(0);
+            // Use epoch if null, handle potentially invalid dates gracefully
+            const dateA = aValue ? new Date(aValue).getTime() : (sortConfig.direction === 'ascending' ? Infinity : -Infinity);
+            const dateB = bValue ? new Date(bValue).getTime() : (sortConfig.direction === 'ascending' ? Infinity : -Infinity);
+
              if (dateA < dateB) {
                 return sortConfig.direction === 'ascending' ? -1 : 1;
              }
@@ -23,18 +59,22 @@ export default function TaskTable({ tasks, isLoading, error }) {
              }
              return 0;
         }
+        
+        // Default values for comparison if keys don't exist
+        const valA = aValue ?? (typeof aValue === 'number' ? 0 : '');
+        const valB = bValue ?? (typeof bValue === 'number' ? 0 : '');
 
         // Handle string sorting (case-insensitive)
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          const comparison = valA.toLowerCase().localeCompare(valB.toLowerCase());
           return sortConfig.direction === 'ascending' ? comparison : -comparison;
         }
         
         // Handle numeric sorting or fallback comparison
-        if (aValue < bValue) {
+        if (valA < valB) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (aValue > bValue) {
+        if (valA > valB) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -97,15 +137,26 @@ export default function TaskTable({ tasks, isLoading, error }) {
     );
   };
 
-  const calculateOpenDuration = (createdAt) => {
-    if (!createdAt) return 'N/A';
+  // Renamed to calculateDuration as it now handles both open and completed tasks
+  const calculateDuration = (createdAt, completedAt, completed) => {
+    if (!createdAt) return 'N/A'; // Need a creation date
     try {
-      const creationDate = new Date(createdAt);
-      const now = new Date();
-      // Ensure creationDate is not in the future
-      if (creationDate > now) return 'Upcoming'; 
+      const startDate = new Date(createdAt);
+      let endDate;
+
+      if (completed && completedAt) {
+        endDate = new Date(completedAt);
+      } else if (!completed) {
+        endDate = new Date(); // Use 'now' for open tasks
+      } else {
+        // Completed but no completedAt date - cannot calculate
+        return 'N/A'; 
+      }
+
+      // Ensure startDate is not in the future relative to endDate
+      if (startDate > endDate) return 'Upcoming/Error'; 
       
-      const diffTime = Math.abs(now - creationDate);
+      const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
       if (diffDays === 0) {
@@ -159,8 +210,8 @@ export default function TaskTable({ tasks, isLoading, error }) {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
                 Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Open Duration
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('openDuration')}>
+                Open Duration {sortConfig.key === 'openDuration' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('deadline')}>
                 Deadline {sortConfig.key === 'deadline' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
@@ -214,7 +265,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
                   {formatStatus(task.completed, task.status)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {task.completed ? 'N/A' : calculateOpenDuration(task.createdAt)}
+                  {calculateDuration(task.createdAt, task.completedAt, task.completed)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(task.deadline)}
