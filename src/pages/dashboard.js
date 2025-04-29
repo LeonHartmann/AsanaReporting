@@ -16,6 +16,7 @@ import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 import jsPDF from 'jspdf'; // Add jsPDF import
 import html2canvas from 'html2canvas'; // Add html2canvas import
+import CompletionRateSummary from '@/components/CompletionRateSummary';
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
@@ -407,6 +408,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               {/* Task Type Summary Section */}
               {!isLoading && !error && tasks.length > 0 && (
                 <TaskTypeSummary tasks={tasks} />
+              )}
+
+              {/* Completion Rate Summary Section */}
+              {!error && (
+                <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
               )}
           </div>
         </div>
