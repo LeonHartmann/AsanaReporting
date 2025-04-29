@@ -24,11 +24,28 @@ function formatSeconds(seconds) {
 // Statuses to exclude from the display
 const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources'];
 
+// Function to get last sync time
+function getLastSyncTime() {
+    try {
+        const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
+        console.log("Retrieving stored sync time:", storedSyncTime);
+        return storedSyncTime ? new Date(storedSyncTime) : null;
+    } catch (err) {
+        console.warn("Error retrieving last sync time:", err);
+        return null;
+    }
+}
+
 function AverageTimeInStatus() {
     const [avgDurations, setAvgDurations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [lastSyncTime, setLastSyncTime] = useState(null); // State to store last sync time
+    // Initialize with current stored value
+    const [lastSyncTime, setLastSyncTime] = useState(() => {
+        // Skip during SSR
+        if (typeof window === 'undefined') return null;
+        return getLastSyncTime();
+    });
 
     useEffect(() => {
         const fetchAverageDurations = async () => {
@@ -43,16 +60,6 @@ function AverageTimeInStatus() {
                 }
                 const data = await res.json();
                 setAvgDurations(data);
-
-                // Try to fetch the last sync time from localStorage
-                try {
-                    const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
-                    if (storedSyncTime) {
-                        setLastSyncTime(new Date(storedSyncTime));
-                    }
-                } catch (storageErr) {
-                    console.warn("Could not access localStorage for sync time:", storageErr);
-                }
             } catch (err) {
                 console.error("Failed to fetch average status durations:", err);
                 setError(err.message || 'Could not load average durations.');
@@ -66,14 +73,8 @@ function AverageTimeInStatus() {
 
         // Set up listener for sync events
         const handleSyncUpdate = () => {
-            try {
-                const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
-                if (storedSyncTime) {
-                    setLastSyncTime(new Date(storedSyncTime));
-                }
-            } catch (err) {
-                console.warn("Error updating sync time:", err);
-            }
+            console.log("Sync event received in AverageTimeInStatus");
+            setLastSyncTime(getLastSyncTime());
         };
 
         // Listen for custom sync event
@@ -82,7 +83,7 @@ function AverageTimeInStatus() {
         return () => {
             window.removeEventListener('asana-sync-completed', handleSyncUpdate);
         };
-    }, []); // Fetch on mount
+    }, []); // Empty dependency array = only on mount
 
     // Filter and Sort Statuses Here
     const filteredAndSortedStatuses = Object.entries(avgDurations)
@@ -93,9 +94,13 @@ function AverageTimeInStatus() {
         <div className="mb-8">
             <div className="flex justify-between items-center mb-1">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Average Time in Status</h3>
-                {lastSyncTime && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                {lastSyncTime ? (
+                    <div className="text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded px-2 py-1 bg-gray-100 dark:bg-gray-800">
                         Last sync: {format(lastSyncTime, 'PPpp')}
+                    </div>
+                ) : (
+                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        No sync data available
                     </div>
                 )}
             </div>

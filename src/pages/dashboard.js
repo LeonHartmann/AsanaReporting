@@ -118,12 +118,18 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     // Skip during SSR
     if (typeof window === 'undefined') return;
     
+    // Ensure handleSyncNow is bound to this component instance
+    const boundHandleSyncNow = handleSyncNow.bind(null);
+    
     // Check if the global sync object exists
     if (window.__DASHBOARD_SYNC__) {
       console.log("Dashboard registering sync handler");
       // Make this function available to the global sync object
       const syncHandlerObj = {
-        handleSyncNow: handleSyncNow
+        handleSyncNow: () => {
+          console.log("Dashboard sync handler called!");
+          boundHandleSyncNow();
+        }
       };
       // Register this component instance
       window.__DASHBOARD_SYNC__.register(syncHandlerObj);
@@ -137,7 +143,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         window.__DASHBOARD_SYNC__.register(null);
       }
     };
-  }, []); // Only run once on mount
+  }, [handleSyncNow]); // Dependency on handleSyncNow to ensure correct function reference
 
   // Update global sync status when local state changes
   useEffect(() => {
@@ -413,9 +419,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       
       // Store in localStorage for other components
       try {
+        console.log("Storing sync time in localStorage:", syncTime.toISOString());
         localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
+        
         // Dispatch an event so other components can react
-        window.dispatchEvent(new CustomEvent('asana-sync-completed'));
+        console.log("Dispatching asana-sync-completed event");
+        const syncEvent = new CustomEvent('asana-sync-completed');
+        window.dispatchEvent(syncEvent);
+        console.log("Event dispatched");
       } catch (storageErr) {
         console.warn("Could not store sync time in localStorage:", storageErr);
       }

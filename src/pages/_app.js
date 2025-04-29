@@ -29,11 +29,16 @@ function MyApp({ Component, pageProps }) {
         onSyncNow: () => {
           // Call the dashboard's sync function
           console.log("Sync button clicked, dashboard instance:", dashboardInstance);
-          if (dashboardInstance) {
-            console.log("Attempting to call handleSyncNow");
-            dashboardInstance.handleSyncNow();
+          if (dashboardInstance && typeof dashboardInstance.handleSyncNow === 'function') {
+            console.log("Calling handleSyncNow function");
+            try {
+              dashboardInstance.handleSyncNow();
+            } catch (err) {
+              console.error("Error calling handleSyncNow:", err);
+            }
           } else {
-            console.error("Dashboard instance not available for sync");
+            console.error("Dashboard instance not available for sync or handleSyncNow is not a function", 
+              dashboardInstance ? `handleSyncNow type: ${typeof dashboardInstance.handleSyncNow}` : "No dashboard instance");
           }
         }
       });
