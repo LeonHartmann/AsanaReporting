@@ -8,7 +8,6 @@ async function fetchAllPages(url) {
   let nextUrl = url;
 
   while (nextUrl) {
-    console.log(`Fetching Asana data from: ${nextUrl}`); // Log fetching progress
     const response = await fetch(nextUrl, {
       headers: {
         Authorization: `Bearer ${ASANA_PAT}`,
@@ -35,7 +34,6 @@ async function fetchAllPages(url) {
       nextUrl = null; // No more pages
     }
   }
-  console.log(`Finished fetching Asana data. Total items: ${allData.length}`);
   return allData;
 }
 
@@ -119,7 +117,6 @@ export async function getTasks(filters = {}) {
       let allTasks = await fetchAllPages(displayUrl);
 
       // --- Apply Filters After Fetching ---
-      // console.log('[Asana API Debug] Received Filters:', JSON.stringify(filters, null, 2)); // Log the entire filters object
 
       // Brand Filtering (Handles comma-separated string for OR logic)
       if (brand) {
@@ -169,25 +166,18 @@ export async function getTasks(filters = {}) {
         }
       }
       
-      // Task Type filtering (similar to assignee, handles comma-separated list for OR logic)
+      // Task Type filtering
       if (taskType) {
           const selectedTaskTypes = taskType.split(',');
-          // console.log(`[Asana Filter Debug] Filtering by Task Types: ${selectedTaskTypes.join(', ')}`);
-          // console.log(`[Asana Filter Debug] Tasks BEFORE Task Type filter: ${allTasks.length}`);
           if (selectedTaskTypes.length > 0) {
-              const tasksBeforeFilter = allTasks; // Keep a reference for logging
+              const tasksBeforeFilter = allTasks; 
               allTasks = tasksBeforeFilter.filter(task => {
                   const taskTypeField = task.custom_fields?.find(f => f.name === 'Task Type');
-                  // Use enum_value.name for single-select comparison
                   const taskTypeValue = taskTypeField?.enum_value?.name;
-                  // Trim the value from Asana before comparing
                   const trimmedTaskTypeValue = taskTypeValue?.trim(); 
                   const shouldKeep = trimmedTaskTypeValue && selectedTaskTypes.includes(trimmedTaskTypeValue); 
-                  // Log details for each task being checked
-                  // console.log(`[Asana Filter Debug] Task ID: ${task.gid}, Task Type Value: '${taskTypeValue || ''}', Trimmed: '${trimmedTaskTypeValue || ''}', Selected: [${selectedTaskTypes.join(', ')}], Keep: ${shouldKeep}`);
                   return shouldKeep;
               });
-              // console.log(`[Asana Filter Debug] Tasks AFTER Task Type filter: ${allTasks.length}`);
           }
       }
       
@@ -259,13 +249,9 @@ export async function getTasks(filters = {}) {
       // Apply completion/status filter if specified
       let finalTasks = filteredTasks;
       const completedFeedbackStatus = '🌀 Completed/Feedback';
-      // const completedStatus = 'Completed'; // No longer needed as a string status
-      // const completedStatuses = [completedStatus, completedFeedbackStatus]; // No longer needed
-
-      console.log(`[Asana Filter] Applying filter: ${completionFilter}`);
 
       // --- Start Filter Logic ---
-      const initialTaskCount = filteredTasks.length; // Count after excluding '📍 Resources'
+      const initialTaskCount = filteredTasks.length; 
       let tasksAfterFilter = [];
 
       switch (completionFilter) {
@@ -302,14 +288,12 @@ export async function getTasks(filters = {}) {
       }
       // --- End Filter Logic ---
 
-      console.log(`[Asana Filter] Initial tasks: ${initialTaskCount}, Tasks after filter '${completionFilter}': ${tasksAfterFilter.length}`);
       finalTasks = tasksAfterFilter;
 
       return finalTasks;
     }
   } catch (error) {
     console.error('Error fetching or processing Asana tasks:', error);
-    // Ensure consistent return type on error
     return distinct ? { brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] } : [];
   }
 }
