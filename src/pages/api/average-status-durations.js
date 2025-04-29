@@ -34,9 +34,11 @@ export default async function handler(req, res) {
 
         // Format the data for the frontend
         const averageDurations = avgData.reduce((acc, row) => {
-            if (row.status && row.average_duration_seconds !== null) {
+            // Trim whitespace from the status name before using it
+            const cleanStatus = row.status ? row.status.trim() : null;
+            if (cleanStatus && row.average_duration_seconds !== null) {
                 // Ensure average is non-negative
-                acc[row.status] = Math.max(0, row.average_duration_seconds); 
+                acc[cleanStatus] = Math.max(0, row.average_duration_seconds); 
             }
             return acc;
         }, {});
