@@ -111,7 +111,7 @@ function AverageTimeInStatus() {
                 )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4"> 
-                (Note: Averages become more accurate as more historical data is collected)
+                (Note: Averages become more accurate as more historical data is collected and filter doesn't apply here)
             </p>
             {isLoading && (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-4">Loading averages...</div>
