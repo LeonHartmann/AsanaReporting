@@ -118,23 +118,69 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     // Skip during SSR
     if (typeof window === 'undefined') return;
     
-    // Ensure handleSyncNow is bound to this component instance
-    const boundHandleSyncNow = handleSyncNow.bind(null);
+    // Don't reference handleSyncNow directly to avoid initialization issues
+    const syncHandler = {
+      handleSyncNow: () => {
+        console.log("Dashboard sync handler called!");
+        // Use the function defined below by directly calling it on the component
+        if (typeof window !== 'undefined') {
+          // We'll use a direct call to the API instead
+          manualSyncTrigger();
+        }
+      }
+    };
     
-    // Check if the global sync object exists
+    // Register this component instance
     if (window.__DASHBOARD_SYNC__) {
       console.log("Dashboard registering sync handler");
-      // Make this function available to the global sync object
-      const syncHandlerObj = {
-        handleSyncNow: () => {
-          console.log("Dashboard sync handler called!");
-          boundHandleSyncNow();
-        }
-      };
-      // Register this component instance
-      window.__DASHBOARD_SYNC__.register(syncHandlerObj);
+      window.__DASHBOARD_SYNC__.register(syncHandler);
     } else {
       console.warn("Dashboard sync object not found - sync button won't work");
+    }
+    
+    // Function to trigger sync manually without using handleSyncNow reference
+    async function manualSyncTrigger() {
+      console.log("Manual sync triggered");
+      
+      // Set states
+      setIsSyncing(true);
+      setSyncMessage('');
+      setError(''); // Clear errors before sync
+
+      try {
+        console.log("Calling /api/sync-asana endpoint...");
+        const res = await fetch('/api/sync-asana', { method: 'GET' });
+        console.log("Response received:", res.status);
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.message || `Sync failed with status: ${res.status}`);
+        }
+
+        // Handle success
+        const syncTime = new Date();
+        setLastSyncTime(syncTime);
+        
+        // Store in localStorage
+        try {
+          localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
+          window.dispatchEvent(new CustomEvent('asana-sync-completed'));
+        } catch (err) {
+          console.warn("localStorage error:", err);
+        }
+        
+        setSyncMessage(data.message || 'Sync completed successfully!');
+        initialFetch(); // Refresh data
+        
+      } catch (err) {
+        console.error('Sync error:', err);
+        setSyncMessage(`Sync failed: ${err.message}`);
+        setError(`Sync failed: ${err.message}`);
+        setLastSyncTime(null);
+      } finally {
+        setIsSyncing(false);
+      }
     }
     
     // Clean up on unmount
@@ -143,7 +189,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         window.__DASHBOARD_SYNC__.register(null);
       }
     };
-  }, [handleSyncNow]); // Dependency on handleSyncNow to ensure correct function reference
+  }, []); // No dependencies to avoid initialization issues
 
   // Update global sync status when local state changes
   useEffect(() => {
@@ -394,59 +440,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       </div>
     );
   }
-
-  // --- NEW: Asana Sync Function ---
-  const handleSyncNow = async () => {
-    setIsSyncing(true);
-    setSyncMessage('');
-    setError(''); // Clear general errors before sync
-
-    try {
-      console.log("Attempting to call /api/sync-asana...");
-      // Using GET, as POST might require a body even if empty, and GET is fine for triggers
-      const res = await fetch('/api/sync-asana', { method: 'GET' }); 
-      console.log("Sync API Response Status:", res.status);
-      const data = await res.json();
-      console.log("Sync API Response Data:", data);
-
-      if (!res.ok) {
-        throw new Error(data.message || `Sync failed with status: ${res.status}`);
-      }
-
-      // Record successful sync time
-      const syncTime = new Date();
-      setLastSyncTime(syncTime); 
-      
-      // Store in localStorage for other components
-      try {
-        console.log("Storing sync time in localStorage:", syncTime.toISOString());
-        localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
-        
-        // Dispatch an event so other components can react
-        console.log("Dispatching asana-sync-completed event");
-        const syncEvent = new CustomEvent('asana-sync-completed');
-        window.dispatchEvent(syncEvent);
-        console.log("Event dispatched");
-      } catch (storageErr) {
-        console.warn("Could not store sync time in localStorage:", storageErr);
-      }
-      
-      setSyncMessage(data.message || 'Sync completed successfully!');
-      
-      // Optionally, refresh dashboard data after sync
-      console.log("Sync successful, refreshing dashboard data...");
-      initialFetch(); // Re-fetch all dashboard data
-
-    } catch (err) {
-      console.error('Error during manual Asana sync:', err);
-      setSyncMessage(`Sync failed: ${err.message}`);
-      setError(`Sync failed: ${err.message}`); // Also set general error if desired
-      setLastSyncTime(null); // Indicate failure potentially
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-  // --- END Asana Sync Function ---
 
   return (
     <>
