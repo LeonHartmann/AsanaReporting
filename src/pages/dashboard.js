@@ -450,15 +450,19 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           </div>
         </div>
 
-        {/* Task List Section */}
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
-        <TaskTable 
-          tasks={tasks} 
-          isLoading={isLoading && tasks.length === 0} // Show table loading only if tasks array is empty during load
-          error={error} 
-          onRowClick={(task) => openTaskStatusModal(task.id, task.name)} // Pass task.id and task.name
-        />
-      </div>
+        {/* --- Task List Section Moved Here (Full Width) --- */}
+        <div className="mt-8"> 
+          <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
+          <TaskTable 
+            tasks={tasks} 
+            isLoading={isLoading && tasks.length === 0} 
+            error={error} 
+            onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
+          />
+        </div>
+        {/* --- End Task List Section --- */}
+
+      </div> { /* End container */}
 
       {/* Modal */}
       <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>

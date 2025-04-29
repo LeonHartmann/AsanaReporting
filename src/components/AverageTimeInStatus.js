@@ -20,6 +20,9 @@ function formatSeconds(seconds) {
     return result.trim();
 }
 
+// Statuses to exclude from the display
+const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources'];
+
 function AverageTimeInStatus() {
     const [avgDurations, setAvgDurations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -50,11 +53,17 @@ function AverageTimeInStatus() {
         fetchAverageDurations();
     }, []); // Fetch on mount
 
-    const sortedStatuses = Object.entries(avgDurations).sort(([statusA], [statusB]) => statusA.localeCompare(statusB));
+    // Filter and Sort Statuses Here
+    const filteredAndSortedStatuses = Object.entries(avgDurations)
+        .filter(([status]) => !statusesToExclude.includes(status)) // Filter based on the exclude list
+        .sort(([statusA], [statusB]) => statusA.localeCompare(statusB)); // Sort remaining statuses
 
     return (
         <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Average Time in Status</h3>
+            <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">Average Time in Status</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4"> 
+                (Note: Averages become more accurate as more historical data is collected)
+            </p>
             {isLoading && (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-4">Loading averages...</div>
             )}
@@ -63,13 +72,13 @@ function AverageTimeInStatus() {
                     Error: {error}
                 </div>
             )}
-            {!isLoading && !error && sortedStatuses.length === 0 && (
-                <div className="text-gray-500 dark:text-gray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800 text-center">No average duration data available.</div>
+            {!isLoading && !error && filteredAndSortedStatuses.length === 0 && (
+                <div className="text-gray-500 dark:text-gray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800 text-center">No average duration data available for active statuses.</div>
             )}
-            {!isLoading && !error && sortedStatuses.length > 0 && (
+            {!isLoading && !error && filteredAndSortedStatuses.length > 0 && (
                  // Use a grid layout similar to TaskSummary - adjust cols as needed
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {sortedStatuses.map(([status, avgSeconds]) => (
+                    {filteredAndSortedStatuses.map(([status, avgSeconds]) => (
                         <div key={status} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
                             {/* Limit status text length if necessary */}
                             <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status}>{status}</h3>
