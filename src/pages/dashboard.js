@@ -17,13 +17,27 @@ import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 import jsPDF from 'jspdf'; // Add jsPDF import
 import html2canvas from 'html2canvas'; // Add html2canvas import
 
+// New Metric Charts
+import ProjectActivityChart from '@/components/charts/ProjectActivityChart';
+import TaskThroughputChart from '@/components/charts/TaskThroughputChart';
+
+// Helper for date calculations (consider moving to a utils file)
+import { differenceInDays, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
+  const [stories, setStories] = useState([]); // <-- Add state for stories
   const [distinctValues, setDistinctValues] = useState({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] });
   const [filters, setFilters] = useState({ brand: '', asset: '', requester: '', assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStories, setIsLoadingStories] = useState(true); // <-- Add separate loading state for stories
   const [error, setError] = useState('');
   const [isExporting, setIsExporting] = useState(false); // Add state for export loading
+
+  // --- Calculated Metrics State --- 
+  const [projectActivityData, setProjectActivityData] = useState([]);
+  const [taskThroughputData, setTaskThroughputData] = useState([]);
+  const [avgCycleTime, setAvgCycleTime] = useState(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +58,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   // Combined fetch function for both distinct values and initial tasks
   const initialFetch = useCallback(async () => {
     setIsLoading(true);
+    setIsLoadingStories(true); // <-- Set stories loading
     setError('');
     try {
       // Fetch distinct values
@@ -55,7 +70,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       setDistinctValues(distinctData); // Update distinct values including assignees and taskTypes
 
       // Fetch initial tasks (no filters applied yet)
-      const tasksRes = await fetch('/api/tasks');
+      const tasksRes = await fetch('/api/tasks'); // Fetch tasks without initial completion filter
       if (!tasksRes.ok) {
         const errorData = await tasksRes.json();
         throw new Error(errorData.message || `Failed to fetch tasks: ${tasksRes.statusText}`);
@@ -63,13 +78,25 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       const tasksData = await tasksRes.json();
       setTasks(tasksData);
 
+      // --- Fetch Stories ---
+      const storiesRes = await fetch('/api/stories');
+      if (!storiesRes.ok) {
+        const errorData = await storiesRes.json();
+        throw new Error(errorData.message || `Failed to fetch stories: ${storiesRes.statusText}`);
+      }
+      const storiesData = await storiesRes.json();
+      setStories(storiesData);
+      setIsLoadingStories(false); // <-- Finish stories loading
+
     } catch (err) {
       console.error('Error during initial fetch:', err);
       setError(err.message || 'Could not load dashboard data. Please refresh.');
       setTasks([]); // Clear tasks on error
+      setStories([]); // <-- Clear stories on error
       setDistinctValues({ brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] }); // Clear distinct values including taskTypes
+      setIsLoadingStories(false); // <-- Finish stories loading even on error
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Keep this for overall loading state
     }
   }, []);
 
@@ -78,6 +105,64 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     initialFetch();
   }, [initialFetch]);
 
+  // --- Calculation Effects ---
+  useEffect(() => {
+    if (isLoading || isLoadingStories) return; // Wait for both tasks and stories to load
+
+    // 1. Calculate Project Activity (Weekly)
+    const weeklyActivity = {};
+    stories.forEach(story => {
+      try {
+        const date = parseISO(story.createdAt);
+        const weekStart = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd'); // Monday as start
+        weeklyActivity[weekStart] = (weeklyActivity[weekStart] || 0) + 1;
+      } catch (e) {
+        console.warn("Invalid story date:", story.createdAt);
+      }
+    });
+    const activityChartData = Object.entries(weeklyActivity)
+      .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+      .map(([date, count]) => ({ date, count }));
+    setProjectActivityData(activityChartData);
+
+    // Filter completed tasks for Throughput and Cycle Time
+    const completedTasks = tasks.filter(t => t.completed && t.completedAt && t.createdAt);
+
+    // 2. Calculate Task Throughput (Monthly)
+    const monthlyThroughput = {};
+    completedTasks.forEach(task => {
+      try {
+        const date = parseISO(task.completedAt);
+        const monthStart = format(startOfMonth(date), 'yyyy-MM');
+        monthlyThroughput[monthStart] = (monthlyThroughput[monthStart] || 0) + 1;
+      } catch (e) {
+        console.warn("Invalid completedAt date:", task.completedAt);
+      }
+    });
+    const throughputChartData = Object.entries(monthlyThroughput)
+      .sort(([dateA], [dateB]) => new Date(dateA + '-01') - new Date(dateB + '-01')) // Sort by month
+      .map(([month, count]) => ({ month, count }));
+    setTaskThroughputData(throughputChartData);
+
+    // 3. Calculate Average Cycle Time (Days)
+    if (completedTasks.length > 0) {
+      const totalCycleTime = completedTasks.reduce((sum, task) => {
+        try {
+          const completedDate = parseISO(task.completedAt);
+          const createdDate = parseISO(task.createdAt);
+          const diff = differenceInDays(completedDate, createdDate);
+          return sum + (diff >= 0 ? diff : 0); // Avoid negative cycle times
+        } catch (e) {
+          console.warn("Error calculating cycle time for task:", task.id, e);
+          return sum;
+        }
+      }, 0);
+      setAvgCycleTime((totalCycleTime / completedTasks.length).toFixed(1));
+    } else {
+      setAvgCycleTime(null); // No completed tasks
+    }
+
+  }, [tasks, stories, isLoading, isLoadingStories]);
 
   // Function to fetch tasks based on current filters (used by FilterPanel)
   const fetchTasksWithFilters = useCallback(async (currentFilters) => {
@@ -273,12 +358,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   };
 
   // Helper to create clickable chart wrappers
-  const renderClickableChart = (title, ChartComponent) => {
-    // We need to pass tasks to the ChartComponent when rendering it inside the modal
-    // The isFullscreen prop is passed automatically by the ChartModal component
-    const chartElement = <ChartComponent tasks={tasks} />;
+  const renderClickableChart = (title, ChartComponent, dataProp) => {
+    // Use a consistent prop name like 'chartData' or pass specific props
+    const chartProps = { [dataProp || 'tasks']: dataProp === 'activityData' ? projectActivityData : (dataProp === 'throughputData' ? taskThroughputData : tasks) };
+    const chartElement = <ChartComponent {...chartProps} />;
     return (
-      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, chartElement)}>
+      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, <ChartComponent {...chartProps} isFullscreen />)}>
          {/* Render the chart directly here for the dashboard view */}
          {chartElement}
       </div>
@@ -373,6 +458,39 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               {!isLoading && !error && tasks.length > 0 && (
                 <TaskTypeSummary tasks={tasks} />
               )}
+
+              {/* ----- End Main Summary Cards ----- */}
+
+              {/* ----- Section for New Metrics ----- */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* Average Cycle Time Card */}
+                <div className="bg-white p-4 rounded-lg shadow flex flex-col justify-center items-center h-full">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Avg. Cycle Time</h3>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} days` : 'N/A')}
+                  </p>
+                  <span className="text-xs text-gray-400">(All Completed Tasks)</span>
+                </div>
+                 {/* Project Activity Chart */}
+                <div className="col-span-1 md:col-span-1">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2 text-center">Project Activity (Weekly)</h3>
+                  {isLoadingStories ? (
+                    <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md h-64 md:h-full flex items-center justify-center text-gray-500">Loading...</div>
+                  ) : (
+                    renderClickableChart('Project Activity Trend (Weekly)', ProjectActivityChart, 'activityData')
+                  )}
+                </div>
+                 {/* Task Throughput Chart */}
+                <div className="col-span-1 md:col-span-1">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2 text-center">Task Throughput (Monthly)</h3>
+                  {isLoading ? (
+                    <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md h-64 md:h-full flex items-center justify-center text-gray-500">Loading...</div>
+                  ) : (
+                    renderClickableChart('Task Throughput (Monthly)', TaskThroughputChart, 'throughputData')
+                  )}
+                </div>
+              </div>
+              {/* ----- End Section for New Metrics ----- */}
           </div> {/* End inner wrapper #capture-content */}
         </div> {/* End of chartsContainerRef / Exportable Content div */}
 

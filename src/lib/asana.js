@@ -114,7 +114,7 @@ export async function getTasks(filters = {}) {
       };
     } else {
       // --- Fetch All Tasks for Display --- 
-      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value,created_by.name,created_at,completed,due_on,due_at,memberships.section.name'; // Add deadline and section info
+      const displayFields = 'name,assignee.name,custom_fields.name,custom_fields.display_value,custom_fields.enum_value,created_by.name,created_at,completed,completed_at,due_on,due_at,memberships.section.name'; // Add completed_at, deadline and section info
       const displayUrl = `${projectTasksEndpoint}?opt_fields=${displayFields}&limit=${limit}`;
       
       let allTasks = await fetchAllPages(displayUrl);
@@ -229,6 +229,7 @@ export async function getTasks(filters = {}) {
           status: section || 'No Status', // Section can be used as status
           deadline: deadline, // Task deadline
           createdAt: task.created_at,
+          completedAt: task.completed_at, // Add completed_at
         };
       });
       
@@ -287,5 +288,35 @@ export async function getTasks(filters = {}) {
     console.error('Error fetching or processing Asana tasks:', error);
     // Ensure consistent return type on error
     return distinct ? { brands: [], assets: [], requesters: [], assignees: [], taskTypes: [] } : [];
+  }
+}
+
+// New function to fetch stories for the project
+export async function getProjectStories() {
+  if (!ASANA_PAT || !ASANA_PROJECT_ID) {
+    console.error('Asana PAT or Project ID is missing in environment variables.');
+    throw new Error('Asana configuration missing.');
+  }
+
+  const storiesEndpoint = `${ASANA_API_BASE}/projects/${ASANA_PROJECT_ID}/stories`;
+  const limit = 100;
+  const fields = 'created_at,text,type,created_by.name'; // Fields relevant for activity tracking
+  const url = `${storiesEndpoint}?opt_fields=${fields}&limit=${limit}`;
+
+  try {
+    console.log('[Asana API] Fetching project stories...');
+    const allStories = await fetchAllPages(url);
+    console.log(`[Asana API] Fetched ${allStories.length} stories.`);
+    // Simple formatting, can be expanded later
+    return allStories.map(story => ({
+      id: story.gid,
+      createdAt: story.created_at,
+      text: story.text,
+      type: story.type,
+      creator: story.created_by?.name || 'Unknown',
+    }));
+  } catch (error) {
+    console.error('Error fetching Asana project stories:', error);
+    throw error; // Re-throw error to be handled by the caller
   }
 } 
