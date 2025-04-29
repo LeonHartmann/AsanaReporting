@@ -97,6 +97,32 @@ export default function TaskTable({ tasks, isLoading, error }) {
     );
   };
 
+  const calculateOpenDuration = (createdAt) => {
+    if (!createdAt) return 'N/A';
+    try {
+      const creationDate = new Date(createdAt);
+      const now = new Date();
+      // Ensure creationDate is not in the future
+      if (creationDate > now) return 'Upcoming'; 
+      
+      const diffTime = Math.abs(now - creationDate);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+          const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+          if (diffHours === 0) {
+              const diffMinutes = Math.floor(diffTime / (1000 * 60));
+              return `${diffMinutes} min`;
+          }
+          return `${diffHours} hours`;
+      }
+      return `${diffDays} days`;
+    } catch (e) {
+      console.error("Error calculating duration:", e);
+      return 'Error';
+    }
+  };
+
   if (error) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -133,6 +159,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
                 Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Open Duration
+              </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('deadline')}>
                 Deadline {sortConfig.key === 'deadline' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
@@ -144,7 +173,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan="9" className="text-center py-10">
+                <td colSpan="10" className="text-center py-10">
                    <div className="flex justify-center items-center">
                       <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -156,7 +185,7 @@ export default function TaskTable({ tasks, isLoading, error }) {
             )}
             {!isLoading && sortedTasks.length === 0 && (
               <tr>
-                <td colSpan="9" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan="10" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -183,6 +212,9 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatStatus(task.completed, task.status)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {task.completed ? 'N/A' : calculateOpenDuration(task.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(task.deadline)}
