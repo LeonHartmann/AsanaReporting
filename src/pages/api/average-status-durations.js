@@ -16,23 +16,14 @@ export default async function handler(req, res) {
     try {
         const supabaseServerClient = createServerSupabaseClient();
 
-        // Fetch average durations directly from the database
-        // Calculate duration in seconds: status_end - status_start
-        // If status_end is NULL, use the current time (NOW())
-        const { data: avgData, error: fetchError } = await supabaseServerClient
-            .from('task_status_history')
-            .select(`
-                status,
-                avg(extract(epoch from (coalesce(status_end, now()) - status_start))) as average_duration_seconds
-            `)
-            .filter('status_start', 'isnot', null) // Ensure we only consider entries with a start time
-            // Optional: Add a filter to exclude extremely long durations if needed (e.g., > 1 year)
-            // .filter(extract(epoch from (coalesce(status_end, now()) - status_start)), 'lt', 31536000) 
-            .groupBy('status');
+        // Call the database function to get average durations
+        const { data: avgData, error: rpcError } = await supabaseServerClient
+            .rpc('get_average_status_durations'); // Call the SQL function
+            
 
-        if (fetchError) {
-            console.error('Supabase error fetching average status durations:', fetchError);
-            throw new Error(`Database error: ${fetchError.message}`);
+        if (rpcError) {
+            console.error('Supabase RPC error fetching average status durations:', rpcError);
+            throw new Error(`Database RPC error: ${rpcError.message}`);
         }
 
         if (!avgData) {
