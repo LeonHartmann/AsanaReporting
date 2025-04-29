@@ -1,26 +1,25 @@
 import { createServerSupabaseClient } from '@/lib/supabaseClient';
-import { differenceInSeconds, parseISO } from 'date-fns';
 
 // Helper function to calculate durations for a single task's history
 function calculateTaskStatusDurations(statusHistory) {
-    if (!statusHistory || statusHistory.length < 2) { // Need at least two points to calculate duration
+    if (!statusHistory || statusHistory.length < 2) {
         return [];
     }
     
-    // --- UPDATED: Robust date sorting --- 
+    // --- UPDATED: Robust date sorting using native Date --- 
     const sortedHistory = [...statusHistory].sort((a, b) => {
         try {
-            const dateA = parseISO(a.recorded_at);
-            const dateB = parseISO(b.recorded_at);
+            // Use native Date parsing
+            const dateA = new Date(a.recorded_at);
+            const dateB = new Date(b.recorded_at);
 
             // Check if dates are valid before calling getTime()
-            const timeA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0; // Default invalid dates to 0 (or handle differently)
+            const timeA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0;
             const timeB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
             
             return timeA - timeB;
         } catch (e) {
-            // Fallback if parseISO itself throws an error (less likely)
-            console.error("Error during date sort comparison:", e);
+            console.error("Error during native date sort comparison:", e);
             return 0; 
         }
     });
@@ -31,24 +30,28 @@ function calculateTaskStatusDurations(statusHistory) {
         const currentEntry = sortedHistory[i];
         const nextEntry = sortedHistory[i + 1];
         try {
-            const startTime = parseISO(currentEntry.recorded_at);
-            const endTime = parseISO(nextEntry.recorded_at);
+            // Use native Date parsing
+            const startTime = new Date(currentEntry.recorded_at);
+            const endTime = new Date(nextEntry.recorded_at);
 
-            // --- NEW: Check if dates are valid before calculating difference --- 
+            // Check if dates are valid before calculating difference
             if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                console.warn(`Skipping duration calculation for interval in task ${currentEntry.task_id} due to invalid date(s):`, 
+                console.warn(`Skipping duration calculation (native) for interval in task ${currentEntry.task_id} due to invalid date(s):`, 
                     { start: currentEntry.recorded_at, end: nextEntry.recorded_at }
                 );
-                continue; // Skip to the next interval
+                continue; 
             }
-            // --- END NEW --- 
+            
+            // --- UPDATED: Calculate difference manually --- 
+            const durationMillis = endTime.getTime() - startTime.getTime();
+            const durationSeconds = Math.round(durationMillis / 1000); // Get difference in seconds
+            // --- END UPDATE ---
 
-            const durationSeconds = differenceInSeconds(endTime, startTime);
-            if (durationSeconds >= 0) { // Ensure duration is not negative
+            if (durationSeconds >= 0) { 
                 durations.push({ status: currentEntry.status, duration: durationSeconds });
             }
         } catch (e) {
-            console.error(`Error during duration calculation for task ${currentEntry.task_id}:`, e);
+            console.error(`Error during native duration calculation for task ${currentEntry.task_id}:`, e);
         }
     }
     return durations;
