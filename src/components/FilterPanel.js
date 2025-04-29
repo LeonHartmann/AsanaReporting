@@ -139,42 +139,64 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
           `}</style>
         </div>
 
-        {/* Asset Filter */}
+        {/* Asset Filter (using react-select) */}
         <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="asset" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="asset-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Asset
           </label>
-          <select
-            id="asset"
+          <Select
+            inputId="asset-select"
             name="asset"
-            value={filters.asset}
-            onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          >
-            <option value="">All Assets</option>
-            {distinctValues.assets?.map((asset) => (
-              <option key={asset} value={asset}>{asset}</option>
-            ))}
-          </select>
+            options={[
+                { value: '', label: 'All Assets' },
+                ...(distinctValues.assets || []).map(asset => ({ value: asset, label: asset }))
+            ]}
+            value={filters.asset ? { value: filters.asset, label: filters.asset } : { value: '', label: 'All Assets' }}
+            onChange={handleSelectChange}
+            isClearable
+            isSearchable
+            placeholder="Search or select..."
+            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            classNamePrefix="react-select"
+            styles={{ /* Reusing styles from Brand */
+              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow, '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)', } }),
+              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)' }),
+              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #4338ca)', }, }),
+              placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+            }}
+          />
         </div>
 
-        {/* Requester Filter */}
+        {/* Requester Filter (using react-select) */}
         <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="requester" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="requester-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Requested By
           </label>
-          <select
-            id="requester"
+          <Select
+            inputId="requester-select"
             name="requester"
-            value={filters.requester}
-            onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          >
-            <option value="">All Requesters</option>
-            {distinctValues.requesters?.map((requester) => (
-              <option key={requester} value={requester}>{requester}</option>
-            ))}
-          </select>
+            options={[
+                { value: '', label: 'All Requesters' },
+                ...(distinctValues.requesters || []).map(requester => ({ value: requester, label: requester }))
+            ]}
+            value={filters.requester ? { value: filters.requester, label: filters.requester } : { value: '', label: 'All Requesters' }}
+            onChange={handleSelectChange}
+            isClearable
+            isSearchable
+            placeholder="Search or select..."
+            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            classNamePrefix="react-select"
+            styles={{ /* Reusing styles from Brand */
+              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow, '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)', } }),
+              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
+              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)' }),
+              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #4338ca)', }, }),
+              placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+            }}
+          />
         </div>
 
         {/* Start Date */}
