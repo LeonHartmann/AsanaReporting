@@ -113,6 +113,38 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     initialFetch();
   }, [initialFetch]);
 
+  // Connect this dashboard instance to the global sync handler
+  useEffect(() => {
+    // Skip during SSR
+    if (typeof window === 'undefined') return;
+    
+    // Check if the global sync object exists
+    if (window.__DASHBOARD_SYNC__) {
+      // Register this component instance
+      window.__DASHBOARD_SYNC__.register({
+        handleSyncNow // Expose the sync handler
+      });
+    }
+    
+    // Clean up on unmount
+    return () => {
+      if (window.__DASHBOARD_SYNC__) {
+        window.__DASHBOARD_SYNC__.register(null);
+      }
+    };
+  }, []); // Only run once on mount
+
+  // Update global sync status when local state changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__DASHBOARD_SYNC__) {
+      window.__DASHBOARD_SYNC__.updateStatus({
+        isSyncing,
+        lastSyncTime,
+        syncMessage
+      });
+    }
+  }, [isSyncing, lastSyncTime, syncMessage]); // Update when these change
+
   // --- Calculation Effects ---
   useEffect(() => {
     if (isLoading) return; // Wait for tasks to load
@@ -390,136 +422,126 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
   return (
     <>
-      {/* Use Layout specific to this page to pass sync props */}
-      <Layout 
-        title="GGBC Reporting Dashboard"
-        isSyncing={isSyncing}
-        lastSyncTime={lastSyncTime}
-        syncMessage={syncMessage}
-        onSyncNow={handleSyncNow}
-      >
-        <Head>
-          {/* Title is set via Layout prop now */}
-        </Head>
+      <Head>
+        <title>GGBC Reporting Dashboard</title>
+      </Head>
 
-        {/* Container for centered content (Filters, Summaries, Charts) */}
-        <div className="container mx-auto px-2 md:px-4">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
+      {/* Container for centered content (Filters, Summaries, Charts) */}
+      <div className="container mx-auto px-2 md:px-4">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
 
-          {/* Filter Section */}
-          <FilterPanel
-            filters={filters}
-            setFilters={setFilters}
-            distinctValues={distinctValues}
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-          />
+        {/* Filter Section */}
+        <FilterPanel
+          filters={filters}
+          setFilters={setFilters}
+          distinctValues={distinctValues}
+          onApplyFilters={handleApplyFilters}
+          onResetFilters={handleResetFilters}
+        />
 
-          {/* Export Button */}
-          <div className="my-4 text-right">
+        {/* Export Button */}
+        <div className="my-4 text-right">
             <button
-              onClick={handleExportPDF}
-              disabled={isExporting || isLoading} 
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleExportPDF}
+                disabled={isExporting || isLoading} 
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isExporting ? 'Exporting...' : 'Export Charts to PDF'}
+                {isExporting ? 'Exporting...' : 'Export Charts to PDF'}
             </button>
-          </div>
-
-          {/* Exportable Content Area */}
-          <div ref={chartsContainerRef}>
-            <div id="capture-content">
-                {/* Task Summary Section */}
-                {!error && (
-                  <TaskSummary 
-                    tasks={tasks} 
-                    avgCycleTime={avgCycleTime} 
-                    isLoading={isLoading} 
-                  />
-                )}
-
-                {/* Average Time In Status Section */}
-                {!isLoading && !error && (
-                   <AverageTimeInStatus />
-                )}
-
-                {/* Chart Grid Section */}
-                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                   {isLoading && !tasks.length ? (
-                    // Show a single loading indicator spanning columns if needed, or repeat per chart
-                    <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
-                  ) : error && !tasks.length ? (
-                       <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                          Could not load chart data: {error}
-                       </div>
-                    ) : tasks.length === 0 ? (
-                      <div className="lg:col-span-3 text-center py-10">No tasks match the current filters.</div>
-                    ) : (
-                      <>
-                        {/* Re-added charts */}
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Task Completion Status', CompletionStatusChart)}
-                        </div>
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
-                        </div>
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
-                        </div>
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
-                        </div>
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
-                        </div>
-                        <div className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
-                        </div>
-                      </>
-                    )}
-                </div>
-
-                {/* Line Chart Section */}
-                <div className="mb-8">
-                    {!isLoading && !error && tasks.length > 0 && (
-                         renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
-                    )} 
-                </div>
-
-                {/* Asset Summary Section */}
-                {!isLoading && !error && tasks.length > 0 && (
-                  <AssetSummary tasks={tasks} />
-                )}
-
-                {/* Task Type Summary Section */}
-                {!isLoading && !error && tasks.length > 0 && (
-                  <TaskTypeSummary tasks={tasks} />
-                )}
-
-                {/* Completion Rate Summary Section */}
-                {!error && (
-                  <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
-                )}
-            </div> { /* End #capture-content */}
-          </div> { /* End chartsContainerRef */}
-
-        </div> { /* --- End container for centered content --- */}
-
-        {/* --- Task List Section - Moved OUTSIDE container for full width --- */}
-        <div className="mt-8 px-2 md:px-4"> { /* Add margin and horizontal padding */}
-          <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white container mx-auto">Task List</h2> { /* Keep title centered */ }
-          <TaskTable 
-            tasks={tasks} 
-            isLoading={isLoading && tasks.length === 0} 
-            error={error} 
-            onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
-          />
         </div>
-        {/* --- End Task List Section --- */}
 
-      </Layout> 
+        {/* Exportable Content Area */}
+        <div ref={chartsContainerRef}>
+          <div id="capture-content">
+              {/* Task Summary Section */}
+              {!error && (
+                <TaskSummary 
+                  tasks={tasks} 
+                  avgCycleTime={avgCycleTime} 
+                  isLoading={isLoading} 
+                />
+              )}
 
-      {/* Modal is outside the main page layout content but within the React fragment */}
+              {/* Average Time In Status Section */}
+              {!isLoading && !error && (
+                 <AverageTimeInStatus />
+              )}
+
+              {/* Chart Grid Section */}
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {isLoading && !tasks.length ? (
+                  // Show a single loading indicator spanning columns if needed, or repeat per chart
+                  <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
+                ) : error && !tasks.length ? (
+                     <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        Could not load chart data: {error}
+                     </div>
+                  ) : tasks.length === 0 ? (
+                    <div className="lg:col-span-3 text-center py-10">No tasks match the current filters.</div>
+                  ) : (
+                    <>
+                      {/* Re-added charts */}
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
+                      </div>
+                    </>
+                  )}
+              </div>
+
+              {/* Line Chart Section */}
+              <div className="mb-8">
+                  {!isLoading && !error && tasks.length > 0 && (
+                       renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
+                  )} 
+              </div>
+
+              {/* Asset Summary Section */}
+              {!isLoading && !error && tasks.length > 0 && (
+                <AssetSummary tasks={tasks} />
+              )}
+
+              {/* Task Type Summary Section */}
+              {!isLoading && !error && tasks.length > 0 && (
+                <TaskTypeSummary tasks={tasks} />
+              )}
+
+              {/* Completion Rate Summary Section */}
+              {!error && (
+                <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
+              )}
+          </div> { /* End #capture-content */}
+        </div> { /* End chartsContainerRef */}
+
+      </div> { /* --- End container for centered content --- */}
+
+      {/* --- Task List Section - Moved OUTSIDE container for full width --- */}
+      <div className="mt-8 px-2 md:px-4"> { /* Add margin and horizontal padding */}
+        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white container mx-auto">Task List</h2> { /* Keep title centered */ }
+        <TaskTable 
+          tasks={tasks} 
+          isLoading={isLoading && tasks.length === 0} 
+          error={error} 
+          onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
+        />
+      </div>
+      {/* --- End Task List Section --- */}
+
+      {/* Modal */}
       <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>
         {selectedTaskId ? (
           <TaskStatusDurations taskId={selectedTaskId} />
@@ -530,6 +552,12 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     </>
   );
 }
+
+// Add sync state and handler to the component for use in _app.js
+// This avoids prop drilling through the component hierarchy
+DashboardPage.syncState = {
+  isSyncAvailable: true
+};
 
 // Protect the page
 export const getServerSideProps = withAuth();
