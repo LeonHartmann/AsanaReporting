@@ -1,65 +1,8 @@
 import { createServerSupabaseClient } from '@/lib/supabaseClient';
 
 // Helper function to calculate durations for a single task's history
-function calculateTaskStatusDurations(statusHistory) {
-    // --- NEW: Log input history --- 
-    // console.log('[Debug] calculateTaskStatusDurations received history:', statusHistory);
-    // --- END NEW --- 
-    if (!statusHistory || statusHistory.length < 2) {
-        return [];
-    }
-
-    const sortedHistory = [...statusHistory].sort((a, b) => {
-        // --- NEW: Log sort values --- 
-        // console.log(`[Debug] Sorting: a.recorded_at = ${a?.recorded_at}, b.recorded_at = ${b?.recorded_at}`);
-        // --- END NEW --- 
-        try {
-            const dateA = new Date(a.recorded_at);
-            const dateB = new Date(b.recorded_at);
-            const timeA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0;
-            const timeB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
-            return timeA - timeB;
-        } catch (e) {
-            // console.error("[Debug] Error during native date sort comparison:", e, { a_rec: a?.recorded_at, b_rec: b?.recorded_at });
-            return 0;
-        }
-    });
-
-    const durations = [];
-    for (let i = 0; i < sortedHistory.length - 1; i++) {
-        const currentEntry = sortedHistory[i];
-        const nextEntry = sortedHistory[i + 1];
-        // --- NEW: Log duration calculation values --- 
-        // console.log(`[Debug] Calculating duration for interval: start=${currentEntry?.recorded_at}, end=${nextEntry?.recorded_at}`);
-        // --- END NEW --- 
-        try {
-            const startTime = new Date(currentEntry.recorded_at);
-            const endTime = new Date(nextEntry.recorded_at);
-
-            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                // console.warn(`[Debug] Skipping duration calculation (native) for interval in task ${currentEntry.task_id} due to invalid date(s):`, 
-                //     { start: currentEntry.recorded_at, end: nextEntry.recorded_at }
-                // );
-                continue; 
-            }
-
-            const durationMillis = endTime.getTime() - startTime.getTime();
-            const durationSeconds = Math.round(durationMillis / 1000); 
-
-            if (durationSeconds >= 0) { 
-                durations.push({ status: currentEntry.status, duration: durationSeconds });
-            } else {
-                // console.warn(`[Debug] Negative duration calculated for task ${currentEntry.task_id}, skipping interval:`, { start: startTime, end: endTime, duration: durationSeconds });
-            }
-
-        } catch (e) {
-            // console.error(`[Debug] Error during native duration calculation for task ${currentEntry.task_id}:`, e, 
-            //     { start: currentEntry?.recorded_at, end: nextEntry?.recorded_at }
-            // );
-        }
-    }
-    return durations;
-}
+// REMOVED: This function is no longer needed as calculation is done in SQL.
+// function calculateTaskStatusDurations(statusHistory) { ... }
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
@@ -73,74 +16,54 @@ export default async function handler(req, res) {
     try {
         const supabaseServerClient = createServerSupabaseClient();
 
-        // Fetch all history data
-        // WARNING: This might fetch a large amount of data. Consider pagination or filtering.
-        // Fetching only necessary columns might improve performance.
-        const { data: allHistory, error: fetchError } = await supabaseServerClient
+        // Fetch average durations directly from the database
+        // Calculate duration in seconds: status_end - status_start
+        // If status_end is NULL, use the current time (NOW())
+        const { data: avgData, error: fetchError } = await supabaseServerClient
             .from('task_status_history')
-            .select('task_id, status, recorded_at') // Select only needed columns
-            .order('task_id').order('recorded_at'); // Order by task_id then time
+            .select(`
+                status,
+                avg(extract(epoch from (coalesce(status_end, now()) - status_start))) as average_duration_seconds
+            `)
+            .filter('status_start', 'isnot', null) // Ensure we only consider entries with a start time
+            // Optional: Add a filter to exclude extremely long durations if needed (e.g., > 1 year)
+            // .filter(extract(epoch from (coalesce(status_end, now()) - status_start)), 'lt', 31536000) 
+            .group('status');
 
         if (fetchError) {
-            console.error('Supabase error fetching all status history:', fetchError);
-            throw new Error(fetchError.message);
+            console.error('Supabase error fetching average status durations:', fetchError);
+            throw new Error(`Database error: ${fetchError.message}`);
         }
 
-        if (!allHistory || allHistory.length === 0) {
-            return res.status(200).json({}); // Return empty object if no history
+        if (!avgData) {
+            return res.status(200).json({}); // Return empty object if no data
         }
 
-        // Group history by task_id
-        const historyByTask = allHistory.reduce((acc, record) => {
-            if (!acc[record.task_id]) {
-                acc[record.task_id] = [];
+        // Format the data for the frontend
+        const averageDurations = avgData.reduce((acc, row) => {
+            if (row.status && row.average_duration_seconds !== null) {
+                // Ensure average is non-negative
+                acc[row.status] = Math.max(0, row.average_duration_seconds); 
             }
-            acc[record.task_id].push(record);
             return acc;
         }, {});
 
-        // Calculate durations for each task and aggregate
-        const statusAggregates = {}; // { status: { totalDuration: number, count: number } }
-
-        Object.values(historyByTask).forEach(taskHistory => {
-            // --- NEW: Log which task's history is being processed --- 
-            if(taskHistory && taskHistory.length > 0) {
-                 // console.log(`[Debug] Processing history for task_id: ${taskHistory[0].task_id}`);
-            }
-            // --- END NEW --- 
-            const taskDurations = calculateTaskStatusDurations(taskHistory);
-            taskDurations.forEach(({ status, duration }) => {
-                if (!statusAggregates[status]) {
-                    statusAggregates[status] = { totalDuration: 0, count: 0 };
-                }
-                statusAggregates[status].totalDuration += duration;
-                statusAggregates[status].count += 1;
-            });
-        });
-
-        // Calculate averages
-        const averageDurations = {};
-        for (const status in statusAggregates) {
-            const aggregate = statusAggregates[status];
-            if (aggregate.count > 0) {
-                averageDurations[status] = aggregate.totalDuration / aggregate.count;
-            }
-        }
-
-        // --- NEW: Filter out specific statuses ---
-        const statusesToExclude = ['Completed', 'CLOSED LOST', 'CLOSED WON', 'Resources'];
+        // Filter out specific statuses (can be done here or in the frontend)
+        // Note: Filtering in the frontend (as it was) allows flexibility
+        // but filtering here might be slightly more efficient if the list is static.
+        const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources']; // Keep using frontend values
         const filteredAverageDurations = Object.entries(averageDurations)
             .filter(([status]) => !statusesToExclude.includes(status))
             .reduce((obj, [key, value]) => {
                 obj[key] = value;
                 return obj;
             }, {});
-        // --- END NEW ---
 
-        return res.status(200).json(filteredAverageDurations); // Return filtered data
+        return res.status(200).json(filteredAverageDurations);
 
     } catch (error) {
         console.error('API Error fetching average status durations:', error);
-        return res.status(500).json({ message: error.message || 'Internal Server Error' });
+        // Provide a more generic error message to the client
+        return res.status(500).json({ message: 'Failed to calculate average status durations.' });
     }
 } 
