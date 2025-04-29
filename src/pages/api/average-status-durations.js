@@ -28,7 +28,7 @@ export default async function handler(req, res) {
             .filter('status_start', 'isnot', null) // Ensure we only consider entries with a start time
             // Optional: Add a filter to exclude extremely long durations if needed (e.g., > 1 year)
             // .filter(extract(epoch from (coalesce(status_end, now()) - status_start)), 'lt', 31536000) 
-            .group('status');
+            .groupBy('status');
 
         if (fetchError) {
             console.error('Supabase error fetching average status durations:', fetchError);
