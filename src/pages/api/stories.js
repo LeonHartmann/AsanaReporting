@@ -1,9 +1,11 @@
 import { getProjectStories } from '../../lib/asana';
-import { verifyToken } from '../../lib/auth'; // Assuming verifyToken handles auth
+import { verifyToken, getTokenFromCookie } from '../../lib/auth'; // Import getTokenFromCookie
 
 export default async function handler(req, res) {
-  // Authentication (adjust based on your actual auth setup)
-  const user = verifyToken(req);
+  // Authentication
+  const token = getTokenFromCookie(req); // Get token from cookie
+  const user = token ? verifyToken(token) : null; // Verify the token
+
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
