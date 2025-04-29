@@ -16,18 +16,20 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [syncMessage, setSyncMessage] = useState('');
   
-  // Load last sync time from localStorage on mount
+  // Load last sync time from server on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const fetchLastSyncTime = async () => {
       try {
-        const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
-        if (storedSyncTime) {
-          setLastSyncTime(new Date(storedSyncTime));
+        const res = await fetch('/api/last-sync-time');
+        const data = await res.json();
+        if (data.lastSyncTime) {
+          setLastSyncTime(new Date(data.lastSyncTime));
         }
       } catch (err) {
-        console.warn("Error loading sync time from localStorage:", err);
+        console.warn("Error loading sync time from server:", err);
       }
-    }
+    };
+    fetchLastSyncTime();
   }, []);
   
   // Direct sync handler
@@ -48,21 +50,22 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
         throw new Error(data.message || `Sync failed with status: ${res.status}`);
       }
       
-      // Record successful sync time
+      // Record successful sync time on server
+      const syncRes = await fetch('/api/last-sync-time', { method: 'POST' });
+      if (!syncRes.ok) {
+        throw new Error('Failed to save sync time');
+      }
+      
+      // Update local state with current time
       const syncTime = new Date();
       setLastSyncTime(syncTime);
       
-      // Store in localStorage and trigger event for other components
-      try {
-        localStorage.setItem('lastAsanaSyncTime', syncTime.toISOString());
-        window.dispatchEvent(new CustomEvent('asana-sync-completed'));
-      } catch (storageErr) {
-        console.warn("Error storing sync time:", storageErr);
-      }
+      // Trigger event for other components
+      window.dispatchEvent(new CustomEvent('asana-sync-completed'));
       
       setSyncMessage(data.message || 'Sync completed successfully!');
       
-      // Reload page to refresh data after sync (optional, can be removed if not desired)
+      // Reload page to refresh data after sync
       setTimeout(() => {
         window.location.reload();
       }, 2000);
