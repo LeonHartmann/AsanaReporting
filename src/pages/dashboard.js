@@ -358,12 +358,45 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
               {/* Chart Grid Section */}
               <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {/* ... existing charts ... */} 
+                 {isLoading && !tasks.length ? (
+                  // Show a single loading indicator spanning columns if needed, or repeat per chart
+                  <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
+                ) : error && !tasks.length ? (
+                     <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        Could not load chart data: {error}
+                     </div>
+                  ) : tasks.length === 0 ? (
+                    <div className="lg:col-span-3 text-center py-10">No tasks match the current filters.</div>
+                  ) : (
+                    <>
+                      {/* Re-added charts */}
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+                      </div>
+                      <div className="lg:col-span-1">
+                        {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
+                      </div>
+                    </>
+                  )}
               </div>
 
               {/* Line Chart Section (Full Width) */}
               <div className="mb-8">
-                 {/* ... existing trend chart ... */} 
+                  {!isLoading && !error && tasks.length > 0 && (
+                       renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
+                  )} 
               </div>
 
               {/* Asset Summary Section */}
