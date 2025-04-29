@@ -347,6 +347,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       <Head>
         <title>GGBC Reporting Dashboard</title>
       </Head>
+
+      {/* Container for centered content (Filters, Summaries, Charts) */}
       <div className="container mx-auto px-2 md:px-4">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
 
@@ -354,41 +356,38 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <FilterPanel
           filters={filters}
           setFilters={setFilters}
-          distinctValues={distinctValues} // Pass distinct values (including assignees and taskTypes)
+          distinctValues={distinctValues}
           onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters} // Pass reset handler
+          onResetFilters={handleResetFilters}
         />
 
         {/* Export Button */}
         <div className="my-4 text-right">
             <button
                 onClick={handleExportPDF}
-                disabled={isExporting || isLoading} // Disable if exporting OR loading data
+                disabled={isExporting || isLoading} 
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isExporting ? 'Exporting...' : 'Export Charts to PDF'} {/* Use isExporting for text */}
+                {isExporting ? 'Exporting...' : 'Export Charts to PDF'}
             </button>
         </div>
 
         {/* Exportable Content Area */}
         <div ref={chartsContainerRef}>
           <div id="capture-content">
-              {/* Task Summary Section - Pass avgCycleTime and isLoading */}
+              {/* Task Summary Section */}
               {!error && (
-                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TaskSummary 
-                    tasks={tasks} 
-                    avgCycleTime={avgCycleTime} 
-                    isLoading={isLoading} 
-                  />
-                </div>
+                <TaskSummary 
+                  tasks={tasks} 
+                  avgCycleTime={avgCycleTime} 
+                  isLoading={isLoading} 
+                />
               )}
 
-              {/* --- NEW: Average Time In Status Section --- */}
+              {/* Average Time In Status Section */}
               {!isLoading && !error && (
                  <AverageTimeInStatus />
               )}
-              {/* --- END NEW --- */}
 
               {/* Chart Grid Section */}
               <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -426,7 +425,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
                   )}
               </div>
 
-              {/* Line Chart Section (Full Width) */}
+              {/* Line Chart Section */}
               <div className="mb-8">
                   {!isLoading && !error && tasks.length > 0 && (
                        renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
@@ -447,24 +446,24 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
               {!error && (
                 <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
               )}
-          </div>
-        </div>
+          </div> { /* End #capture-content */}
+        </div> { /* End chartsContainerRef */}
 
-        {/* --- Task List Section Moved Here (Full Width) --- */}
-        <div className="mt-8"> 
-          <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Task List</h2>
-          <TaskTable 
-            tasks={tasks} 
-            isLoading={isLoading && tasks.length === 0} 
-            error={error} 
-            onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
-          />
-        </div>
-        {/* --- End Task List Section --- */}
+      </div> { /* --- End container for centered content --- */}
 
-      </div> { /* End container */}
+      {/* --- Task List Section - Moved OUTSIDE container for full width --- */}
+      <div className="mt-8 px-2 md:px-4"> { /* Add margin and horizontal padding */}
+        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white container mx-auto">Task List</h2> { /* Keep title centered */ }
+        <TaskTable 
+          tasks={tasks} 
+          isLoading={isLoading && tasks.length === 0} 
+          error={error} 
+          onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
+        />
+      </div>
+      {/* --- End Task List Section --- */}
 
-      {/* Modal */}
+      {/* Modal */} 
       <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>
         {selectedTaskId ? (
           <TaskStatusDurations taskId={selectedTaskId} />
