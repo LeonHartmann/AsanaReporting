@@ -24,28 +24,24 @@ function formatSeconds(seconds) {
 // Statuses to exclude from the display
 const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources'];
 
-// Function to get last sync time
-function getLastSyncTime() {
-    try {
-        const storedSyncTime = localStorage.getItem('lastAsanaSyncTime');
-        console.log("Retrieving stored sync time:", storedSyncTime);
-        return storedSyncTime ? new Date(storedSyncTime) : null;
-    } catch (err) {
-        console.warn("Error retrieving last sync time:", err);
-        return null;
-    }
-}
-
 function AverageTimeInStatus() {
     const [avgDurations, setAvgDurations] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    // Initialize with current stored value
-    const [lastSyncTime, setLastSyncTime] = useState(() => {
-        // Skip during SSR
-        if (typeof window === 'undefined') return null;
-        return getLastSyncTime();
-    });
+    const [lastSyncTime, setLastSyncTime] = useState(null);
+
+    // Function to fetch last sync time from server
+    const fetchLastSyncTime = async () => {
+        try {
+            const res = await fetch('/api/last-sync-time');
+            const data = await res.json();
+            if (data.lastSyncTime) {
+                setLastSyncTime(new Date(data.lastSyncTime));
+            }
+        } catch (err) {
+            console.warn("Error fetching last sync time:", err);
+        }
+    };
 
     useEffect(() => {
         const fetchAverageDurations = async () => {
@@ -69,12 +65,14 @@ function AverageTimeInStatus() {
             }
         };
 
+        // Fetch both data on mount
         fetchAverageDurations();
+        fetchLastSyncTime();
 
         // Set up listener for sync events
         const handleSyncUpdate = () => {
             console.log("Sync event received in AverageTimeInStatus");
-            setLastSyncTime(getLastSyncTime());
+            fetchLastSyncTime(); // Fetch new sync time when sync occurs
         };
 
         // Listen for custom sync event

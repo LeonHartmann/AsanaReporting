@@ -127,11 +127,6 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
                   >
                     {isSyncing ? 'Syncing...' : 'Sync Asana'}
                   </button>
-                  {lastSyncTime && (
-                     <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:inline">
-                       Last: {format(lastSyncTime, 'Pp')}
-                     </span>
-                   )}
                 </div>
               )}
               {showLogout && (
