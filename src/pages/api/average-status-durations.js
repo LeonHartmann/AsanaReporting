@@ -33,12 +33,22 @@ function calculateTaskStatusDurations(statusHistory) {
         try {
             const startTime = parseISO(currentEntry.recorded_at);
             const endTime = parseISO(nextEntry.recorded_at);
+
+            // --- NEW: Check if dates are valid before calculating difference --- 
+            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                console.warn(`Skipping duration calculation for interval in task ${currentEntry.task_id} due to invalid date(s):`, 
+                    { start: currentEntry.recorded_at, end: nextEntry.recorded_at }
+                );
+                continue; // Skip to the next interval
+            }
+            // --- END NEW --- 
+
             const durationSeconds = differenceInSeconds(endTime, startTime);
             if (durationSeconds >= 0) { // Ensure duration is not negative
                 durations.push({ status: currentEntry.status, duration: durationSeconds });
             }
         } catch (e) {
-            console.error(`Error parsing dates for task ${currentEntry.task_id} status calculation:`, e);
+            console.error(`Error during duration calculation for task ${currentEntry.task_id}:`, e);
         }
     }
     return durations;
