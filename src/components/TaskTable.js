@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 
-export default function TaskTable({ tasks, isLoading, error }) {
+export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
   const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'descending' });
 
   const sortedTasks = useMemo(() => {
@@ -242,7 +242,11 @@ export default function TaskTable({ tasks, isLoading, error }) {
               </tr>
             )}
             {!isLoading && sortedTasks.map((task) => (
-              <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <tr 
+                key={task.id} 
+                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${onRowClick ? 'cursor-pointer' : ''}`}
+                onClick={() => onRowClick ? onRowClick(task) : undefined}
+              >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {task.brand}
                 </td>
@@ -258,8 +262,8 @@ export default function TaskTable({ tasks, isLoading, error }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {task.taskType}
                 </td>
-                <td className="px-6 py-4 whitespace-normal text-sm text-gray-900 dark:text-white">
-                  {task.name} 
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {task.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatStatus(task.completed, task.status)}

@@ -17,6 +17,10 @@ import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 import jsPDF from 'jspdf'; // Add jsPDF import
 import html2canvas from 'html2canvas'; // Add html2canvas import
 import CompletionRateSummary from '@/components/CompletionRateSummary';
+// --- NEW IMPORTS ---
+import AverageTimeInStatus from '@/components/AverageTimeInStatus'; 
+import TaskStatusDurations from '@/components/TaskStatusDurations';
+// --- END NEW IMPORTS ---
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
@@ -32,20 +36,34 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   // --- Calculated Metrics State --- 
   const [avgCycleTime, setAvgCycleTime] = useState(null);
 
-  // Modal State
+  // --- Modal State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState({ title: '', chart: null });
+  // Store either chart content OR selected task ID for status view
+  const [modalContent, setModalContent] = useState({ title: '', chart: null }); 
+  const [selectedTaskId, setSelectedTaskId] = useState(null); // Track selected task for status duration modal
+  // --- END Modal State ---
 
   const chartsContainerRef = useRef(null); // Add ref for chart container
 
-  const openModal = (title, chartElement) => {
+  // Function to open modal for standard charts
+  const openChartModal = (title, chartElement) => {
+    setSelectedTaskId(null); // Ensure task ID is cleared
     setModalContent({ title, chart: chartElement });
     setIsModalOpen(true);
   };
 
+  // --- NEW: Function to open modal for Task Status Durations ---
+  const openTaskStatusModal = (taskId, taskName) => {
+    setModalContent({ title: `Status History: ${taskName || taskId}`, chart: null }); // Set title, clear chart
+    setSelectedTaskId(taskId); // Set the selected task ID
+    setIsModalOpen(true);
+  };
+  // --- END NEW ---
+
   const closeModal = () => {
     setIsModalOpen(false);
     setModalContent({ title: '', chart: null }); // Clear content on close
+    setSelectedTaskId(null); // Clear selected task ID
   };
 
   // Combined fetch function for both distinct values and initial tasks
@@ -317,7 +335,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     const chartProps = { [dataProp || 'tasks']: tasks }; 
     const chartElement = <ChartComponent {...chartProps} />;
     return (
-      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openModal(title, <ChartComponent {...chartProps} isFullscreen />)}>
+      // Use openChartModal for standard charts
+      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openChartModal(title, <ChartComponent {...chartProps} isFullscreen />)}>
          {chartElement}
       </div>
     );
@@ -356,11 +375,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           <div id="capture-content">
               {/* Task Summary Section - Pass avgCycleTime and isLoading */}
               {!error && (
-                <TaskSummary 
-                  tasks={tasks} 
-                  avgCycleTime={avgCycleTime} 
-                  isLoading={isLoading} 
-                />
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TaskSummary 
+                    tasks={tasks} 
+                    avgCycleTime={avgCycleTime} 
+                    isLoading={isLoading} 
+                  />
+                  <AverageTimeInStatus />
+                </div>
               )}
 
               {/* Chart Grid Section */}
@@ -429,12 +451,17 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           tasks={tasks} 
           isLoading={isLoading && tasks.length === 0} // Show table loading only if tasks array is empty during load
           error={error} 
+          onRowClick={(task) => openTaskStatusModal(task.id, task.name)} // Pass task.id and task.name
         />
       </div>
 
       {/* Modal */}
       <ChartModal isOpen={isModalOpen} onClose={closeModal} title={modalContent.title}>
-        {modalContent.chart}
+        {selectedTaskId ? (
+          <TaskStatusDurations taskId={selectedTaskId} />
+        ) : (
+          modalContent.chart
+        )}
       </ChartModal>
     </>
   );
