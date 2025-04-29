@@ -26,8 +26,10 @@ export default async function handler(req, res) {
             throw new Error(`Database RPC error: ${rpcError.message}`);
         }
 
+        console.log("[API Debug] Raw data from DB (avgData):", avgData);
+
         if (!avgData) {
-            return res.status(200).json({}); // Return empty object if no data
+            return res.status(200).json([]); // Return empty array if no data
         }
 
         // Format the data for the frontend
@@ -47,6 +49,8 @@ export default async function handler(req, res) {
                 obj[key] = value;
                 return obj;
             }, {});
+
+        console.log("[API Debug] Filtered durations (before ordering):", filteredAverageDurations);
 
         // Order the statuses according to the specified sequence
         const statusOrder = [
@@ -72,6 +76,8 @@ export default async function handler(req, res) {
                  orderedDurationsArray.push({ status: status, duration: duration });
             }
         });
+
+        console.log("[API Debug] Final ordered array being sent:", orderedDurationsArray);
 
         return res.status(200).json(orderedDurationsArray);
 
