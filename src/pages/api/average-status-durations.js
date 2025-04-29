@@ -6,9 +6,26 @@ function calculateTaskStatusDurations(statusHistory) {
     if (!statusHistory || statusHistory.length < 2) { // Need at least two points to calculate duration
         return [];
     }
-    const sortedHistory = [...statusHistory].sort((a, b) => 
-        parseISO(a.recorded_at).getTime() - parseISO(b.recorded_at).getTime()
-    );
+    
+    // --- UPDATED: Robust date sorting --- 
+    const sortedHistory = [...statusHistory].sort((a, b) => {
+        try {
+            const dateA = parseISO(a.recorded_at);
+            const dateB = parseISO(b.recorded_at);
+
+            // Check if dates are valid before calling getTime()
+            const timeA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0; // Default invalid dates to 0 (or handle differently)
+            const timeB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
+            
+            return timeA - timeB;
+        } catch (e) {
+            // Fallback if parseISO itself throws an error (less likely)
+            console.error("Error during date sort comparison:", e);
+            return 0; 
+        }
+    });
+    // --- END UPDATE --- 
+
     const durations = [];
     for (let i = 0; i < sortedHistory.length - 1; i++) {
         const currentEntry = sortedHistory[i];
