@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabaseClient';
 import { differenceInSeconds, parseISO } from 'date-fns';
+import { requireAuth } from '@/lib/auth';
 
 // Helper function to calculate durations
 function calculateStatusDurations(statusHistory) {
@@ -17,40 +18,40 @@ function calculateStatusDurations(statusHistory) {
     const currentEntry = sortedHistory[i];
     const nextEntry = sortedHistory[i + 1];
     
-    // Determine the end time for the current status
-    // If it's the last entry, the duration calculation might depend on whether the task is considered "ongoing" 
-    // in this status or if we should use the current time. For simplicity, we'll assume the duration ends
-    // when the next status begins. If it's the last status, its duration isn't explicitly calculated here
-    // unless you define an end point (e.g., task completion time or current time).
-    // Let's calculate duration based on the start time of the next status.
-
     let durationSeconds = 0;
-    if (nextEntry) {
-        try {
-            const startTime = parseISO(currentEntry.recorded_at);
-            const endTime = parseISO(nextEntry.recorded_at);
-            durationSeconds = differenceInSeconds(endTime, startTime);
-        } catch (e) {
-            console.error(`Error parsing dates for task ${currentEntry.task_id}:`, e);
-            durationSeconds = 0; // Handle potential date parsing errors
-        }
+    try {
+      const startTime = parseISO(currentEntry.recorded_at);
+      let endTime;
+      
+      if (nextEntry) {
+        // If there's a next entry, use its start time as the end time
+        endTime = parseISO(nextEntry.recorded_at);
+      } else {
+        // For the last status, use current time as the end time
+        endTime = new Date();
+      }
+      
+      durationSeconds = differenceInSeconds(endTime, startTime);
+    } catch (e) {
+      console.error(`Error parsing dates for task ${currentEntry.task_id}:`, e);
+      durationSeconds = 0; // Handle potential date parsing errors
     }
 
-    // Add the status and its duration (if calculable)
-    if (durationSeconds > 0) { // Only add entries with a calculated duration
-        durations.push({
-            status: currentEntry.status,
-            duration: durationSeconds, // Duration in seconds
-            startDate: currentEntry.recorded_at,
-            endDate: nextEntry ? nextEntry.recorded_at : null, // Indicate end if available
-        });
+    // Add the status and its duration
+    if (durationSeconds > 0) {
+      durations.push({
+        status: currentEntry.status,
+        duration: durationSeconds, // Duration in seconds
+        startDate: currentEntry.recorded_at,
+        endDate: nextEntry ? nextEntry.recorded_at : new Date().toISOString(), // Use current time for the last entry
+      });
     }
   }
 
   return durations;
 }
 
-export default async function handler(req, res) {
+async function taskStatusDurationsHandler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
@@ -102,4 +103,7 @@ export default async function handler(req, res) {
     console.error('API Error fetching task status durations:', error);
     return res.status(500).json({ message: error.message || 'Internal Server Error' });
   }
-} 
+}
+
+// Protect this API route with authentication
+export default requireAuth(taskStatusDurationsHandler); 

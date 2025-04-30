@@ -38,13 +38,24 @@ function formatSeconds(seconds) {
 
 // Status color mapping (customize as needed)
 const statusColors = {
-  'Backlog': 'rgba(156, 163, 175, 0.7)', // gray
-  'To Do': 'rgba(96, 165, 250, 0.7)',   // blue
-  'In Progress': 'rgba(251, 191, 36, 0.7)', // yellow
-  'In Review': 'rgba(167, 139, 250, 0.7)', // purple
-  'Blocked': 'rgba(248, 113, 113, 0.7)',   // red
-  'Done': 'rgba(52, 211, 153, 0.7)',    // green
-  // Add more statuses and colors
+  // Use the exact status names from Supabase (including whitespace and emojis)
+  '📃 To Do ': 'rgba(96, 165, 250, 0.7)',         // blue
+  ' ☕️ Awaiting Info': 'rgba(234, 179, 8, 0.7)',  // yellow
+  '🎨 In progress': 'rgba(59, 130, 246, 0.7)',    // darker blue
+  '📩 In Review ': 'rgba(167, 139, 250, 0.7)',    // purple
+  '🌀 Completed/Feedback': 'rgba(52, 211, 153, 0.7)', // green
+  '✅ Completed': 'rgba(34, 197, 94, 0.7)',       // darker green
+  '🟢 CLOSED WON': 'rgba(16, 185, 129, 0.7)',     // teal
+  '🔴 CLOSED LOST': 'rgba(239, 68, 68, 0.7)',     // red
+  // Include fallbacks for status names without emojis
+  'To Do': 'rgba(96, 165, 250, 0.7)',
+  'Awaiting Info': 'rgba(234, 179, 8, 0.7)',
+  'In Progress': 'rgba(59, 130, 246, 0.7)',
+  'In Review': 'rgba(167, 139, 250, 0.7)',
+  'Completed/Feedback': 'rgba(52, 211, 153, 0.7)',
+  'Completed': 'rgba(34, 197, 94, 0.7)',
+  'CLOSED WON': 'rgba(16, 185, 129, 0.7)',
+  'CLOSED LOST': 'rgba(239, 68, 68, 0.7)',
 };
 
 const defaultColor = 'rgba(209, 213, 219, 0.7)'; // default gray
@@ -73,10 +84,24 @@ function TaskStatusDurations({ taskId }) {
       try {
         const res = await fetch(`/api/task-status-durations?taskId=${taskId}`);
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || `Error fetching data: ${res.statusText}`);
+          // Try to parse as JSON first, but fall back to text if that fails
+          try {
+            const errorData = await res.json();
+            throw new Error(errorData.message || `Error fetching data: ${res.statusText}`);
+          } catch (jsonError) {
+            // If JSON parsing fails, get the text instead
+            const errorText = await res.text();
+            throw new Error(`Server error (${res.status}): ${errorText.substring(0, 150)}...`);
+          }
         }
-        const data = await res.json();
+        
+        // Parse the successful response
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonError) {
+          throw new Error(`Failed to parse response as JSON: ${jsonError.message}`);
+        }
         
         setTaskDetails({
             name: data.taskName,
@@ -95,7 +120,7 @@ function TaskStatusDurations({ taskId }) {
           // Prepare data for Chart.js horizontal stacked bar chart
           const statuses = [...new Set(data.statusDurations.map(d => d.status))]; // Unique statuses in order
           const datasets = statuses.map(status => ({
-            label: status,
+            label: status.trim(), // Trim whitespace for display
             data: [data.statusDurations.filter(d => d.status === status).reduce((sum, d) => sum + d.duration, 0)],
             backgroundColor: statusColors[status] || defaultColor,
             borderColor: (statusColors[status] || defaultColor).replace('0.7', '1'), // Darker border
@@ -194,12 +219,11 @@ function TaskStatusDurations({ taskId }) {
       {taskDetails && (
         <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
           <p><strong>Task:</strong> {taskDetails.name || 'N/A'}</p>
-          {/* Add other details if needed */}
-          {/* <p>Brand: {taskDetails.brand || 'N/A'}</p> */}
-          {/* <p>Assignee: {taskDetails.assignee || 'N/A'}</p> */} 
+          <p><strong>Brand:</strong> {taskDetails.brand || 'N/A'}</p>
+          <p><strong>Assignee:</strong> {taskDetails.assignee || 'N/A'}</p>
         </div>
       )}
-      <div style={{ height: '100px' }}> {/* Adjust height as needed */} 
+      <div style={{ height: '150px' }}> {/* Increase height for better visibility */} 
         <Bar data={chartData} options={options} />
       </div>
     </div>
