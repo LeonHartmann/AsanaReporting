@@ -76,51 +76,26 @@ export const exportDashboardToPDF = async (elementIdsToCapture, filters, setIsEx
 
         console.log(`Capturing element: #${elementId}`);
         
-        // Add temporary padding and slightly increase delay
-        const originalPaddingTop = element.style.paddingTop;
-        element.style.paddingTop = '5px'; // Add 5px padding at the top
-
-        await new Promise(resolve => setTimeout(resolve, 150)); // Increased delay
-
-        // Define target capture dimensions (16:9)
-        const captureWidth = 1920;
-        const captureHeight = 1080;
+        // Slight delay before capturing each element might help rendering
+        await new Promise(resolve => setTimeout(resolve, 100)); 
 
         const canvas = await html2canvas(element, {
             useCORS: true,
             backgroundColor: '#ffffff', 
             // Consider adding scale if quality is still low, e.g., scale: 2
-            width: captureWidth,   // Set explicit width for capture canvas
-            height: captureHeight, // Set explicit height for capture canvas
-            windowWidth: captureWidth, // Hint for layout engine
-            windowHeight: captureHeight // Hint for layout engine
         });
-
-        // Restore original padding
-        element.style.paddingTop = originalPaddingTop;
 
         console.log(`Canvas generated for #${elementId}, adding to PDF...`);
         const imgData = canvas.toDataURL('image/jpeg', 0.85); // Slightly higher quality JPEG
         const imgProps = pdf.getImageProperties(imgData);
         
-        // Calculate image dimensions to fit available width, preserving aspect ratio
-        let finalImgWidth = imgProps.width;
-        let finalImgHeight = imgProps.height;
-        const widthScale = availableWidth / finalImgWidth;
-        const scale = widthScale; // Scale based on width only
+        // Scale image to fit available width
+        const imgHeight = (imgProps.height * availableWidth) / imgProps.width;
+        const imgWidth = availableWidth;
 
-        finalImgWidth = imgProps.width * scale;
-        finalImgHeight = imgProps.height * scale;
-
-        // Position image at the current Y, centered horizontally
-        const imageXPos = margin + (availableWidth - finalImgWidth) / 2; 
-        const imageYPos = currentY;
-
-        // Calculate required height *before* potentially adding a page
-        const requiredHeight = finalImgHeight;
-
-        // Check if adding this image exceeds the page height (minus bottom margin)
-        if (currentY > margin && (currentY + requiredHeight) > (pdfHeight - margin)) {
+        // Check if element fits on the current page
+        const remainingPageHeight = pdfHeight - margin - currentY;
+        if (imgHeight > remainingPageHeight) {
             console.log(`Adding new page for element #${elementId}`);
             pdf.addPage();
             currentY = margin; // Reset Y position to top margin
@@ -128,10 +103,8 @@ export const exportDashboardToPDF = async (elementIdsToCapture, filters, setIsEx
         }
 
         // Add the image
-        pdf.addImage(imgData, 'JPEG', imageXPos, imageYPos, finalImgWidth, finalImgHeight);
-
-        // Update Y position based on the actual image height placed, add spacing
-        currentY += finalImgHeight + 15; 
+        pdf.addImage(imgData, 'JPEG', margin, currentY, imgWidth, imgHeight);
+        currentY += imgHeight + 15; // Update Y position, add spacing after image
     }
 
     // --- Save PDF --- 
