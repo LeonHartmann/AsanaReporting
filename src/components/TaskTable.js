@@ -19,20 +19,6 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
     let sortableItems = [...tasks];
     const now = new Date(); // Get current time once for consistency in this sort run
 
-    // Debug: Log the first task to see what status data is available
-    if (sortableItems.length > 0) {
-      console.log('First task data:', sortableItems[0]);
-      // Show all available status duration keys
-      const statusKeys = Object.keys(sortableItems[0]).filter(key => 
-        key.includes('To Do') || 
-        key.includes('Awaiting Info') || 
-        key.includes('In progress') || 
-        key.includes('In Review') || 
-        key.includes('Completed/Feedback')
-      );
-      console.log('Available status duration keys:', statusKeys);
-    }
-
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         // Ensure values exist for sorting, default to empty string or 0 if null/undefined

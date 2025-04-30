@@ -4,9 +4,6 @@ import { createServerSupabaseClient } from '@/lib/supabaseClient';
 
 async function tasksHandler(req, res) {
   if (req.method === 'GET') {
-    // Log the raw query object received from the request
-    // console.log('[API Handler Debug] Received req.query:', JSON.stringify(req.query, null, 2));
-
     const { brand, asset, requester, assignee, startDate, endDate, distinct, completionFilter, taskType } = req.query;
 
     // Basic input validation/sanitization could be added here
@@ -23,9 +20,6 @@ async function tasksHandler(req, res) {
         distinct: distinct === 'true', // Convert string 'true' to boolean
         completionFilter: completionFilter || undefined,
       };
-
-      // Log the constructed filters object before passing it to getTasks
-      // console.log('[API Handler Debug] Constructed Filters for getTasks:', JSON.stringify(filters, null, 2));
 
       const data = await getTasks(filters);
       
@@ -47,13 +41,6 @@ async function tasksHandler(req, res) {
             if (error) {
               console.error('Error fetching task status durations:', error);
             } else if (statusDurations) {
-              // Log all unique status names from Supabase for debugging
-              const uniqueStatuses = new Set();
-              statusDurations.forEach(record => {
-                if (record.status) uniqueStatuses.add(record.status);
-              });
-              console.log('Unique status names from Supabase:', Array.from(uniqueStatuses));
-              
               // Group status durations by task ID
               const taskStatusMap = {};
               statusDurations.forEach(record => {
@@ -68,12 +55,8 @@ async function tasksHandler(req, res) {
                 const taskHistory = taskStatusMap[task.id] || [];
                 const statusDurations = calculateStatusDurations(taskHistory);
                 
-                // Log status durations for the first few tasks to debug
-                if (task.id === data[0]?.id) {
-                  console.log('Status durations for first task:', statusDurations);
-                }
-                
                 // Add duration for each status to the task
+                // We'll use the actual status names from the database with exact formatting
                 const statusColumns = [
                   '📃 To Do ',
                   ' ☕️ Awaiting Info',
@@ -81,12 +64,6 @@ async function tasksHandler(req, res) {
                   '📩 In Review ',
                   '🌀 Completed/Feedback'
                 ];
-                
-                // Log exact status names for the first task
-                if (task.id === data[0]?.id) {
-                  const allStatusesInDurations = statusDurations.map(d => d.status);
-                  console.log('All status names used in durations:', allStatusesInDurations);
-                }
                 
                 // In case of inconsistencies in status naming, try different variations
                 for (const status of statusColumns) {
@@ -179,9 +156,6 @@ function calculateStatusDurations(statusHistory) {
       duration
     });
   }
-
-  // Debug log
-  console.log('Status map for a task:', statusMap);
 
   return durations;
 }
