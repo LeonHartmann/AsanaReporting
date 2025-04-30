@@ -389,7 +389,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
               {/* Average Time In Status Section */}
               {!isLoading && !error && (
-                 <AverageTimeInStatus />
+                 <AverageTimeInStatus tasks={tasks} />
               )}
 
               {/* Chart Grid Section */}

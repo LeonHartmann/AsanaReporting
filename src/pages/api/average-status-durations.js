@@ -10,9 +10,14 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     }
 
-    // TODO: Implement filter handling later based on req.query if needed
-    // const { brand, asset, requester, assignee, taskType, startDate, endDate } = req.query;
+    // Add deprecation notice in logs
+    console.warn("DEPRECATED: The /api/average-status-durations endpoint is deprecated and will be removed in a future version. Average status durations are now calculated client-side based on filtered tasks.");
 
+    // Return empty array since we no longer use this endpoint
+    return res.status(200).json([]);
+
+    // Original implementation commented out
+    /*
     try {
         const supabaseServerClient = createServerSupabaseClient();
 
@@ -82,4 +87,5 @@ export default async function handler(req, res) {
         // Provide a more generic error message to the client
         return res.status(500).json({ message: 'Failed to calculate average status durations.' });
     }
+    */
 } 

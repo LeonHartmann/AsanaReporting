@@ -1,5 +1,24 @@
 import React, { useState, useMemo } from 'react';
 
+// Helper to format seconds into a readable string (e.g., "1d 2h 30m")
+function formatSeconds(seconds) {
+  if (seconds < 0) return 'N/A'; // Handle potential negative times
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const days = Math.floor(seconds / (3600 * 24));
+  const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+
+  let result = '';
+  if (days > 0) result += `${days}d `;
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0) result += `${minutes}m `;
+  if (remainingSeconds > 0 && days === 0 && hours === 0 && minutes === 0) result += `${remainingSeconds}s`; // Show seconds only if less than a minute total
+  else if (result === '') result = '0s'; // Handle 0 duration
+
+  return result.trim();
+}
+
 export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
   const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'descending' });
 
@@ -36,6 +55,36 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
           const durationA = getDurationMillis(a);
           const durationB = getDurationMillis(b);
 
+          if (durationA < durationB) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (durationA > durationB) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+        }
+
+        // Add special handling for timeInStatus sorting
+        if (sortConfig.key === 'timeInStatus') {
+          const getCurrentStatusAgeSeconds = (task) => {
+            if (!task.createdAt) return 0;
+            const startDate = new Date(task.createdAt);
+            let endDate = new Date(); // Default to now
+            
+            if (task.completed && task.completedAt) {
+              endDate = new Date(task.completedAt);
+            }
+            
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
+              return 0;
+            }
+            
+            return (endDate - startDate) / 1000; // Duration in seconds
+          };
+          
+          const durationA = getCurrentStatusAgeSeconds(a);
+          const durationB = getCurrentStatusAgeSeconds(b);
+          
           if (durationA < durationB) {
             return sortConfig.direction === 'ascending' ? -1 : 1;
           }
@@ -174,6 +223,37 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
     }
   };
 
+  // Calculate time in current status
+  const calculateCurrentStatusAge = (task) => {
+    if (!task.createdAt) return 'N/A';
+    
+    try {
+      // Note: We're using task creation date as a proxy for status entry time
+      // For true "time in status" we would need status transition history data
+      const startDate = new Date(task.createdAt);
+      let endDate;
+      
+      if (task.completed && task.completedAt) {
+        endDate = new Date(task.completedAt);
+      } else {
+        endDate = new Date(); // Current time for open tasks
+      }
+      
+      // Skip invalid dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return 'N/A';
+      }
+      
+      // Calculate seconds between dates
+      const durationSeconds = Math.max(0, (endDate - startDate) / 1000);
+      
+      return formatSeconds(durationSeconds);
+    } catch (e) {
+      console.error("Error calculating time in status:", e);
+      return 'Error';
+    }
+  };
+
   if (error) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -210,6 +290,9 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
                 Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('timeInStatus')}>
+                Current Status Age {sortConfig.key === 'timeInStatus' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('openDuration')}>
                 Open Duration {sortConfig.key === 'openDuration' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
@@ -224,7 +307,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan="10" className="text-center py-10">
+                <td colSpan="11" className="text-center py-10">
                    <div className="flex justify-center items-center">
                       <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -236,7 +319,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
             )}
             {!isLoading && sortedTasks.length === 0 && (
               <tr>
-                <td colSpan="10" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan="11" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -267,6 +350,9 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatStatus(task.completed, task.status)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {calculateCurrentStatusAge(task)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {calculateDuration(task.createdAt, task.completedAt, task.completed)}
