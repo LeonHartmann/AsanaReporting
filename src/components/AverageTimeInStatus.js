@@ -83,6 +83,13 @@ function AverageTimeInStatus({ tasks = [] }) {
                 return;
             }
 
+            // Debug: Log the first task to see what status data is available
+            if (tasks.length > 0) {
+                console.log('AverageTimeInStatus - First task data:', tasks[0]);
+                const availableStatusKeys = Object.keys(tasks[0]).filter(key => statusOrder.includes(key));
+                console.log('AverageTimeInStatus - Available status keys in first task:', availableStatusKeys);
+            }
+
             // Calculate average for each status
             const statusDurationsMap = {};
             const statusCountMap = {};

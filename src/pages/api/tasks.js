@@ -47,6 +47,13 @@ async function tasksHandler(req, res) {
             if (error) {
               console.error('Error fetching task status durations:', error);
             } else if (statusDurations) {
+              // Log all unique status names from Supabase for debugging
+              const uniqueStatuses = new Set();
+              statusDurations.forEach(record => {
+                if (record.status) uniqueStatuses.add(record.status);
+              });
+              console.log('Unique status names from Supabase:', Array.from(uniqueStatuses));
+              
               // Group status durations by task ID
               const taskStatusMap = {};
               statusDurations.forEach(record => {
@@ -61,6 +68,11 @@ async function tasksHandler(req, res) {
                 const taskHistory = taskStatusMap[task.id] || [];
                 const statusDurations = calculateStatusDurations(taskHistory);
                 
+                // Log status durations for the first few tasks to debug
+                if (task.id === data[0]?.id) {
+                  console.log('Status durations for first task:', statusDurations);
+                }
+                
                 // Add duration for each status to the task
                 const statusColumns = [
                   '📃 To Do',
@@ -70,11 +82,57 @@ async function tasksHandler(req, res) {
                   '🌀 Completed/Feedback'
                 ];
                 
-                statusColumns.forEach(status => {
-                  // Find the duration for this status
-                  const statusEntry = statusDurations.find(d => d.status === status);
+                // Log exact status names for the first task
+                if (task.id === data[0]?.id) {
+                  const allStatusesInDurations = statusDurations.map(d => d.status);
+                  console.log('All status names used in durations:', allStatusesInDurations);
+                }
+                
+                // In case of inconsistencies in status naming, try different variations
+                for (const status of statusColumns) {
+                  // Try exact match first
+                  let statusEntry = statusDurations.find(d => d.status === status);
+                  
+                  // If no match, try with/without emoji
+                  if (!statusEntry) {
+                    // Try without emoji if present
+                    if (status.match(/[\u{1F300}-\u{1F6FF}]/u)) {
+                      const withoutEmoji = status.replace(/[\u{1F300}-\u{1F6FF}]/gu, '').trim();
+                      statusEntry = statusDurations.find(d => d.status.includes(withoutEmoji));
+                    }
+                    // Try keywords for common status names
+                    else if (status.includes('To Do')) {
+                      statusEntry = statusDurations.find(d => 
+                        d.status.includes('Todo') || 
+                        d.status.includes('To Do') ||
+                        d.status.includes('To-Do')
+                      );
+                    }
+                    else if (status.includes('In progress')) {
+                      statusEntry = statusDurations.find(d => 
+                        d.status.includes('progress') || 
+                        d.status.includes('In-progress')
+                      );
+                    }
+                    else if (status.includes('Review')) {
+                      statusEntry = statusDurations.find(d => d.status.includes('Review'));
+                    }
+                    else if (status.includes('Awaiting Info')) {
+                      statusEntry = statusDurations.find(d => 
+                        d.status.includes('Awaiting') || 
+                        d.status.includes('waiting')
+                      );
+                    }
+                    else if (status.includes('Completed/Feedback')) {
+                      statusEntry = statusDurations.find(d => 
+                        d.status.includes('Completed') || 
+                        d.status.includes('Feedback')
+                      );
+                    }
+                  }
+                  
                   task[status] = statusEntry ? statusEntry.duration : 'N/A';
-                });
+                }
               });
             }
           } catch (err) {
@@ -149,6 +207,9 @@ function calculateStatusDurations(statusHistory) {
       duration
     });
   }
+
+  // Debug log
+  console.log('Status map for a task:', statusMap);
 
   return durations;
 }
