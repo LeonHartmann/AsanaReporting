@@ -1,5 +1,14 @@
 import React, { useState, useMemo } from 'react';
 
+// Define the statuses we want to show as columns
+const statusColumns = [
+  '📃 To Do',
+  '☕️ Awaiting Info',
+  '🎨 In progress',
+  '📩 In Review',
+  '🌀 Completed/Feedback'
+];
+
 export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
   const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'descending' });
 
@@ -12,6 +21,20 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
         // Ensure values exist for sorting, default to empty string or 0 if null/undefined
         const aValue = a[sortConfig.key]; // Get raw value for potential date/duration calculation
         const bValue = b[sortConfig.key];
+
+        // Handle status duration sorting
+        if (statusColumns.includes(sortConfig.key)) {
+          const durationA = a[sortConfig.key] !== 'N/A' ? parseFloat(a[sortConfig.key]) || 0 : 0;
+          const durationB = b[sortConfig.key] !== 'N/A' ? parseFloat(b[sortConfig.key]) || 0 : 0;
+
+          if (durationA < durationB) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (durationA > durationB) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+        }
 
         // Special handling for Open Duration sorting
         if (sortConfig.key === 'openDuration') {
@@ -137,6 +160,27 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
     );
   };
 
+  // Format duration in seconds to human-readable format
+  const formatSeconds = (seconds) => {
+    if (seconds === 'N/A') return 'N/A';
+    if (seconds < 0) return 'N/A';
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    
+    const days = Math.floor(seconds / (3600 * 24));
+    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.round(seconds % 60);
+
+    let result = '';
+    if (days > 0) result += `${days}d `;
+    if (hours > 0) result += `${hours}h `;
+    if (minutes > 0) result += `${minutes}m `;
+    if (remainingSeconds > 0 && days === 0 && hours === 0 && minutes === 0) result += `${remainingSeconds}s`;
+    else if (result === '') result = '0s';
+
+    return result.trim();
+  };
+
   // Renamed to calculateDuration as it now handles both open and completed tasks
   const calculateDuration = (createdAt, completedAt, completed) => {
     if (!createdAt) return 'N/A'; // Need a creation date
@@ -210,6 +254,12 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
                 Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
+              {/* Add status duration columns */}
+              {statusColumns.map(status => (
+                <th key={status} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort(status)}>
+                  Time in {status} {sortConfig.key === status ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+                </th>
+              ))}
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('openDuration')}>
                 Open Duration {sortConfig.key === 'openDuration' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
               </th>
@@ -224,7 +274,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan="10" className="text-center py-10">
+                <td colSpan={10 + statusColumns.length} className="text-center py-10">
                    <div className="flex justify-center items-center">
                       <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -236,7 +286,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
             )}
             {!isLoading && sortedTasks.length === 0 && (
               <tr>
-                <td colSpan="10" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan={10 + statusColumns.length} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -268,6 +318,12 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatStatus(task.completed, task.status)}
                 </td>
+                {/* Status duration cells */}
+                {statusColumns.map(status => (
+                  <td key={status} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatSeconds(task[status] || 'N/A')}
+                  </td>
+                ))}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {calculateDuration(task.createdAt, task.completedAt, task.completed)}
                 </td>

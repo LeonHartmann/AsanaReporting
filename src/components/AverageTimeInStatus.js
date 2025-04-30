@@ -33,9 +33,9 @@ const statusOrder = [
     '🌀 Completed/Feedback'
 ];
 
-function AverageTimeInStatus() {
-    const [avgDurations, setAvgDurations] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
+function AverageTimeInStatus({ tasks = [] }) {
+    const [avgDurations, setAvgDurations] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [lastSyncTime, setLastSyncTime] = useState(null);
 
@@ -53,29 +53,7 @@ function AverageTimeInStatus() {
     };
 
     useEffect(() => {
-        const fetchAverageDurations = async () => {
-            setIsLoading(true);
-            setError('');
-            try {
-                // Fetch average durations
-                const res = await fetch('/api/average-status-durations');
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.message || `Error fetching averages: ${res.statusText}`);
-                }
-                const data = await res.json();
-                setAvgDurations(data);
-            } catch (err) {
-                console.error("Failed to fetch average status durations:", err);
-                setError(err.message || 'Could not load average durations.');
-                setAvgDurations({});
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        // Fetch both data on mount
-        fetchAverageDurations();
+        // Fetch last sync time on component mount
         fetchLastSyncTime();
 
         // Set up listener for sync events
@@ -92,9 +70,64 @@ function AverageTimeInStatus() {
         };
     }, []); // Empty dependency array = only on mount
 
-    // The data from the API (avgDurations) is now an array of {status, duration} objects
-    // No filtering or sorting needed here as the API handles it.
-    const orderedStatusData = avgDurations; // Rename for clarity, it's already ordered
+    useEffect(() => {
+        // Calculate average durations based on the tasks prop
+        setIsLoading(true);
+        setError('');
+
+        try {
+            // Check if tasks have status duration data
+            if (!tasks || tasks.length === 0) {
+                setAvgDurations([]);
+                setIsLoading(false);
+                return;
+            }
+
+            // Calculate average for each status
+            const statusDurationsMap = {};
+            const statusCountMap = {};
+
+            // Process each task
+            tasks.forEach(task => {
+                // Process each status
+                statusOrder.forEach(status => {
+                    // Skip if the task doesn't have data for this status or it's N/A
+                    if (!task[status] || task[status] === 'N/A') return;
+
+                    // Parse the duration value (should be in seconds)
+                    const durationValue = parseFloat(task[status]);
+                    if (isNaN(durationValue)) return;
+
+                    // Accumulate the duration values and count for averaging
+                    if (!statusDurationsMap[status]) {
+                        statusDurationsMap[status] = 0;
+                        statusCountMap[status] = 0;
+                    }
+                    statusDurationsMap[status] += durationValue;
+                    statusCountMap[status]++;
+                });
+            });
+
+            // Calculate the averages
+            const averages = [];
+            statusOrder.forEach(status => {
+                if (statusDurationsMap[status] && statusCountMap[status]) {
+                    const avgDuration = statusDurationsMap[status] / statusCountMap[status];
+                    averages.push({
+                        status,
+                        duration: avgDuration
+                    });
+                }
+            });
+
+            setAvgDurations(averages);
+        } catch (err) {
+            console.error("Error calculating average durations:", err);
+            setError("Failed to calculate average durations.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [tasks]); // Recalculate when tasks change
 
     return (
         <div className="mb-8">
@@ -111,23 +144,23 @@ function AverageTimeInStatus() {
                 )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4"> 
-                (Note: Averages become more accurate as more historical data is collected and filter doesn't apply here)
+                (Note: Averages are calculated based on the currently filtered tasks)
             </p>
             {isLoading && (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-4">Loading averages...</div>
+                <div className="text-center text-gray-500 dark:text-gray-400 py-4">Calculating averages...</div>
             )}
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                     Error: {error}
                 </div>
             )}
-            {!isLoading && !error && (!orderedStatusData || orderedStatusData.length === 0) && (
+            {!isLoading && !error && (!avgDurations || avgDurations.length === 0) && (
                 <div className="text-gray-500 dark:text-gray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-gray-800 text-center">No average duration data available for active statuses.</div>
             )}
-            {!isLoading && !error && orderedStatusData && orderedStatusData.length > 0 && (
+            {!isLoading && !error && avgDurations && avgDurations.length > 0 && (
                  // Use a grid layout similar to TaskSummary - adjust cols as needed
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {orderedStatusData.map(({ status, duration }) => (
+                    {avgDurations.map(({ status, duration }) => (
                         <div key={status} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
                             {/* Limit status text length if necessary */}
                             <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status}>{status}</h3>
