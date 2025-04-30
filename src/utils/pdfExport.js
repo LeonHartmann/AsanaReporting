@@ -82,10 +82,18 @@ export const exportDashboardToPDF = async (elementIdsToCapture, filters, setIsEx
 
         await new Promise(resolve => setTimeout(resolve, 150)); // Increased delay
 
+        // Define target capture dimensions (16:9)
+        const captureWidth = 1920;
+        const captureHeight = 1080;
+
         const canvas = await html2canvas(element, {
             useCORS: true,
             backgroundColor: '#ffffff', 
             // Consider adding scale if quality is still low, e.g., scale: 2
+            width: captureWidth,   // Set explicit width for capture canvas
+            height: captureHeight, // Set explicit height for capture canvas
+            windowWidth: captureWidth, // Hint for layout engine
+            windowHeight: captureHeight // Hint for layout engine
         });
 
         // Restore original padding
