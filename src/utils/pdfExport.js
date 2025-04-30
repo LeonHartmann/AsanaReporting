@@ -76,14 +76,20 @@ export const exportDashboardToPDF = async (elementIdsToCapture, filters, setIsEx
 
         console.log(`Capturing element: #${elementId}`);
         
-        // Slight delay before capturing each element might help rendering
-        await new Promise(resolve => setTimeout(resolve, 100)); 
+        // Add temporary padding and slightly increase delay
+        const originalPaddingTop = element.style.paddingTop;
+        element.style.paddingTop = '5px'; // Add 5px padding at the top
+
+        await new Promise(resolve => setTimeout(resolve, 150)); // Increased delay
 
         const canvas = await html2canvas(element, {
             useCORS: true,
             backgroundColor: '#ffffff', 
             // Consider adding scale if quality is still low, e.g., scale: 2
         });
+
+        // Restore original padding
+        element.style.paddingTop = originalPaddingTop;
 
         console.log(`Canvas generated for #${elementId}, adding to PDF...`);
         const imgData = canvas.toDataURL('image/jpeg', 0.85); // Slightly higher quality JPEG
