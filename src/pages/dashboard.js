@@ -27,9 +27,29 @@ import Layout from '@/components/Layout';
 import { exportTasksToCSV } from '@/utils/csvExport';
 // --- NEW: Import PDF Export ---
 import { exportDashboardToPDF } from '@/utils/pdfExport';
+// --- NEW: Import Settings Icon (example using a basic SVG, replace if you have an icon library) ---
+import { SettingsIcon } from '@/components/icons'; // Assuming you have an icons component/file
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
+
+// --- Define exportable elements with user-friendly names ---
+const availablePdfElements = [
+  { id: 'export-task-summary', name: 'Task Summary' },
+  { id: 'export-avg-time-status', name: 'Average Time In Status' },
+  { id: 'export-completion-chart', name: 'Completion Status Chart' },
+  { id: 'export-deadline-chart', name: 'Deadline Chart' },
+  { id: 'export-brand-chart', name: 'Brand Chart' },
+  { id: 'export-assignee-chart', name: 'Assignee Chart' },
+  { id: 'export-asset-chart', name: 'Asset Type Chart' },
+  { id: 'export-requester-chart', name: 'Requester Chart' },
+  { id: 'export-trend-chart', name: 'Trend Chart' },
+  { id: 'export-asset-summary', name: 'Asset Summary Table' },
+  { id: 'export-task-type-summary', name: 'Task Type Summary Table' },
+  { id: 'export-completion-rate', name: 'Completion Rate Summary' }
+];
+// Extract just the IDs for initial state
+const allPdfElementIds = availablePdfElements.map(el => el.id);
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -38,7 +58,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   // State for managing PDF export loading indicator
-  const [isExportingPDF, setIsExportingPDF] = useState(false); 
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  // --- NEW: PDF Export Settings State ---
+  const [isPdfSettingsModalOpen, setIsPdfSettingsModalOpen] = useState(false);
+  const [selectedPdfElementIds, setSelectedPdfElementIds] = useState(allPdfElementIds); // Default to all selected
 
   // --- Calculated Metrics State ---
   const [avgCycleTime, setAvgCycleTime] = useState(null);
@@ -205,6 +229,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   }
 
   // Define the order of elements for PDF export
+  // --- This is now defined outside the component ---
+  /*
   const pdfElementIds = [
     'export-task-summary',
     'export-avg-time-status',
@@ -220,6 +246,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     'export-task-type-summary',
     'export-completion-rate'
   ];
+  */
 
   return (
     <>
@@ -240,17 +267,29 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           onResetFilters={handleResetFilters}
         />
 
-        {/* Export Buttons */} 
-        <div className="my-4 text-right space-x-2"> {/* Added space-x-2 for button spacing */} 
+        {/* Export Buttons */}
+        <div className="my-4 text-right flex justify-end items-center space-x-2"> {/* Use flex for alignment */}
+            {/* PDF Export Button */}
             <button
-                // Call the utility function, passing the element ID and necessary state setters
-                onClick={() => exportDashboardToPDF(pdfElementIds, filters, setIsExportingPDF, setError)}
-                disabled={isExportingPDF || isLoading} // Disable based on PDF export state
+                // Use the selected elements from state for the export
+                onClick={() => exportDashboardToPDF(selectedPdfElementIds, filters, setIsExportingPDF, setError)}
+                disabled={isExportingPDF || isLoading || selectedPdfElementIds.length === 0} // Also disable if nothing selected
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={selectedPdfElementIds.length === 0 ? "Select elements to export via settings" : "Export selected charts to PDF"} // Add tooltip
             >
-                {isExportingPDF ? 'Exporting PDF...' : 'Export Charts to PDF'} 
+                {isExportingPDF ? 'Exporting PDF...' : 'Export Charts to PDF'}
             </button>
-            {/* --- NEW CSV Export Button --- */}
+
+             {/* PDF Settings Button */}
+             <button
+                onClick={() => setIsPdfSettingsModalOpen(true)}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Configure PDF Export" // Tooltip
+             >
+                <SettingsIcon className="w-5 h-5" /> {/* Example usage */}
+            </button>
+
+            {/* CSV Export Button */}
             <button
                 onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)} // Pass tasks and filename
                 disabled={isLoading || tasks.length === 0} // Disable if loading or no tasks
@@ -258,7 +297,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             >
                 Export Tasks to CSV
             </button>
-             {/* --- END NEW CSV Export Button --- */}
         </div>
 
         {/* Exportable Content Area (identified by id) */} 
@@ -368,6 +406,21 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           modalContent.chart
         )}
       </ChartModal>
+
+      {/* --- NEW: PDF Export Settings Modal --- */}
+      {/* We will add the modal component here in the next step */}
+      {/* Example placeholder:
+      <PdfExportSettingsModal
+        isOpen={isPdfSettingsModalOpen}
+        onClose={() => setIsPdfSettingsModalOpen(false)}
+        availableElements={availablePdfElements}
+        selectedElementIds={selectedPdfElementIds}
+        onSave={(newSelection) => {
+          setSelectedPdfElementIds(newSelection);
+          setIsPdfSettingsModalOpen(false);
+        }}
+      />
+      */}
     </>
   );
 }
