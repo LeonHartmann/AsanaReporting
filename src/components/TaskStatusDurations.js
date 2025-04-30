@@ -164,8 +164,8 @@ function TaskStatusDurations({ taskId }) {
           const datasets = statuses.map(status => ({
             label: status.trim(), // Trim whitespace for display
             data: [data.statusDurations.filter(d => d.status === status).reduce((sum, d) => sum + d.duration, 0)],
-            backgroundColor: statusColors[status] || defaultColor,
-            borderColor: (statusColors[status] || defaultColor).replace('0.7', '1'), // Darker border
+            backgroundColor: statusColors[status.trim()] || defaultColor,
+            borderColor: (statusColors[status.trim()] || defaultColor).replace('0.7', '1'), // Darker border
             borderWidth: 1,
             borderRadius: 4, // Add rounded corners
             barThickness: 25 // Set consistent bar thickness
