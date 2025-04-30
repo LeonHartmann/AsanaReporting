@@ -1,54 +1,81 @@
 import { createServerSupabaseClient } from '@/lib/supabaseClient';
 import { requireAuth } from '@/lib/auth';
 
-// Helper function to calculate durations
-function calculateStatusDurations(statusHistory) {
-  if (!statusHistory || statusHistory.length === 0) {
+// Helper function to safely parse a date
+function parseDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Helper function to calculate durations with minimal dependencies
+function calculateStatusDurations(history) {
+  // If no history, return empty array
+  if (!history || !Array.isArray(history) || history.length === 0) {
     return [];
   }
 
-  // Sort history chronologically using native Date parsing
-  const sortedHistory = [...statusHistory].sort((a, b) => {
-    return new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime();
+  // Sort by recorded_at date manually
+  const sorted = [...history];
+  sorted.sort(function(a, b) {
+    const dateA = parseDate(a.recorded_at);
+    const dateB = parseDate(b.recorded_at);
+    
+    // Handle null dates
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    
+    // Standard date comparison
+    return dateA.getTime() - dateB.getTime();
   });
 
-  const durations = [];
-  for (let i = 0; i < sortedHistory.length; i++) {
-    const currentEntry = sortedHistory[i];
-    const nextEntry = sortedHistory[i + 1];
+  // Calculate durations
+  const results = [];
+  const statusDurations = {};
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
     
-    let durationSeconds = 0;
-    try {
-      const startTime = new Date(currentEntry.recorded_at);
-      let endTime;
-      
-      if (nextEntry) {
-        // If there's a next entry, use its start time as the end time
-        endTime = new Date(nextEntry.recorded_at);
-      } else {
-        // For the last status, use current time as the end time
-        endTime = new Date();
-      }
-      
-      // Calculate duration in seconds
-      durationSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
-    } catch (e) {
-      console.error(`Error parsing dates for task ${currentEntry.task_id}:`, e);
-      durationSeconds = 0; // Handle potential date parsing errors
+    // Skip entries with invalid dates
+    const startDate = parseDate(current.recorded_at);
+    if (!startDate) continue;
+    
+    let endDate;
+    if (next) {
+      endDate = parseDate(next.recorded_at);
+      if (!endDate) continue; // Skip if next date is invalid
+    } else {
+      endDate = new Date(); // Use current time for last status
     }
-
-    // Add the status and its duration
-    if (durationSeconds > 0) {
-      durations.push({
-        status: currentEntry.status,
-        duration: durationSeconds, // Duration in seconds
-        startDate: currentEntry.recorded_at,
-        endDate: nextEntry ? nextEntry.recorded_at : new Date().toISOString(), // Use current time for the last entry
-      });
+    
+    // Calculate duration in seconds
+    const durationMs = endDate.getTime() - startDate.getTime();
+    const durationSec = Math.floor(durationMs / 1000);
+    
+    if (durationSec <= 0) continue; // Skip negative or zero durations
+    
+    // Add to status map
+    const status = current.status;
+    if (!statusDurations[status]) {
+      statusDurations[status] = 0;
     }
+    statusDurations[status] += durationSec;
   }
-
-  return durations;
+  
+  // Convert to array
+  for (const status in statusDurations) {
+    results.push({
+      status: status,
+      duration: statusDurations[status]
+    });
+  }
+  
+  return results;
 }
 
 async function taskStatusDurationsHandler(req, res) {
@@ -64,63 +91,55 @@ async function taskStatusDurationsHandler(req, res) {
   }
 
   try {
-    // Use the server-side client
-    const supabaseServerClient = createServerSupabaseClient(); 
-
-    // Wrap the Supabase query in a try-catch to handle any potential errors
-    let data, error;
-    try {
-      const result = await supabaseServerClient
-        .from('task_status_history')
-        .select('*')
-        .eq('task_id', taskId)
-        .order('recorded_at', { ascending: true });
-      
-      data = result.data;
-      error = result.error;
-    } catch (supabaseError) {
-      console.error('Unexpected error during Supabase query:', supabaseError);
-      return res.status(500).json({ message: 'Database query failed' });
-    }
-
+    // Create Supabase client
+    const supabase = createServerSupabaseClient(); 
+    
+    // Query the database
+    const { data, error } = await supabase
+      .from('task_status_history')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('recorded_at', { ascending: true });
+    
+    // Handle errors
     if (error) {
-      console.error('Supabase error fetching status history:', error);
-      return res.status(500).json({ message: error.message || 'Database error' });
+      console.error('Supabase error:', error);
+      return res.status(500).json({ message: 'Database error: ' + error.message });
     }
-
+    
+    // Handle no data
     if (!data || data.length === 0) {
-      return res.status(404).json({ message: `No status history found for task ID: ${taskId}` });
+      return res.status(404).json({ message: 'No status history found for this task' });
     }
-
-    // Calculate durations with error handling
+    
+    // Calculate durations
     let durations = [];
     try {
       durations = calculateStatusDurations(data);
-    } catch (calculationError) {
-      console.error('Error calculating status durations:', calculationError);
-      return res.status(500).json({ message: 'Error processing status duration data' });
+    } catch (e) {
+      console.error('Error calculating durations:', e);
+      return res.status(500).json({ message: 'Error calculating status durations' });
     }
-
-    // Return the task details along with durations
-    const taskDetails = data[0]; // Get details from the first entry
     
+    // Get task details from first entry
+    const taskDetails = data[0] || {};
+    
+    // Return response
     return res.status(200).json({
-        taskId: taskDetails.task_id,
-        taskName: taskDetails.task_name || 'Unknown Task', // Include task name with fallback
-        statusDurations: durations,
-        // Optionally include other details with fallbacks
-        brand: taskDetails.brand || 'N/A',
-        asset: taskDetails.asset || 'N/A',
-        assignee: taskDetails.assignee || 'Unassigned',
-        requester: taskDetails.requester || 'N/A',
-        taskType: taskDetails.task_type || 'N/A',
+      taskId: taskDetails.task_id || taskId,
+      taskName: taskDetails.task_name || 'Unknown Task',
+      statusDurations: durations,
+      brand: taskDetails.brand || 'N/A',
+      asset: taskDetails.asset || 'N/A',
+      assignee: taskDetails.assignee || 'Unassigned',
+      requester: taskDetails.requester || 'N/A',
+      taskType: taskDetails.task_type || 'N/A',
     });
-
-  } catch (error) {
-    console.error('API Error fetching task status durations:', error);
-    return res.status(500).json({ message: error.message || 'Internal Server Error' });
+  } catch (e) {
+    console.error('API handler error:', e);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
-// Protect this API route with authentication
+// Export with auth protection
 export default requireAuth(taskStatusDurationsHandler); 
