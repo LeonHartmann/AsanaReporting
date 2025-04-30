@@ -271,6 +271,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
         {/* Export Buttons */}
         <div className="my-4 text-right flex justify-end items-center space-x-2"> {/* Use flex for alignment */}
+            {/* CSV Export Button */}
+            <button
+                onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)} // Pass tasks and filename
+                disabled={isLoading || tasks.length === 0} // Disable if loading or no tasks
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Export Tasks to CSV
+            </button>
+            
             {/* PDF Export Button */}
             <button
                 // Use the selected elements from state for the export
@@ -281,23 +290,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             >
                 {isExportingPDF ? 'Exporting PDF...' : 'Export Charts to PDF'}
             </button>
-
-             {/* PDF Settings Button */}
-             <button
-                onClick={() => setIsPdfSettingsModalOpen(true)}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Configure PDF Export" // Tooltip
-             >
-                <SettingsIcon className="w-5 h-5" /> {/* Example usage */}
-            </button>
-
-            {/* CSV Export Button */}
+            
+            {/* PDF Settings Button */}
             <button
-                onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)} // Pass tasks and filename
-                disabled={isLoading || tasks.length === 0} // Disable if loading or no tasks
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsPdfSettingsModalOpen(true)}
+                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Configure PDF Export" // Tooltip
+                disabled={isLoading} // Disable settings if main data is loading
             >
-                Export Tasks to CSV
+                <SettingsIcon className="w-5 h-5" /> {/* Example usage */}
             </button>
         </div>
 
