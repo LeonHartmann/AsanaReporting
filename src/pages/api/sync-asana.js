@@ -36,7 +36,6 @@ function getSafe(obj, keys, defaultValue = null) {
 
 
 async function fetchTasksFromAsana(projectId, pat) {
-  console.log(`Fetching tasks from Asana project ${projectId}`);
   const baseUrl = `https://app.asana.com/api/1.0/projects/${projectId}/tasks`;
   const fields = [
     "name",
@@ -69,7 +68,6 @@ async function fetchTasksFromAsana(projectId, pat) {
       }
 
       const url = `${baseUrl}?${params.toString()}`;
-      console.log("Fetching URL:", url); // Log the URL being fetched
 
       const response = await fetch(url, { headers });
 
@@ -87,12 +85,10 @@ async function fetchTasksFromAsana(projectId, pat) {
       const nextPage = data.next_page;
       if (nextPage && nextPage.offset) {
         offset = nextPage.offset;
-        console.log(`Fetching next page of tasks (offset: ${offset})...`);
       } else {
         break; // No more pages
       }
     }
-    console.log(`Successfully fetched ${allTasks.length} tasks from Asana`);
     return allTasks;
   } catch (error) {
     console.error("An error occurred during Asana fetch:", error);
@@ -116,7 +112,6 @@ export default async function handler(req, res) {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  console.log("--- Starting Asana Sync API Route ---");
   const scriptStartTime = Date.now();
 
   if (!supabaseUrl || !supabaseKey || !asanaPAT || !asanaProjectId) {
@@ -139,7 +134,6 @@ export default async function handler(req, res) {
     const totalCount = tasks.length;
     const errors = []; // Collect errors during processing
 
-    console.log(`Processing ${totalCount} tasks...`);
 
     for (const task of tasks) {
       const taskId = getSafe(task, ['gid']);
@@ -202,7 +196,6 @@ export default async function handler(req, res) {
 
         if (!latestRecord) {
           // Case 1: First time seeing this task
-          console.log(`Task ${taskId} (${taskName}): Adding initial record with status '${currentStatus}'`);
           recordData.status_start = currentTimestamp; // Starts now
 
           const { error: insertError } = await supabase.from('task_status_history').insert(recordData);
@@ -217,7 +210,6 @@ export default async function handler(req, res) {
           const lastStatus = getSafe(latestRecord, ['status']);
 
           if (currentStatus !== lastStatus) {
-            console.log(`Task ${taskId} (${taskName}): Status changed from '${lastStatus}' to '${currentStatus}'`);
 
             // Update end time of the previous record
             const { error: updateError } = await supabase
@@ -246,7 +238,6 @@ export default async function handler(req, res) {
 
           } else {
             // Status has NOT changed - log for info, no DB action
-            console.log(`Task ${taskId} (${taskName}): Status '${currentStatus}' unchanged. No database update needed.`);
           }
         }
         processedCount++; // Mark task as processed (attempted)
@@ -261,9 +252,6 @@ export default async function handler(req, res) {
     const duration = (Date.now() - scriptStartTime) / 1000;
     const successRate = totalCount > 0 ? (processedCount / totalCount) * 100 : 100;
 
-    console.log(`--- Asana Sync Finished (${duration.toFixed(2)}s) ---`);
-    console.log(`Processed: ${processedCount}/${totalCount} tasks (${successRate.toFixed(1)}% success)`);
-    console.log(`Database Actions (Inserts/Updates): ${dbActionsCount}`);
     if (errors.length > 0) {
       console.warn(`Encountered ${errors.length} errors during processing.`);
       // Decide how to report errors (e.g., include in response)
