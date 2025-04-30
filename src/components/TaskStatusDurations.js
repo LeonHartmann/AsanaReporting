@@ -22,18 +22,41 @@ ChartJS.register(
 
 // Helper to format seconds into a readable string (e.g., "1d 2h 30m")
 function formatSeconds(seconds) {
-    if (seconds < 60) return `${seconds}s`;
+    if (seconds === undefined || seconds === null) return 'N/A';
+    
+    // For very small durations (less than a minute)
+    if (seconds < 60) {
+        return `${Math.round(seconds)}s`;
+    }
+    
     const days = Math.floor(seconds / (3600 * 24));
     const hours = Math.floor((seconds % (3600 * 24)) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.round(seconds % 60);
 
-    let result = '';
-    if (days > 0) result += `${days}d `;
-    if (hours > 0) result += `${hours}h `;
-    if (minutes > 0) result += `${minutes}m`;
-    if (result === '') result = `${seconds}s`; // Fallback for < 1 minute
-
-    return result.trim();
+    // Choose appropriate display format based on magnitude
+    if (days > 0) {
+        // For durations over a day
+        if (hours > 0) {
+            return `${days}d ${hours}h`;
+        }
+        return `${days}d`;
+    } else if (hours > 0) {
+        // For durations over an hour
+        if (minutes > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${hours}h`;
+    } else if (minutes > 0) {
+        // For durations over a minute
+        if (remainingSeconds > 0) {
+            return `${minutes}m ${remainingSeconds}s`;
+        }
+        return `${minutes}m`;
+    }
+    
+    // Should never reach here due to the < 60 check above, but just in case
+    return `${remainingSeconds}s`;
 }
 
 // Status color mapping (customize as needed)
@@ -144,6 +167,8 @@ function TaskStatusDurations({ taskId }) {
             backgroundColor: statusColors[status] || defaultColor,
             borderColor: (statusColors[status] || defaultColor).replace('0.7', '1'), // Darker border
             borderWidth: 1,
+            borderRadius: 4, // Add rounded corners
+            barThickness: 25 // Set consistent bar thickness
           }));
 
           setChartData({
@@ -193,12 +218,12 @@ function TaskStatusDurations({ taskId }) {
         stacked: true,
         title: {
           display: true,
-          text: 'Duration (seconds)',
+          text: 'Duration',
         },
         ticks: {
            callback: function(value, index, values) {
-                // Optionally format ticks further if needed
-                return value; 
+                // Format duration based on magnitude
+                return formatSeconds(value);
            }
         }
       },
@@ -259,7 +284,12 @@ function TaskStatusDurations({ taskId }) {
           )}
         </div>
       )}
-      <div style={{ height: '150px' }}> {/* Increase height for better visibility */} 
+      {/* Calculate an appropriate height based on the number of statuses */}
+      <div style={{ 
+        height: chartData && chartData.datasets ? 
+          `${Math.max(150, chartData.datasets.length * 35)}px` : 
+          '150px'
+      }}> 
         <Bar data={chartData} options={options} />
       </div>
     </div>
