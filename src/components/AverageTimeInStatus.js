@@ -144,7 +144,7 @@ function AverageTimeInStatus({ tasks = [] }) {
                 )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4"> 
-                (Note: Averages are calculated based on the currently filtered tasks)
+                (Note: Averages improve as more historical data is collected)
             </p>
             {isLoading && (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-4">Calculating averages...</div>
