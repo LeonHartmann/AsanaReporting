@@ -27,6 +27,8 @@ import Layout from '@/components/Layout';
 import { exportTasksToCSV } from '@/utils/csvExport';
 // --- NEW: Import PDF Export ---
 import { exportDashboardToPDF } from '@/utils/pdfExport';
+// --- NEW: Import Settings Modal ---
+import PdfExportSettingsModal from '@/components/PdfExportSettingsModal';
 // --- NEW: Import Settings Icon (example using a basic SVG, replace if you have an icon library) ---
 import { SettingsIcon } from '@/components/icons'; // Assuming you have an icons component/file
 
@@ -408,8 +410,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       </ChartModal>
 
       {/* --- NEW: PDF Export Settings Modal --- */}
-      {/* We will add the modal component here in the next step */}
-      {/* Example placeholder:
+      {/* Render the modal conditionally */}
       <PdfExportSettingsModal
         isOpen={isPdfSettingsModalOpen}
         onClose={() => setIsPdfSettingsModalOpen(false)}
@@ -420,7 +421,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           setIsPdfSettingsModalOpen(false);
         }}
       />
-      */}
     </>
   );
 }
