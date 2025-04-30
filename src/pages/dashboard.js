@@ -14,19 +14,19 @@ import TaskTrendChart from '@/components/charts/TaskCreationTrendChart'; // Impo
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
-import jsPDF from 'jspdf'; // Add jsPDF import
-import html2canvas from 'html2canvas'; // Add html2canvas import
 import CompletionRateSummary from '@/components/CompletionRateSummary';
 // --- NEW IMPORTS ---
-import AverageTimeInStatus from '@/components/AverageTimeInStatus'; 
+import AverageTimeInStatus from '@/components/AverageTimeInStatus';
 import TaskStatusDurations from '@/components/TaskStatusDurations';
 // --- END NEW IMPORTS ---
 // --- NEW: Import for date formatting ---
-import { format } from 'date-fns'; 
+import { format } from 'date-fns';
 // --- NEW: Import Layout ---
 import Layout from '@/components/Layout';
 // --- NEW: Import CSV Export ---
 import { exportTasksToCSV } from '@/utils/csvExport';
+// --- NEW: Import PDF Export ---
+import { exportDashboardToPDF } from '@/utils/pdfExport';
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
@@ -37,7 +37,8 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [filters, setFilters] = useState({ brand: [], asset: [], requester: [], assignee: [], taskType: [], startDate: '', endDate: '', completionFilter: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isExporting, setIsExporting] = useState(false); // Add state for export loading
+  // State for managing PDF export loading indicator
+  const [isExportingPDF, setIsExportingPDF] = useState(false); 
 
   // --- Calculated Metrics State ---
   const [avgCycleTime, setAvgCycleTime] = useState(null);
@@ -48,8 +49,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const [modalContent, setModalContent] = useState({ title: '', chart: null }); 
   const [selectedTaskId, setSelectedTaskId] = useState(null); // Track selected task for status duration modal
   // --- END Modal State ---
-
-  const chartsContainerRef = useRef(null); // Add ref for chart container
 
   // Function to open modal for standard charts
   const openChartModal = (title, chartElement) => {
@@ -192,148 +191,6 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       fetchTasksWithFilters(defaultFilters); // Fetch with default filters
   };
 
-  // Function to handle PDF export
-  const handleExportPDF = async () => {
-    console.log("Exporting PDF...");
-    const chartContainer = chartsContainerRef.current;
-    if (!chartContainer) {
-      console.error("Chart container not found for export.");
-      setError("Could not find elements to export.");
-      return;
-    }
-
-    // Use dedicated export state, not general loading state
-    setIsExporting(true);
-    // setError(''); // Keep error state separate, don't clear it here necessarily
-
-    // Format Filters Text
-    const filtersApplied = Object.entries(filters)
-      .filter(([key, value]) => value && (!Array.isArray(value) || value.length > 0))
-      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${Array.isArray(value) ? value.join(', ') : value}`)
-      .join('\n');
-
-    // Get current date and time
-    const now = new Date();
-    const dateTimeString = now.toLocaleString();
-
-    try {
-      // Increase delay significantly
-      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
-
-      console.log("Capturing content with html2canvas...");
-
-      // Get the inner wrapper element
-      const captureElement = document.getElementById('capture-content');
-      if (!captureElement) {
-          console.error("Capture target element (#capture-content) not found.");
-          setError("Could not find content element to export.");
-          // Stop export loading indicator if element not found
-          setIsExporting(false); 
-          return;
-      }
-
-      // Temporarily set overflow to visible on the CAPTURE element
-      const originalOverflow = captureElement.style.overflow;
-      captureElement.style.overflow = 'visible';
-      let originalHeight = captureElement.style.height;
-      captureElement.style.height = 'auto'; // Ensure full height is considered
-
-      let canvas;
-      try {
-          // Capture the INNER element
-          canvas = await html2canvas(captureElement, {
-              useCORS: true,
-              backgroundColor: '#ffffff' // Use the built-in option for background
-          });
-      } finally {
-          // Restore original styles on the CAPTURE element
-          captureElement.style.overflow = originalOverflow;
-          captureElement.style.height = originalHeight;
-      }
-
-      console.log("Canvas generated, converting to JPEG...");
-      const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG format with 80% quality
-      
-      console.log("Creating PDF...");
-      const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'pt',
-          format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 40; // points
-
-      // --- PDF Content --- 
-      let currentY = margin;
-
-      // 1. Title
-      pdf.setFontSize(16);
-      pdf.setFont(undefined, 'bold'); // Use default font, but bold
-      pdf.text("GGBC Reporting Dashboard", pdfWidth / 2, currentY, { align: 'center' });
-      currentY += 15; // Add space after title
-
-      // 2. Export Date/Time (smaller font, top right)
-      pdf.setFontSize(8);
-      pdf.setFont(undefined, 'normal'); // Reset font weight
-      pdf.text(`Exported: ${dateTimeString}`, pdfWidth - margin, margin + 5, { align: 'right' }); // Position relative to top margin
-      currentY += 10; // Add a bit more space
-
-      // 3. Applied Filters
-      pdf.setFontSize(10);
-      pdf.setFont(undefined, 'bold');
-      pdf.text('Applied Filters:', margin, currentY);
-      currentY += 15;
-      pdf.setFont(undefined, 'normal');
-      // Use splitTextToSize to handle potentially long filter lists
-      const splitFilters = pdf.splitTextToSize(filtersApplied || 'None', pdfWidth - 2 * margin);
-      pdf.text(splitFilters, margin, currentY);
-      currentY += (splitFilters.length * 10) + 10; // Adjust Y based on number of lines for filters + spacing
-
-      // 4. Chart Image
-      const imageYPos = currentY;
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = imgProps.width;
-      const imgHeight = imgProps.height;
-      const availableWidth = pdfWidth - 2 * margin;
-      const availableHeight = pdfHeight - imageYPos - margin; 
-
-      // Calculate scaling to fit image within available space
-      let finalImgWidth = imgWidth;
-      let finalImgHeight = imgHeight;
-      const widthScale = availableWidth / finalImgWidth;
-      const heightScale = availableHeight / finalImgHeight;
-      const scale = Math.min(widthScale, heightScale); // Use the smaller scale to fit both dimensions
-
-      finalImgWidth = imgWidth * scale;
-      finalImgHeight = imgHeight * scale;
-      
-      // Center the image horizontally
-      const imageXPos = margin + (availableWidth - finalImgWidth) / 2; 
-
-      console.log("Adding image to PDF...");
-      pdf.addImage(imgData, 'JPEG', imageXPos, imageYPos, finalImgWidth, finalImgHeight);
-
-      // --- Save PDF --- 
-      console.log("Saving PDF...");
-      pdf.save(`GGBC_Dashboard_Export_${now.toISOString().split('T')[0]}.pdf`); // Add date to filename
-      console.log("PDF Saved.");
-
-    } catch (err) {
-        console.error("Error generating PDF:", err);
-        setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
-        // Ensure overflow is restored on the CAPTURE element in case of errors
-        if (captureElement && typeof originalOverflow !== 'undefined') { 
-            captureElement.style.overflow = originalOverflow;
-            captureElement.style.height = originalHeight;
-        }
-    } finally {
-        // Hide EXPORT loading indicator
-        setIsExporting(false); 
-    }
-  };
-
   // Helper to create clickable chart wrappers
   const renderClickableChart = (title, ChartComponent, dataProp) => {
     // Simplified: removed logic for activity/throughput data
@@ -346,6 +203,23 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
       </div>
     );
   }
+
+  // Define the order of elements for PDF export
+  const pdfElementIds = [
+    'export-task-summary',
+    'export-avg-time-status',
+    // Add chart IDs individually if they should be separate images
+    'export-completion-chart',
+    'export-deadline-chart',
+    'export-brand-chart',
+    'export-assignee-chart',
+    'export-asset-chart',
+    'export-requester-chart',
+    'export-trend-chart',
+    'export-asset-summary',
+    'export-task-type-summary',
+    'export-completion-rate'
+  ];
 
   return (
     <>
@@ -366,14 +240,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
           onResetFilters={handleResetFilters}
         />
 
-        {/* Export Button */}
-        <div className="my-4 text-right space-x-2"> {/* Added space-x-2 for button spacing */}
+        {/* Export Buttons */} 
+        <div className="my-4 text-right space-x-2"> {/* Added space-x-2 for button spacing */} 
             <button
-                onClick={handleExportPDF}
-                disabled={isExporting || isLoading}
+                // Call the utility function, passing the element ID and necessary state setters
+                onClick={() => exportDashboardToPDF(pdfElementIds, filters, setIsExportingPDF, setError)}
+                disabled={isExportingPDF || isLoading} // Disable based on PDF export state
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isExporting ? 'Exporting PDF...' : 'Export Charts to PDF'}
+                {isExportingPDF ? 'Exporting PDF...' : 'Export Charts to PDF'} 
             </button>
             {/* --- NEW CSV Export Button --- */}
             <button
@@ -386,82 +261,90 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              {/* --- END NEW CSV Export Button --- */}
         </div>
 
-        {/* Exportable Content Area */}
-        <div ref={chartsContainerRef}>
-          <div id="capture-content">
-              {/* Task Summary Section */}
-              {!error && (
-                <TaskSummary 
-                  tasks={tasks} 
-                  avgCycleTime={avgCycleTime} 
-                  isLoading={isLoading} 
-                />
-              )}
+        {/* Exportable Content Area (identified by id) */} 
+        <div id="capture-content">
+             {/* Task Summary Section */}
+             <div id="export-task-summary">
+                {!error && (
+                  <TaskSummary 
+                    tasks={tasks} 
+                    avgCycleTime={avgCycleTime} 
+                    isLoading={isLoading} 
+                  />
+                )} 
+             </div>
 
-              {/* Average Time In Status Section */}
-              {!isLoading && !error && (
-                 <AverageTimeInStatus tasks={tasks} />
-              )}
+             {/* Average Time In Status Section */}
+             <div id="export-avg-time-status">
+                {!isLoading && !error && (
+                   <AverageTimeInStatus tasks={tasks} />
+                )} 
+             </div>
 
-              {/* Chart Grid Section */}
-              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             {/* Chart Grid Section - Add ID to wrapper */}
+             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                  {isLoading && !tasks.length ? (
                   // Show a single loading indicator spanning columns if needed, or repeat per chart
                   <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
                 ) : error && !tasks.length ? (
-                     <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                        Could not load chart data: {error}
-                     </div>
+                      <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                         Could not load chart data: {error}
+                      </div>
                   ) : tasks.length === 0 ? (
                     <div className="lg:col-span-3 text-center py-10">No tasks match the current filters.</div>
                   ) : (
-                    <>
-                      {/* Re-added charts */}
-                      <div className="lg:col-span-1">
+                    <> 
+                      {/* Add IDs to individual chart wrappers */}
+                     <div id="export-completion-chart" className="lg:col-span-1">
                         {renderClickableChart('Task Completion Status', CompletionStatusChart)}
                       </div>
-                      <div className="lg:col-span-1">
-                        {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
-                      </div>
-                      <div className="lg:col-span-1">
-                        {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
-                      </div>
-                      <div className="lg:col-span-1">
-                        {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
-                      </div>
-                      <div className="lg:col-span-1">
-                        {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
-                      </div>
-                      <div className="lg:col-span-1">
-                        {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
-                      </div>
+                      <div id="export-deadline-chart" className="lg:col-span-1">
+                         {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
+                       </div>
+                       <div id="export-brand-chart" className="lg:col-span-1">
+                          {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+                        </div>
+                        <div id="export-assignee-chart" className="lg:col-span-1">
+                           {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+                         </div>
+                         <div id="export-asset-chart" className="lg:col-span-1">
+                            {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+                          </div>
+                          <div id="export-requester-chart" className="lg:col-span-1">
+                             {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
+                           </div>
                     </>
                   )}
-              </div>
+             </div>
 
-              {/* Line Chart Section */}
-              <div className="mb-8">
-                  {!isLoading && !error && tasks.length > 0 && (
-                       renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
-                  )} 
-              </div>
+             {/* Line Chart Section - Add ID */}
+             <div id="export-trend-chart" className="mb-8">
+                 {!isLoading && !error && tasks.length > 0 && (
+                      renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
+                 )} 
+             </div>
 
-              {/* Asset Summary Section */}
-              {!isLoading && !error && tasks.length > 0 && (
-                <AssetSummary tasks={tasks} />
-              )}
+             {/* Asset Summary Section - Add ID */}
+             <div id="export-asset-summary">
+                {!isLoading && !error && tasks.length > 0 && (
+                  <AssetSummary tasks={tasks} />
+                )}
+             </div>
 
-              {/* Task Type Summary Section */}
-              {!isLoading && !error && tasks.length > 0 && (
-                <TaskTypeSummary tasks={tasks} />
-              )}
+             {/* Task Type Summary Section - Add ID */}
+             <div id="export-task-type-summary">
+                {!isLoading && !error && tasks.length > 0 && (
+                  <TaskTypeSummary tasks={tasks} />
+                )}
+             </div>
 
-              {/* Completion Rate Summary Section */}
-              {!error && (
-                <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
-              )}
-          </div> { /* End #capture-content */}
-        </div> { /* End chartsContainerRef */}
+             {/* Completion Rate Summary Section - Add ID */}
+             <div id="export-completion-rate">
+                {!error && (
+                  <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
+                )}
+             </div>
+         </div> { /* End #capture-content */} 
 
       </div> { /* --- End container for centered content --- */}
 
