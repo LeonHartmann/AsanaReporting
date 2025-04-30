@@ -24,12 +24,12 @@ function formatSeconds(seconds) {
 // Statuses to exclude from the display
 const statusesToExclude = ['✅ Completed', '🔴 CLOSED LOST', '🟢 CLOSED WON', '📍 Resources'];
 
-// Define the custom status order
+// Define the custom status order (use exact names from Supabase including whitespace)
 const statusOrder = [
-    '📃 To Do',
-    '☕️ Awaiting Info',
+    '📃 To Do ',
+    ' ☕️ Awaiting Info',
     '🎨 In progress',
-    '📩 In Review',
+    '📩 In Review ',
     '🌀 Completed/Feedback'
 ];
 
@@ -169,8 +169,8 @@ function AverageTimeInStatus({ tasks = [] }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {avgDurations.map(({ status, duration }) => (
                         <div key={status} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-                            {/* Limit status text length if necessary */}
-                            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status}>{status}</h3>
+                            {/* Limit status text length if necessary, and trim whitespace */}
+                            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1 truncate" title={status.trim()}>{status.trim()}</h3>
                             <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatSeconds(duration)}</div>
                         </div>
                     ))}

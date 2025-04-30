@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 
 // Define the statuses we want to show as columns
+// Use exact names from Supabase (including whitespace)
 const statusColumns = [
-  '📃 To Do',
-  '☕️ Awaiting Info',
+  '📃 To Do ',
+  ' ☕️ Awaiting Info',
   '🎨 In progress',
-  '📩 In Review',
+  '📩 In Review ',
   '🌀 Completed/Feedback'
 ];
 
@@ -273,7 +274,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
               {/* Add status duration columns */}
               {statusColumns.map(status => (
                 <th key={status} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort(status)}>
-                  Time in {status} {sortConfig.key === status ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+                  Time in {status.trim()} {sortConfig.key === status ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
                 </th>
               ))}
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('openDuration')}>

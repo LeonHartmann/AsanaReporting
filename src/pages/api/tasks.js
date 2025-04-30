@@ -75,10 +75,10 @@ async function tasksHandler(req, res) {
                 
                 // Add duration for each status to the task
                 const statusColumns = [
-                  '📃 To Do',
-                  '☕️ Awaiting Info',
+                  '📃 To Do ',
+                  ' ☕️ Awaiting Info',
                   '🎨 In progress',
-                  '📩 In Review',
+                  '📩 In Review ',
                   '🌀 Completed/Feedback'
                 ];
                 
@@ -90,44 +90,16 @@ async function tasksHandler(req, res) {
                 
                 // In case of inconsistencies in status naming, try different variations
                 for (const status of statusColumns) {
-                  // Try exact match first
+                  // Try exact match first (this should now work with the exact names)
                   let statusEntry = statusDurations.find(d => d.status === status);
                   
-                  // If no match, try with/without emoji
+                  // Keep fallback logic just for robustness
                   if (!statusEntry) {
-                    // Try without emoji if present
-                    if (status.match(/[\u{1F300}-\u{1F6FF}]/u)) {
-                      const withoutEmoji = status.replace(/[\u{1F300}-\u{1F6FF}]/gu, '').trim();
-                      statusEntry = statusDurations.find(d => d.status.includes(withoutEmoji));
-                    }
-                    // Try keywords for common status names
-                    else if (status.includes('To Do')) {
-                      statusEntry = statusDurations.find(d => 
-                        d.status.includes('Todo') || 
-                        d.status.includes('To Do') ||
-                        d.status.includes('To-Do')
-                      );
-                    }
-                    else if (status.includes('In progress')) {
-                      statusEntry = statusDurations.find(d => 
-                        d.status.includes('progress') || 
-                        d.status.includes('In-progress')
-                      );
-                    }
-                    else if (status.includes('Review')) {
-                      statusEntry = statusDurations.find(d => d.status.includes('Review'));
-                    }
-                    else if (status.includes('Awaiting Info')) {
-                      statusEntry = statusDurations.find(d => 
-                        d.status.includes('Awaiting') || 
-                        d.status.includes('waiting')
-                      );
-                    }
-                    else if (status.includes('Completed/Feedback')) {
-                      statusEntry = statusDurations.find(d => 
-                        d.status.includes('Completed') || 
-                        d.status.includes('Feedback')
-                      );
+                    // Try with trimmed values
+                    const trimmedStatus = status.trim();
+                    const trimmedEntries = statusDurations.filter(d => d.status.trim() === trimmedStatus);
+                    if (trimmedEntries.length > 0) {
+                      statusEntry = trimmedEntries[0];
                     }
                   }
                   
