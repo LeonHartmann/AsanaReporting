@@ -100,7 +100,7 @@ export function exportTasksToCSV(tasks, filename = 'tasks_export.csv') {
   // --- Define CSV Headers ---
   const baseHeaders = [
     'Task ID', 'Task Name', 'Assignee', 'Due Date', 'Completed', 'Completed At',
-    'Created At', 'URL', 'Brand', 'Asset', 'Requester', 'Task Type',
+    'Created At', 'Brand', 'Asset', 'Requester', 'Task Type',
     'Status', 'Custom Fields' 
   ];
   // Add Time in Status headers (using seconds as unit)
@@ -120,11 +120,10 @@ export function exportTasksToCSV(tasks, filename = 'tasks_export.csv') {
         getSafeValue(task.id),
         getSafeValue(task.name),
         formatAssignee(task.assignee), // Use specific formatter
-        formatDateValue(task.dueOn), // Use correct field 'dueOn', format date
+        formatDateValue(task.deadline), // Use task.deadline for Due Date
         getSafeValue(task.completed),
         formatDateValue(task.completedAt), // Format date
         formatDateValue(task.createdAt), // Format date
-        getSafeValue(task.permalink_url),
         getSafeValue(task.brand),
         getSafeValue(task.asset),
         getSafeValue(task.requester),
