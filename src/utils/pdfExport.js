@@ -95,40 +95,35 @@ export const exportDashboardToPDF = async (elementIdsToCapture, filters, setIsEx
         const imgData = canvas.toDataURL('image/jpeg', 0.85); // Slightly higher quality JPEG
         const imgProps = pdf.getImageProperties(imgData);
         
-        // Define a 16:9 target area within the available width
-        const targetBoxHeight = availableWidth * (9 / 16);
-
-        // Calculate scaling to fit the *captured image* within the 16:9 box, preserving aspect ratio
+        // Calculate image dimensions to fit available width, preserving aspect ratio
         let finalImgWidth = imgProps.width;
         let finalImgHeight = imgProps.height;
         const widthScale = availableWidth / finalImgWidth;
-        const heightScale = targetBoxHeight / finalImgHeight;
-        const scale = Math.min(widthScale, heightScale); // Use the smaller scale to fit both dimensions
+        const scale = widthScale; // Scale based on width only
 
         finalImgWidth = imgProps.width * scale;
         finalImgHeight = imgProps.height * scale;
 
-        // Calculate position to center the scaled image within the 16:9 box
+        // Position image at the current Y, centered horizontally
         const imageXPos = margin + (availableWidth - finalImgWidth) / 2; 
-        const imageYPos = currentY + (targetBoxHeight - finalImgHeight) / 2;
+        const imageYPos = currentY;
 
-        // Check if element fits on the current page
-        const remainingPageHeight = pdfHeight - margin - currentY;
-        if (targetBoxHeight > remainingPageHeight && currentY > margin) { // Add check to prevent breaking if it's the first item
+        // Calculate required height *before* potentially adding a page
+        const requiredHeight = finalImgHeight;
+
+        // Check if adding this image exceeds the page height (minus bottom margin)
+        if (currentY > margin && (currentY + requiredHeight) > (pdfHeight - margin)) {
             console.log(`Adding new page for element #${elementId}`);
             pdf.addPage();
             currentY = margin; // Reset Y position to top margin
             // Optional: Repeat header on new pages? (Could add complexity)
         }
 
-        // Optional: Draw a faint border around the 16:9 box for visualization (can be removed)
-        // pdf.setDrawColor(230, 230, 230); // Light gray
-        // pdf.rect(margin, currentY, availableWidth, targetBoxHeight);
-
+        // Add the image
         pdf.addImage(imgData, 'JPEG', imageXPos, imageYPos, finalImgWidth, finalImgHeight);
 
-        // Update Y position based on the height of the 16:9 box, add spacing
-        currentY += targetBoxHeight + 15; 
+        // Update Y position based on the actual image height placed, add spacing
+        currentY += finalImgHeight + 15; 
     }
 
     // --- Save PDF --- 
