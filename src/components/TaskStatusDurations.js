@@ -83,16 +83,27 @@ function TaskStatusDurations({ taskId }) {
 
       try {
         const res = await fetch(`/api/task-status-durations?taskId=${taskId}`);
+        
         if (!res.ok) {
-          // Try to parse as JSON first, but fall back to text if that fails
+          // For error responses, clone the response before reading
+          const clonedRes = res.clone();
+          
+          // Try to parse as JSON first
+          let errorMessage;
           try {
             const errorData = await res.json();
-            throw new Error(errorData.message || `Error fetching data: ${res.statusText}`);
+            errorMessage = errorData.message || `Error fetching data: ${res.statusText}`;
           } catch (jsonError) {
-            // If JSON parsing fails, get the text instead
-            const errorText = await res.text();
-            throw new Error(`Server error (${res.status}): ${errorText.substring(0, 150)}...`);
+            // If JSON parsing fails, get the text instead from the cloned response
+            try {
+              const errorText = await clonedRes.text();
+              errorMessage = `Server error (${res.status}): ${errorText.substring(0, 150)}...`;
+            } catch (textError) {
+              // If all else fails, use a generic error message
+              errorMessage = `Server error (${res.status}): Could not read error details`;
+            }
           }
+          throw new Error(errorMessage);
         }
         
         // Parse the successful response
