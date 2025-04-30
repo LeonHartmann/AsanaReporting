@@ -25,6 +25,8 @@ import TaskStatusDurations from '@/components/TaskStatusDurations';
 import { format } from 'date-fns'; 
 // --- NEW: Import Layout ---
 import Layout from '@/components/Layout';
+// --- NEW: Import CSV Export ---
+import { exportTasksToCSV } from '@/utils/csvExport';
 
 // Helper for date calculations
 import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fns imports
@@ -365,14 +367,23 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         />
 
         {/* Export Button */}
-        <div className="my-4 text-right">
+        <div className="my-4 text-right space-x-2"> {/* Added space-x-2 for button spacing */}
             <button
                 onClick={handleExportPDF}
-                disabled={isExporting || isLoading} 
+                disabled={isExporting || isLoading}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isExporting ? 'Exporting...' : 'Export Charts to PDF'}
+                {isExporting ? 'Exporting PDF...' : 'Export Charts to PDF'}
             </button>
+            {/* --- NEW CSV Export Button --- */}
+            <button
+                onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)} // Pass tasks and filename
+                disabled={isLoading || tasks.length === 0} // Disable if loading or no tasks
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Export Tasks to CSV
+            </button>
+             {/* --- END NEW CSV Export Button --- */}
         </div>
 
         {/* Exportable Content Area */}
