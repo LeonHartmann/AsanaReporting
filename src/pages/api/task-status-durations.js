@@ -124,8 +124,16 @@ async function taskStatusDurationsHandler(req, res) {
     // Get task details from first entry
     const taskDetails = data[0] || {};
     
-    // Construct Asana task URL
-    const asanaTaskUrl = taskId ? `https://app.asana.com/0/${taskId}` : null;
+    // Construct Asana task URL with proper format
+    // Get workspace ID from env or use default from example
+    const workspaceId = process.env.ASANA_WORKSPACE_ID || '21887210681374';
+    // Get project ID from env or use default from example
+    const projectId = process.env.ASANA_PROJECT_ID || '1207673991970095';
+    
+    // Format: https://app.asana.com/1/[workspace-id]/project/[project-id]/task/[task-id]
+    const asanaTaskUrl = taskId ? 
+      `https://app.asana.com/1/${workspaceId}/project/${projectId}/task/${taskId}` : 
+      null;
     
     // Return response
     return res.status(200).json({
