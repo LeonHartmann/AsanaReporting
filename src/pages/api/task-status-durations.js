@@ -124,6 +124,9 @@ async function taskStatusDurationsHandler(req, res) {
     // Get task details from first entry
     const taskDetails = data[0] || {};
     
+    // Construct Asana task URL
+    const asanaTaskUrl = taskId ? `https://app.asana.com/0/${taskId}` : null;
+    
     // Return response
     return res.status(200).json({
       taskId: taskDetails.task_id || taskId,
@@ -134,6 +137,7 @@ async function taskStatusDurationsHandler(req, res) {
       assignee: taskDetails.assignee || 'Unassigned',
       requester: taskDetails.requester || 'N/A',
       taskType: taskDetails.task_type || 'N/A',
+      asanaUrl: asanaTaskUrl
     });
   } catch (e) {
     console.error('API handler error:', e);
