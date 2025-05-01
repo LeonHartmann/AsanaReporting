@@ -1,15 +1,21 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- addPdfHeader function remains the same as before ---
+/**
+ * Adds the standard header to the current PDF page.
+ * @param {jsPDF} pdf The jsPDF instance.
+ * @param {number} currentY The starting Y position for the header.
+ * @param {string} dateTimeString The formatted date/time string.
+ * @param {string[]} splitFilters The formatted and split filter text.
+ * @returns {number} The Y position after adding the header.
+ */
 const addPdfHeader = (pdf, currentY, dateTimeString, splitFilters) => {
-    // ... (implementation from previous answer) ...
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const margin = 40;
     const availableWidth = pdfWidth - 2 * margin;
     let y = currentY;
 
-    // PDF Header (Title, Date, Filters)
+    // --- PDF Header (Title, Date, Filters) ---
     pdf.setFontSize(16);
     pdf.setFont(undefined, 'bold');
     pdf.text("GGBC Reporting Dashboard", pdfWidth / 2, y, { align: 'center' });
@@ -17,8 +23,9 @@ const addPdfHeader = (pdf, currentY, dateTimeString, splitFilters) => {
 
     pdf.setFontSize(8);
     pdf.setFont(undefined, 'normal');
-    pdf.text(`Exported: ${dateTimeString}`, pdfWidth - margin, margin + 5, { align: 'right' });
-    y += 10;
+    // Position date relative to the right margin consistently
+    pdf.text(`Exported: ${dateTimeString}`, pdfWidth - margin, margin + 5, { align: 'right' }); // Use fixed top margin for date consistency
+    y += 10; // Adjust Y based on title's position
 
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'bold');
@@ -26,109 +33,68 @@ const addPdfHeader = (pdf, currentY, dateTimeString, splitFilters) => {
     y += 15;
     pdf.setFont(undefined, 'normal');
     pdf.text(splitFilters, margin, y);
-    y += (splitFilters.length * 10) + 15;
+    y += (splitFilters.length * 10) + 15; // Add extra spacing after filters
 
-    return y;
-};
-
-/**
- * Takes a source canvas and returns a new canvas with 16:9 aspect ratio,
- * drawing the source canvas centered within it with padding.
- * @param {HTMLCanvasElement} sourceCanvas The canvas from html2canvas.
- * @param {string} [backgroundColor='#ffffff'] The background color for padding.
- * @returns {HTMLCanvasElement} A new canvas with 16:9 aspect ratio.
- */
-const convertTo16x9Canvas = (sourceCanvas, backgroundColor = '#ffffff') => {
-    const sourceWidth = sourceCanvas.width;
-    const sourceHeight = sourceCanvas.height;
-    const sourceRatio = sourceWidth / sourceHeight;
-    const targetRatio = 16 / 9;
-
-    let targetWidth = sourceWidth;
-    let targetHeight = sourceHeight;
-
-    if (sourceRatio > targetRatio) {
-        // Source is wider than 16:9, padding will be added top/bottom
-        targetHeight = sourceWidth / targetRatio; // Calculate height based on source width and 16:9 ratio
-    } else if (sourceRatio < targetRatio) {
-        // Source is taller than 16:9, padding will be added left/right
-        targetWidth = sourceHeight * targetRatio; // Calculate width based on source height and 16:9 ratio
-    }
-    // If sourceRatio === targetRatio, target dimensions remain source dimensions
-
-    const targetCanvas = document.createElement('canvas');
-    targetCanvas.width = targetWidth;
-    targetCanvas.height = targetHeight;
-
-    const ctx = targetCanvas.getContext('2d');
-
-    // Fill background color for padding
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-    // Calculate coordinates to draw the source canvas centered
-    const drawX = (targetWidth - sourceWidth) / 2;
-    const drawY = (targetHeight - sourceHeight) / 2;
-
-    // Draw the source canvas onto the target canvas
-    ctx.drawImage(sourceCanvas, drawX, drawY, sourceWidth, sourceHeight);
-
-    console.log(`Converted canvas from ${sourceWidth}x${sourceHeight} to 16:9 ${targetWidth}x${targetHeight}`);
-
-    return targetCanvas;
+    return y; // Return the updated Y position
 };
 
 
 /**
- * Exports the dashboard content to a PDF file by capturing individual sections,
- * ensuring each captured element image has a 16:9 aspect ratio via padding.
+ * Exports the dashboard content to a PDF file by capturing individual sections.
  *
  * @param {string[]} elementIdsToCapture Array of HTML element IDs to capture.
  * @param {object} filters The currently applied filters object.
  * @param {function} setIsExporting Callback function to set the exporting state (true/false).
  * @param {function} setError Callback function to set an error message.
- * @param {function} [setProgress] Optional callback for progress updates.
+ * @param {function} [setProgress] Optional callback for progress updates (e.g., setProgress({ current: i, total: n })).
  */
 export const exportDashboardToPDF = async (
     elementIdsToCapture,
     filters,
     setIsExporting,
     setError,
-    setProgress
+    setProgress // Optional progress callback
 ) => {
-    console.log("Exporting PDF by elements (16:9 conversion)...");
+    console.log("Exporting PDF by elements...");
 
-    // --- Initial Setup (Validation, State, PDF, Header Content) ---
+    // Basic validation
     if (!Array.isArray(elementIdsToCapture) || elementIdsToCapture.length === 0) {
         console.error("No element IDs provided for PDF export.");
         setError("Configuration error: No elements specified for export.");
         return;
     }
+
     setIsExporting(true);
     setError('');
     if (setProgress) setProgress({ current: 0, total: elementIdsToCapture.length });
 
+    // --- Prepare PDF and Header Content ---
     const now = new Date();
-    const dateTimeString = now.toLocaleString();
+    const dateTimeString = now.toLocaleString(); // Consider using toLocaleDateString and toLocaleTimeString for more control
+
     const filtersApplied = Object.entries(filters)
-        // ... (filter formatting logic remains the same) ...
         .filter(([key, value]) => value && (!Array.isArray(value) || value.length > 0))
         .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${Array.isArray(value) ? value.join(', ') : value}`)
-        .join('\n');
+        .join('\n'); // Keep newline for potential multi-line display in PDF
 
     const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
         format: 'a4'
     });
+
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 40;
+    const margin = 40; // points
     const availableWidth = pdfWidth - 2 * margin;
-    let currentY = margin;
+    const availableHeight = pdfHeight - 2 * margin; // Max usable height per page
+    let currentY = margin; // Start Y position below the top margin
+
+    // Pre-split filter text for header function
     const splitFilters = pdf.splitTextToSize(filtersApplied || 'None', availableWidth);
+
+    // Add header to the first page
     currentY = addPdfHeader(pdf, currentY, dateTimeString, splitFilters);
-    // --- End Initial Setup ---
 
     try {
         console.log("Starting element capture loop...");
@@ -141,65 +107,66 @@ export const exportDashboardToPDF = async (
             const element = document.getElementById(elementId);
             if (!element) {
                 console.warn(`Element with ID '${elementId}' not found. Skipping.`);
-                continue;
+                continue; // Skip to the next element
             }
+
             console.log(`Capturing element: #${elementId}`);
 
             // --- html2canvas Capture ---
-            let sourceCanvas;
+            // REMOVED: await new Promise(resolve => setTimeout(resolve, 100)); // Investigate if truly needed
+            let canvas;
             try {
-                 sourceCanvas = await html2canvas(element, {
+                 canvas = await html2canvas(element, {
                     useCORS: true,
-                    backgroundColor: '#ffffff', // Set background for capture itself
-                    scale: window.devicePixelRatio || 2, // Keep high-res capture
-                    logging: false,
+                    backgroundColor: '#ffffff', // Important for consistency
+                    // OPTIMIZATION: Use scale for better quality (especially on HiDPI)
+                    scale: window.devicePixelRatio || 2,
+                    logging: false, // Disable logging for slight performance gain in production
+                    // Allow Taint can sometimes help with CORS issues but taints the canvas
+                    // allowTaint: false,
                 });
             } catch (canvasError) {
                 console.error(`html2canvas failed for element #${elementId}:`, canvasError);
                 setError(`Error capturing element #${elementId}. Skipping.`);
-                continue;
+                continue; // Skip this element
             }
 
-            // --- Convert to 16:9 Canvas ---
-            if (setProgress) setProgress({ current: elementIndex, total: elementIdsToCapture.length, stage: `Converting ${elementId} to 16:9` });
-            const finalCanvas = convertTo16x9Canvas(sourceCanvas, '#ffffff'); // Use white padding
 
-            // --- Get Image Data from the 16:9 Canvas ---
-            // Use PNG for better quality of graphics/text
-            const imgData = finalCanvas.toDataURL('image/png');
-            const imgProps = pdf.getImageProperties(imgData); // Properties of the 16:9 image
+            if (setProgress) setProgress({ current: elementIndex, total: elementIdsToCapture.length, stage: `Processing ${elementId}` });
 
-            console.log(`16:9 Canvas (${imgProps.width}x${imgProps.height}) generated for #${elementId}, adding to PDF...`);
+            console.log(`Canvas generated for #${elementId}, adding to PDF...`);
 
-            // --- Scale 16:9 Image and Add to PDF ---
-            // Scale the 16:9 image to fit the available PDF width
+            // OPTIMIZATION: Try 'image/png' for potentially better quality (especially charts/text)
+            // const imgData = canvas.toDataURL('image/jpeg', 0.9); // Higher quality JPEG
+            const imgData = canvas.toDataURL('image/png');    // Lossless PNG
+
+            const imgProps = pdf.getImageProperties(imgData);
+
+            // Scale image to fit available width, maintaining aspect ratio
             const imgWidth = availableWidth;
-            // Height will be calculated based on the 16:9 ratio and availableWidth
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width; // or simply imgWidth * 9 / 16
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
             const spaceNeeded = imgHeight + 15; // Image height + spacing
 
             // --- Page Break Logic ---
-            if (currentY + spaceNeeded > pdfHeight - margin) {
+            // Check if the image *plus spacing* exceeds the available height on the *current* page
+            if (currentY + spaceNeeded > pdfHeight - margin) { // Check against bottom margin
                 console.log(`Adding new page for element #${elementId}`);
                 pdf.addPage();
-                currentY = margin;
+                currentY = margin; // Reset Y position to top margin
+                // OPTIMIZATION: Add header to new pages
                 currentY = addPdfHeader(pdf, currentY, dateTimeString, splitFilters);
             }
 
-            // Add the 16:9 image
-            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-            currentY += spaceNeeded;
-
-            // Optional: Clean up canvases if memory becomes an issue, though JS garbage collection usually handles this.
-            // sourceCanvas = null;
-            // finalCanvas = null;
+            // Add the image
+            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight); // Use 'PNG' if using PNG
+            currentY += spaceNeeded; // Update Y position
 
         } // End of loop
 
         // --- Save PDF ---
         console.log("Saving PDF...");
         if (setProgress) setProgress({ current: elementIdsToCapture.length, total: elementIdsToCapture.length, stage: "Saving PDF" });
-        const filename = `GGBC_Dashboard_Export_${now.toISOString().split('T')[0]}_16x9.pdf`;
+        const filename = `GGBC_Dashboard_Export_${now.toISOString().split('T')[0]}.pdf`;
         pdf.save(filename);
         console.log("PDF Saved as", filename);
 
@@ -207,7 +174,7 @@ export const exportDashboardToPDF = async (
         console.error("Error generating PDF:", err);
         setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
     } finally {
-        setIsExporting(false);
-        if (setProgress) setProgress(null);
+        setIsExporting(false); // Hide loading indicator
+        if (setProgress) setProgress(null); // Clear progress
     }
 };
