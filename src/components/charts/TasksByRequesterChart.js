@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bar } from 'react-chartjs-2';
+import { createVerticalGradient } from '@/utils/chartGradients';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -145,9 +146,27 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: 'rgba(153, 102, 255, 0.6)', // Purple color
-        borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: isFullscreen ? 1 : 1,
+        backgroundColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(245, 158, 11, 0.6)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(253, 224, 71, 0.8)',
+            'rgba(245, 158, 11, 0.8)'
+          );
+        },
+        borderColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(245, 158, 11, 1)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(253, 224, 71, 1)',
+            'rgba(245, 158, 11, 1)'
+          );
+        },
+        borderWidth: 1,
       },
     ],
   };
@@ -244,7 +263,7 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col"
-    : "bg-white dark:bg-gray-800 px-4 pt-4 pb-6 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col";
+    : "bg-gradient-to-tr from-white via-gray-100 to-gray-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 px-6 pt-6 pb-8 rounded-2xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer relative flex flex-col transition hover:shadow-2xl";
 
   // If in normal view, render just the chart with a note
   if (!isFullscreen) {

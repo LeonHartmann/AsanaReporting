@@ -1,5 +1,7 @@
 import '@/styles/globals.css';
 import Layout from '@/components/Layout';
+// Apply global Chart.js styling
+import '@/utils/chartDefaults';
 
 function MyApp({ Component, pageProps }) {
   return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
+import { createVerticalGradient } from '@/utils/chartGradients';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -85,8 +86,26 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
         label: 'Tasks Created',
         data: createdCounts,
         fill: false,
-        borderColor: 'rgb(75, 192, 192)', // Teal
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgb(20, 184, 166)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgb(94, 234, 212)',
+            'rgb(20, 184, 166)'
+          );
+        },
+        backgroundColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(20, 184, 166, 0.2)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(94, 234, 212, 0.3)',
+            'rgba(20, 184, 166, 0.3)'
+          );
+        },
         tension: 0.1,
         borderWidth: isFullscreen ? 2 : 1,
         pointRadius: isFullscreen ? 5 : 3,
@@ -96,8 +115,26 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
         label: 'Tasks Completed',
         data: completedCounts,
         fill: false,
-        borderColor: 'rgb(54, 162, 235)', // Blue
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgb(99, 102, 241)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgb(165, 180, 252)',
+            'rgb(99, 102, 241)'
+          );
+        },
+        backgroundColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(99, 102, 241, 0.2)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(165, 180, 252, 0.3)',
+            'rgba(99, 102, 241, 0.3)'
+          );
+        },
         tension: 0.1,
         borderWidth: isFullscreen ? 2 : 1,
         pointRadius: isFullscreen ? 5 : 3,
@@ -224,7 +261,7 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full"
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
+    : "bg-gradient-to-tr from-white via-gray-100 to-gray-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 p-6 rounded-2xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-2xl";
 
   return (
     <div 

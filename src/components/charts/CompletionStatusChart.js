@@ -17,17 +17,16 @@ ChartJS.register(
 
 // Define a fixed color map for statuses
 const STATUS_COLORS = {
-  'Completed': 'rgba(52, 168, 83, 0.7)',        // Green
-  'Completed/Feedback': 'rgba(150, 200, 100, 0.7)', // Light Green-ish (Adjust as needed)
-  'In progress': 'rgba(66, 133, 244, 0.7)',    // Blue
-  'In Review': 'rgba(170, 107, 228, 0.7)',      // Purple
-  'To Do': 'rgba(251, 188, 5, 0.7)',         // Yellow
-  'Awaiting Info': 'rgba(231, 141, 53, 0.7)', // Orange (Adjusted slightly from Blocked)
-  'Blocked': 'rgba(234, 67, 53, 0.7)',       // Red
-  'No Status': 'rgba(158, 158, 158, 0.7)',     // Grey
-  // Add other potential statuses here if known
+  'Completed': 'rgba(34, 197, 94, 0.7)',       // Tailwind green-500
+  'Completed/Feedback': 'rgba(52, 211, 153, 0.7)', // Emerald
+  'In progress': 'rgba(59, 130, 246, 0.7)',    // Blue
+  'In Review': 'rgba(139, 92, 246, 0.7)',      // Purple
+  'To Do': 'rgba(234, 179, 8, 0.7)',           // Yellow
+  'Awaiting Info': 'rgba(249, 115, 22, 0.7)',  // Orange
+  'Blocked': 'rgba(239, 68, 68, 0.7)',         // Red
+  'No Status': 'rgba(107, 114, 128, 0.7)',     // Gray
 };
-const DEFAULT_COLOR = 'rgba(158, 158, 158, 0.7)'; // Grey for unknown statuses
+const DEFAULT_COLOR = 'rgba(107, 114, 128, 0.7)';
 
 export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) {
   if (!tasks || tasks.length === 0) {
@@ -164,7 +163,7 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full"
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
+    : "bg-gradient-to-tr from-white via-gray-100 to-gray-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 p-6 rounded-2xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-2xl";
 
   return (
     <div 

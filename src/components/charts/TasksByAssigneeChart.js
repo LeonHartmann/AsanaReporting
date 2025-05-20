@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
+import { createVerticalGradient } from '@/utils/chartGradients';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -47,8 +48,26 @@ export default function TasksByAssigneeChart({ tasks, onClick }) {
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: 'rgba(75, 192, 192, 0.6)', // Teal color
-        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(34, 197, 94, 0.6)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(134, 239, 172, 0.8)',
+            'rgba(34, 197, 94, 0.8)'
+          );
+        },
+        borderColor: (ctx) => {
+          const { chart, chartArea } = ctx;
+          if (!chartArea) return 'rgba(34, 197, 94, 1)';
+          return createVerticalGradient(
+            chart.ctx,
+            chartArea,
+            'rgba(134, 239, 172, 1)',
+            'rgba(34, 197, 94, 1)'
+          );
+        },
         borderWidth: 1,
       },
     ],
@@ -93,7 +112,7 @@ export default function TasksByAssigneeChart({ tasks, onClick }) {
     <div 
       id="tasks-by-assignee-chart"
       data-title="Tasks by Assignee"
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer" 
+      className="bg-gradient-to-tr from-white via-gray-100 to-gray-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 p-6 rounded-2xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-2xl"
       onClick={onClick}
     >
       <Bar data={data} options={options} />
