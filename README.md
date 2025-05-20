@@ -30,7 +30,7 @@ It allows users to visualize and filter Asana tasks based on various criteria.
 *   [Next.js](https://nextjs.org) (React Framework with Pages Router)
 *   [React](https://reactjs.org/)
 *   [Tailwind CSS](https://tailwindcss.com/)
-*   [Chart.js](https://www.chartjs.org/) (or similar charting library used within components) - *Assumption, verify if needed*
+*   [Visx](https://airbnb.io/visx/) for modern, performant charts (replacing the previous Chart.js usage)
 *   Node.js (for backend API routes)
 
 ## Project Structure Highlights
