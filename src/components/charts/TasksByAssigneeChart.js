@@ -47,8 +47,8 @@ export default function TasksByAssigneeChart({ tasks, onClick }) {
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: 'rgba(75, 192, 192, 0.6)', // Teal color
-        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.6)', // Green
+        borderColor: 'rgba(34, 197, 94, 1)',
         borderWidth: 1,
       },
     ],
@@ -93,7 +93,7 @@ export default function TasksByAssigneeChart({ tasks, onClick }) {
     <div 
       id="tasks-by-assignee-chart"
       data-title="Tasks by Assignee"
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer" 
+      className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-xl"
       onClick={onClick}
     >
       <Bar data={data} options={options} />

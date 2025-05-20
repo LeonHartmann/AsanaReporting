@@ -85,8 +85,8 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
         label: 'Tasks Created',
         data: createdCounts,
         fill: false,
-        borderColor: 'rgb(75, 192, 192)', // Teal
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgb(20, 184, 166)', // Teal
+        backgroundColor: 'rgba(20, 184, 166, 0.2)',
         tension: 0.1,
         borderWidth: isFullscreen ? 2 : 1,
         pointRadius: isFullscreen ? 5 : 3,
@@ -96,8 +96,8 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
         label: 'Tasks Completed',
         data: completedCounts,
         fill: false,
-        borderColor: 'rgb(54, 162, 235)', // Blue
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgb(99, 102, 241)', // Indigo
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
         tension: 0.1,
         borderWidth: isFullscreen ? 2 : 1,
         pointRadius: isFullscreen ? 5 : 3,
@@ -224,7 +224,7 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full"
-    : "bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer";
+    : "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-xl";
 
   return (
     <div 

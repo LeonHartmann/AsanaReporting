@@ -151,9 +151,9 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: 'rgba(255, 159, 64, 0.6)', // Orange color
-        borderColor: 'rgba(255, 159, 64, 1)',
-        borderWidth: isFullscreen ? 1 : 1, // Consistent border width
+        backgroundColor: 'rgba(56, 189, 248, 0.6)', // Sky
+        borderColor: 'rgba(56, 189, 248, 1)',
+        borderWidth: isFullscreen ? 1 : 1,
       },
     ],
   };
@@ -261,7 +261,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col" // Use flex-col for fullscreen layout
-    : "bg-white dark:bg-gray-800 px-4 pt-4 pb-6 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col"; // Adjusted padding
+    : "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 px-6 pt-6 pb-8 rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer relative flex flex-col transition hover:shadow-xl"; // Adjusted padding
 
   // If in normal view, render just the chart with a note
   if (!isFullscreen) {

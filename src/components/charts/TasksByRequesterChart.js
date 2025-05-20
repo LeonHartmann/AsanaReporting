@@ -145,8 +145,8 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: 'rgba(153, 102, 255, 0.6)', // Purple color
-        borderColor: 'rgba(153, 102, 255, 1)',
+        backgroundColor: 'rgba(245, 158, 11, 0.6)', // Amber
+        borderColor: 'rgba(245, 158, 11, 1)',
         borderWidth: isFullscreen ? 1 : 1,
       },
     ],
@@ -244,7 +244,7 @@ export default function TasksByRequesterChart({ tasks, onClick, isFullscreen }) 
   // Custom container class based on fullscreen state
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col"
-    : "bg-white dark:bg-gray-800 px-4 pt-4 pb-6 rounded-lg shadow-md h-96 cursor-pointer relative flex flex-col";
+    : "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 px-6 pt-6 pb-8 rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer relative flex flex-col transition hover:shadow-xl";
 
   // If in normal view, render just the chart with a note
   if (!isFullscreen) {

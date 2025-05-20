@@ -69,12 +69,12 @@ export default function TasksByDeadlineChart({ tasks, onClick }) {
   
   // Colors for different deadline periods
   const backgroundColors = [
-    'rgba(234, 67, 53, 0.7)',   // Red for Overdue
-    'rgba(251, 188, 5, 0.7)',   // Yellow for Today
-    'rgba(66, 133, 244, 0.7)',  // Blue for This Week
-    'rgba(52, 168, 83, 0.7)',   // Green for This Month
-    'rgba(170, 107, 228, 0.7)',  // Purple for Future
-    'rgba(128, 128, 128, 0.7)',  // Gray for No Deadline
+    'rgba(239, 68, 68, 0.7)',   // Overdue - red
+    'rgba(234, 179, 8, 0.7)',   // Today - yellow
+    'rgba(59, 130, 246, 0.7)',  // This Week - blue
+    'rgba(34, 197, 94, 0.7)',   // This Month - green
+    'rgba(99, 102, 241, 0.7)',  // Future - indigo
+    'rgba(107, 114, 128, 0.7)', // No Deadline - gray
   ];
   
   const borderColors = backgroundColors.map(color => color.replace('0.7', '1'));
@@ -130,7 +130,7 @@ export default function TasksByDeadlineChart({ tasks, onClick }) {
     <div 
       id="tasks-by-deadline-chart"
       data-title="Tasks by Deadline"
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96 cursor-pointer" 
+      className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 h-96 cursor-pointer transition hover:shadow-xl"
       onClick={onClick}
     >
       <Bar data={data} options={options} />
