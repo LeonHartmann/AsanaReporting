@@ -125,40 +125,54 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric', month: 'short', day: 'numeric'
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('en-GB', { // Using en-GB for dd/mm/yyyy
+        day: '2-digit', month: '2-digit', year: 'numeric'
       });
     } catch (e) {
       return 'Invalid Date';
     }
   };
 
-  // Format a completion status as a styled badge
+  // Updated formatStatus function
   const formatStatus = (completed, status) => {
+    let text = status;
+    let bgColor = 'bg-customGray-200 dark:bg-customGray-600';
+    let textColor = 'text-customGray-800 dark:text-customGray-100';
+
     if (completed) {
-      return (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-          Completed
-        </span>
-      );
-    }
-    
-    // Color code based on status name
-    let colorClass = 'bg-gray-100 text-gray-800'; // Default
-    
-    if (status.toLowerCase().includes('in progress')) {
-      colorClass = 'bg-blue-100 text-blue-800';
-    } else if (status.toLowerCase().includes('todo') || status.toLowerCase().includes('to do')) {
-      colorClass = 'bg-yellow-100 text-yellow-800';
-    } else if (status.toLowerCase().includes('review')) {
-      colorClass = 'bg-purple-100 text-purple-800';
-    } else if (status.toLowerCase().includes('block')) {
-      colorClass = 'bg-red-100 text-red-800';
+      text = 'Completed';
+      bgColor = 'bg-success'; // Using success color from config
+      textColor = 'text-white';
+    } else {
+      const lowerStatus = status ? status.toLowerCase() : '';
+      if (lowerStatus.includes('in progress')) {
+        bgColor = 'bg-primary'; // Using primary for In Progress (as info)
+        textColor = 'text-white';
+      } else if (lowerStatus.includes('todo') || lowerStatus.includes('to do')) {
+        bgColor = 'bg-warning'; // Using warning
+        textColor = 'text-customGray-900'; // Dark text for yellow bg
+      } else if (lowerStatus.includes('review')) {
+        bgColor = 'bg-accent-purple'; // Using accent.purple
+        textColor = 'text-white';
+      } else if (lowerStatus.includes('block')) {
+        bgColor = 'bg-error'; // Using error
+        textColor = 'text-white';
+      } else if (lowerStatus.includes('awaiting info')) {
+        bgColor = 'bg-accent-orange'; // Using accent.orange
+        textColor = 'text-white';
+      } else if (lowerStatus.includes('completed/feedback')) {
+        bgColor = 'bg-secondary'; // Using secondary for feedback
+        textColor = 'text-white';
+        text = 'Feedback'; // Shorten display name
+      }
     }
     
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}>
-        {status}
+      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${bgColor} ${textColor} whitespace-nowrap`}>
+        {text}
       </span>
     );
   };
@@ -223,63 +237,67 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div className="bg-error/10 border border-error/40 text-error px-4 py-3 rounded-lg relative font-sans" role="alert"> {/* Updated error style */}
         <strong className="font-bold">Error!</strong>
         <span className="block sm:inline"> {error}</span>
       </div>
     );
   }
+  
+  const headerCellClasses = "px-5 py-3.5 text-left text-xs font-semibold text-customGray-600 dark:text-customGray-300 uppercase tracking-wider cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:bg-customGray-100 dark:focus:bg-customGray-600 transition-colors duration-150";
+  const bodyCellClasses = "px-5 py-4 whitespace-nowrap text-sm";
+  const textMainClasses = "text-customGray-900 dark:text-customGray-100";
+  const textSubtleClasses = "text-customGray-500 dark:text-customGray-400";
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white dark:bg-customGray-800 shadow-xl overflow-hidden rounded-xl font-sans"> {/* Updated container styles */}
        <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+        <table className="min-w-full divide-y divide-customGray-200 dark:divide-customGray-700">
+          <thead className="bg-customGray-50 dark:bg-customGray-700/50"> {/* Updated header bg */}
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('brand')}>
-                Brand {sortConfig.key === 'brand' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('brand')}>
+                Brand <span className="opacity-70 ml-1">{sortConfig.key === 'brand' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('asset')}>
-                Asset {sortConfig.key === 'asset' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('asset')}>
+                Asset <span className="opacity-70 ml-1">{sortConfig.key === 'asset' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('requester')}>
-                Requested By {sortConfig.key === 'requester' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('requester')}>
+                Requested By <span className="opacity-70 ml-1">{sortConfig.key === 'requester' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('assignee')}>
-                Assignee {sortConfig.key === 'assignee' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('assignee')}>
+                Assignee <span className="opacity-70 ml-1">{sortConfig.key === 'assignee' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('taskType')}>
-                Task Type {sortConfig.key === 'taskType' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('taskType')}>
+                Task Type <span className="opacity-70 ml-1">{sortConfig.key === 'taskType' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('name')}>
-                Task Name {sortConfig.key === 'name' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={`${headerCellClasses} min-w-[200px]`} onClick={() => requestSort('name')}> {/* Added min-width */}
+                Task Name <span className="opacity-70 ml-1">{sortConfig.key === 'name' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('status')}>
-                Status {sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('status')}>
+                Status <span className="opacity-70 ml-1">{sortConfig.key === 'status' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              {/* Add status duration columns */}
               {statusColumns.map(status => (
-                <th key={status} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort(status)}>
-                  Time in {status.trim()} {sortConfig.key === status ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+                <th key={status} scope="col" className={headerCellClasses} onClick={() => requestSort(status)}>
+                  Time in {status.trim()} <span className="opacity-70 ml-1">{sortConfig.key === status ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
                 </th>
               ))}
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('openDuration')}>
-                Open Duration {sortConfig.key === 'openDuration' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('openDuration')}>
+                Open Duration <span className="opacity-70 ml-1">{sortConfig.key === 'openDuration' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('deadline')}>
-                Deadline {sortConfig.key === 'deadline' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('deadline')}>
+                Deadline <span className="opacity-70 ml-1">{sortConfig.key === 'deadline' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('createdAt')}>
-                Created At {sortConfig.key === 'createdAt' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}
+              <th scope="col" className={headerCellClasses} onClick={() => requestSort('createdAt')}>
+                Created At <span className="opacity-70 ml-1">{sortConfig.key === 'createdAt' ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '↕'}</span>
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 relative">
+          <tbody className="bg-white dark:bg-customGray-800 divide-y divide-customGray-200 dark:divide-customGray-700 relative">
             {isLoading && (
               <tr>
-                <td colSpan={10 + statusColumns.length} className="text-center py-10">
+                <td colSpan={7 + statusColumns.length} className="text-center py-10"> {/* Adjusted colSpan */}
                    <div className="flex justify-center items-center">
-                      <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> {/* Used primary color */}
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -289,7 +307,7 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
             )}
             {!isLoading && sortedTasks.length === 0 && (
               <tr>
-                <td colSpan={10 + statusColumns.length} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                <td colSpan={7 + statusColumns.length} className={`${bodyCellClasses} ${textSubtleClasses} text-center`}> {/* Adjusted colSpan */}
                   No tasks found matching your criteria.
                 </td>
               </tr>
@@ -297,43 +315,42 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
             {!isLoading && sortedTasks.map((task) => (
               <tr 
                 key={task.id} 
-                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`hover:bg-customGray-50 dark:hover:bg-customGray-700/60 transition-colors duration-150 ${onRowClick ? 'cursor-pointer' : ''}`}
                 onClick={() => onRowClick ? onRowClick(task) : undefined}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  {task.brand}
+                <td className={`${bodyCellClasses} font-medium ${textMainClasses}`}>
+                  {task.brand || 'N/A'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {task.asset}
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
+                  {task.asset || 'N/A'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {task.requester}
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
+                  {task.requester || 'N/A'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {task.assignee}
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
+                  {task.assignee || 'Unassigned'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {task.taskType}
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
+                  {task.taskType || 'N/A'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                <td className={`${bodyCellClasses} ${textMainClasses} max-w-xs truncate`}> {/* Added max-width and truncate */}
                   {task.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
                   {formatStatus(task.completed, task.status)}
                 </td>
-                {/* Status duration cells */}
                 {statusColumns.map(status => (
-                  <td key={status} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td key={status} className={`${bodyCellClasses} ${textSubtleClasses}`}>
                     {formatSeconds(task[status] || 'N/A')}
                   </td>
                 ))}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
                   {calculateDuration(task.createdAt, task.completedAt, task.completed)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
                   {formatDate(task.deadline)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className={`${bodyCellClasses} ${textSubtleClasses}`}>
                   {formatDate(task.createdAt)}
                 </td>
               </tr>
@@ -343,4 +360,4 @@ export default function TaskTable({ tasks, isLoading, error, onRowClick }) {
       </div>
     </div>
   );
-} 
+}

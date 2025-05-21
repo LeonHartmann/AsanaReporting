@@ -35,27 +35,37 @@ function PdfExportSettingsModal({ isOpen, onClose, availableElements, selectedEl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fade-in-scale">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Configure PDF Export Elements</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-customGray-900 bg-opacity-75 transition-opacity duration-300 ease-in-out font-sans"> {/* Updated overlay */}
+      <div className="bg-white dark:bg-customGray-800 rounded-xl shadow-xl p-6 w-full max-w-lg transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fade-in-scale"> {/* Updated panel, max-w-lg */}
+        <h3 className="text-xl font-semibold mb-5 text-customGray-900 dark:text-customGray-100">Configure PDF Export Elements</h3> {/* Updated text styles */}
 
-        <div className="mb-4 space-x-2">
-          <button onClick={handleSelectAll} className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500">Select All</button>
-          <button onClick={handleDeselectAll} className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500">Deselect All</button>
+        <div className="mb-5 space-x-3"> {/* Updated spacing */}
+          <button 
+            onClick={handleSelectAll} 
+            className="px-3.5 py-1.5 text-sm font-medium rounded-md text-customGray-700 dark:text-customGray-200 bg-customGray-100 dark:bg-customGray-700 hover:bg-customGray-200 dark:hover:bg-customGray-600 transition-colors"
+          >
+            Select All
+          </button>
+          <button 
+            onClick={handleDeselectAll} 
+            className="px-3.5 py-1.5 text-sm font-medium rounded-md text-customGray-700 dark:text-customGray-200 bg-customGray-100 dark:bg-customGray-700 hover:bg-customGray-200 dark:hover:bg-customGray-600 transition-colors"
+          >
+            Deselect All
+          </button>
         </div>
 
-        <div className="max-h-60 overflow-y-auto mb-6 pr-2 space-y-2"> {/* Scrollable area */}
+        <div className="max-h-72 overflow-y-auto mb-6 pr-2 space-y-2.5"> {/* Increased max-h, updated spacing */}
           {availableElements.map((element) => (
-            <div key={element.id} className="flex items-center">
+            <div key={element.id} className="flex items-center p-1 hover:bg-customGray-50 dark:hover:bg-customGray-700/50 rounded-md"> {/* Added hover and rounded */}
               <input
                 type="checkbox"
                 id={`pdf-setting-${element.id}`}
                 value={element.id}
                 checked={currentSelection.has(element.id)}
                 onChange={handleCheckboxChange}
-                className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                className="mr-2.5 h-4 w-4 rounded border-customGray-300 dark:border-customGray-500 text-primary focus:ring-2 focus:ring-primary/50 dark:bg-customGray-700 dark:ring-offset-customGray-800" // Updated checkbox style
               />
-              <label htmlFor={`pdf-setting-${element.id}`} className="text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor={`pdf-setting-${element.id}`} className="text-sm text-customGray-700 dark:text-customGray-300 select-none"> {/* Added select-none */}
                 {element.name}
               </label>
             </div>
@@ -64,21 +74,21 @@ function PdfExportSettingsModal({ isOpen, onClose, availableElements, selectedEl
 
         <div className="flex justify-end space-x-3">
           <button
-            onClick={onClose} // Simple close, doesn't save changes
-            className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium rounded-md text-customGray-700 dark:text-customGray-200 bg-customGray-100 dark:bg-customGray-700 hover:bg-customGray-200 dark:hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition-colors" // Updated cancel button
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-            disabled={currentSelection.size === 0} // Disable save if nothing selected
+            className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 transition-colors" // Updated save button
+            disabled={currentSelection.size === 0}
           >
             Save Selection
           </button>
         </div>
       </div>
-       {/* Add simple fade-in animation */}
+      {/* Add simple fade-in animation */}
       <style jsx>{`
         @keyframes fade-in-scale {
           from {

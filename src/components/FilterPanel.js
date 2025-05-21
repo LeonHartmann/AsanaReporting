@@ -78,12 +78,12 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
   };
 
   return (
-    <form onSubmit={handleApply} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+    <form onSubmit={handleApply} className="bg-white dark:bg-customGray-800 p-6 rounded-xl shadow-lg mb-8 font-sans"> {/* Updated container styles */}
       {/* Row 1: Original Filters (excluding assignee dropdown) + Buttons */}
-      <div className="flex flex-wrap gap-4 items-end mb-4"> {/* Added mb-4 for spacing */}
+      <div className="flex flex-wrap gap-6 items-end mb-6"> {/* Increased gap and mb */}
         {/* Brand Filter (using react-select) */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="brand-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52"> {/* Increased width */}
+          <label htmlFor="brand-select" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5"> {/* Updated label styles */}
             Brand
           </label>
           <Select
@@ -99,57 +99,89 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             isClearable
             isSearchable
             placeholder="Search or select..."
-            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            className="shadow-sm text-customGray-700 dark:text-customGray-100 sm:text-sm" /* Updated text color */
             classNamePrefix="react-select"
-            // Basic styling for dark mode compatibility (can be customized further)
             styles={{
               control: (base, state) => ({
                 ...base,
-                backgroundColor: 'var(--select-bg, white)', // Use CSS variable or default
-                borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)',
-                boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow,
+                backgroundColor: 'var(--select-bg, white)',
+                borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border, #d1d5db)', // primary, customGray.300
+                boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #3b82f6)' : base.boxShadow,
+                borderRadius: '0.375rem', // rounded-md
+                minHeight: '38px', // Ensure consistent height with other inputs
                 '&:hover': {
-                    borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)',
+                  borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border-hover, #9ca3af)', // customGray.400
                 }
               }),
-              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              menu: (base) => ({
-                ...base,
-                backgroundColor: 'var(--select-menu-bg, white)',
-              }),
+              valueContainer: (base) => ({ ...base, padding: '2px 8px'}),
+              multiValue: (base) => ({ ...base, backgroundColor: 'var(--select-multivalue-bg, #e0e7ff)', borderRadius: '0.25rem'}), // primary-lightest bg
+              multiValueLabel: (base) => ({ ...base, color: 'var(--select-multivalue-text, #3730a3)'}), // primary-darker text
+              multiValueRemove: (base) => ({ ...base, color: 'var(--select-multivalue-remove-text, #4f46e5)', '&:hover': { backgroundColor: 'var(--select-multivalue-remove-hover-bg, #c7d2fe)', color: 'var(--select-multivalue-remove-hover-text, #3730a3)'}}),
+              input: (base) => ({ ...base, margin: '0px', paddingBottom: '0px', paddingTop: '0px', color: 'var(--select-text, #111827)' }),
+              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)', borderRadius: '0.375rem', zIndex: 20}),
               option: (base, state) => ({
                 ...base,
-                backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)',
-                color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)',
-                '&:active': {
-                    backgroundColor: 'var(--select-option-active-bg, #4338ca)',
-                },
+                backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #3b82f6)' : state.isFocused ? 'var(--select-option-focus-bg, #dbeafe)' : 'var(--select-menu-bg, white)', // primary, primary-lightest
+                color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #111827)',
+                '&:active': { backgroundColor: 'var(--select-option-active-bg, #2563eb)'}, // primary-dark
               }),
-              placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+              placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}), // customGray.500
+              clearIndicator: (base) => ({ ...base, color: 'var(--select-clear-indicator, #9ca3af)', '&:hover': {color: 'var(--select-clear-indicator-hover, #ef4444)'}}),
+              dropdownIndicator: (base) => ({ ...base, color: 'var(--select-dropdown-indicator, #9ca3af)', '&:hover': {color: 'var(--select-dropdown-indicator-hover, #6b7280)'}}),
             }}
           />
-          {/* CSS Variables for dark mode - Add to your global CSS or layout */}
+          {/* Updated CSS Variables for react-select */}
           <style jsx global>{`
+            html { /* Light mode defaults */
+                --select-bg: #ffffff;
+                --select-border: #d1d5db; /* customGray.300 */
+                --select-border-focus: #3b82f6; /* primary */
+                --select-border-hover: #9ca3af; /* customGray.400 */
+                --select-text: #111827; /* customGray.900 */
+                --select-menu-bg: #ffffff;
+                --select-option-selected-bg: #3b82f6; /* primary */
+                --select-option-focus-bg: #dbeafe; /* primary-lightest (blue-100) */
+                --select-option-selected-text: #ffffff;
+                --select-option-active-bg: #2563eb; /* primary-dark */
+                --select-placeholder-text: #6b7280; /* customGray.500 */
+                --select-multivalue-bg: #e0e7ff; /* indigo-100 for example */
+                --select-multivalue-text: #3730a3; /* indigo-800 */
+                --select-multivalue-remove-text: #4f46e5; /* indigo-600 */
+                --select-multivalue-remove-hover-bg: #c7d2fe; /* indigo-200 */
+                --select-multivalue-remove-hover-text: #3730a3; /* indigo-800 */
+                --select-clear-indicator: #9ca3af; /* customGray.400 */
+                --select-clear-indicator-hover: #ef4444; /* error */
+                --select-dropdown-indicator: #9ca3af; /* customGray.400 */
+                --select-dropdown-indicator-hover: #6b7280; /* customGray.500 */
+            }
             html.dark {
-                --select-bg: #374151; /* gray-700 */
-                --select-border: #4b5563; /* gray-600 */
-                --select-border-focus: #6366f1; /* indigo-500 */
-                --select-border-hover: #6b7280; /* gray-500 */
-                --select-text: #d1d5db; /* gray-300 */
-                --select-menu-bg: #374151; /* gray-700 */
-                --select-option-selected-bg: #4f46e5; /* indigo-600 */
-                --select-option-focus-bg: #4b5563; /* gray-600 */
-                --select-option-selected-text: white;
-                --select-option-active-bg: #4338ca; /* indigo-700 */
-                --select-placeholder-text: #9ca3af; /* gray-400 */
+                --select-bg: #1f2937; /* customGray.800 */
+                --select-border: #4b5563; /* customGray.600 */
+                --select-border-focus: #60a5fa; /* primary.light */
+                --select-border-hover: #6b7280; /* customGray.500 */
+                --select-text: #f3f4f6; /* customGray.100 */
+                --select-menu-bg: #1f2937; /* customGray.800 */
+                --select-option-selected-bg: #3b82f6; /* primary */
+                --select-option-focus-bg: #374151; /* customGray.700 */
+                --select-option-selected-text: #ffffff;
+                --select-option-active-bg: #2563eb; /* primary.dark */
+                --select-placeholder-text: #9ca3af; /* customGray.400 */
+                --select-multivalue-bg: #374151; /* customGray.700 */
+                --select-multivalue-text: #a5b4fc; /* indigo-300 */
+                --select-multivalue-remove-text: #c7d2fe; /* indigo-200 */
+                --select-multivalue-remove-hover-bg: #4338ca; /* indigo-700 */
+                --select-multivalue-remove-hover-text: #e0e7ff; /* indigo-100 */
+                --select-clear-indicator: #9ca3af; /* customGray.400 */
+                --select-clear-indicator-hover: #f87171; /* error-light */
+                --select-dropdown-indicator: #9ca3af; /* customGray.400 */
+                --select-dropdown-indicator-hover: #d1d5db; /* customGray.300 */
             }
           `}</style>
         </div>
 
         {/* Asset Filter (using react-select) */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="asset-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52">
+          <label htmlFor="asset-select" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5">
             Asset
           </label>
           <Select
@@ -165,22 +197,27 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             isClearable
             isSearchable
             placeholder="Search or select..."
-            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            className="shadow-sm text-customGray-700 dark:text-customGray-100 sm:text-sm" /* Updated text color */
             classNamePrefix="react-select"
-            styles={{ /* Reusing styles from Brand */
-              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow, '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)', } }),
-              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)' }),
-              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #4338ca)', }, }),
+            styles={{ /* Reusing styles from Brand, defined above via CSS variables */
+              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #3b82f6)' : base.boxShadow, borderRadius: '0.375rem', minHeight: '38px', '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border-hover, #9ca3af)', } }),
+              valueContainer: (base) => ({ ...base, padding: '2px 8px'}),
+              multiValue: (base) => ({ ...base, backgroundColor: 'var(--select-multivalue-bg, #e0e7ff)', borderRadius: '0.25rem'}),
+              multiValueLabel: (base) => ({ ...base, color: 'var(--select-multivalue-text, #3730a3)'}),
+              multiValueRemove: (base) => ({ ...base, color: 'var(--select-multivalue-remove-text, #4f46e5)', '&:hover': { backgroundColor: 'var(--select-multivalue-remove-hover-bg, #c7d2fe)', color: 'var(--select-multivalue-remove-hover-text, #3730a3)'}}),
+              input: (base) => ({ ...base, margin: '0px', paddingBottom: '0px', paddingTop: '0px', color: 'var(--select-text, #111827)' }),
+              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)', borderRadius: '0.375rem', zIndex: 20}),
+              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #3b82f6)' : state.isFocused ? 'var(--select-option-focus-bg, #dbeafe)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #111827)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #2563eb)'}, }),
               placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+              clearIndicator: (base) => ({ ...base, color: 'var(--select-clear-indicator, #9ca3af)', '&:hover': {color: 'var(--select-clear-indicator-hover, #ef4444)'}}),
+              dropdownIndicator: (base) => ({ ...base, color: 'var(--select-dropdown-indicator, #9ca3af)', '&:hover': {color: 'var(--select-dropdown-indicator-hover, #6b7280)'}}),
             }}
           />
         </div>
 
         {/* Requester Filter (using react-select) */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="requester-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52">
+          <label htmlFor="requester-select" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5">
             Requested By
           </label>
           <Select
@@ -196,22 +233,27 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             isClearable
             isSearchable
             placeholder="Search or select..."
-            className="shadow-sm text-gray-700 dark:text-gray-300 sm:text-sm"
+            className="shadow-sm text-customGray-700 dark:text-customGray-100 sm:text-sm" /* Updated text color */
             classNamePrefix="react-select"
-            styles={{ /* Reusing styles from Brand */
-              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #4f46e5)' : base.boxShadow, '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #4f46e5)' : 'var(--select-border-hover, #9ca3af)', } }),
-              singleValue: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              input: (base) => ({ ...base, color: 'var(--select-text, #374151)' }),
-              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)' }),
-              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #4f46e5)' : state.isFocused ? 'var(--select-option-focus-bg, #eef2ff)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #374151)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #4338ca)', }, }),
+            styles={{ /* Reusing styles from Brand, defined above via CSS variables */
+              control: (base, state) => ({ ...base, backgroundColor: 'var(--select-bg, white)', borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border, #d1d5db)', boxShadow: state.isFocused ? '0 0 0 1px var(--select-border-focus, #3b82f6)' : base.boxShadow, borderRadius: '0.375rem', minHeight: '38px', '&:hover': { borderColor: state.isFocused ? 'var(--select-border-focus, #3b82f6)' : 'var(--select-border-hover, #9ca3af)', } }),
+              valueContainer: (base) => ({ ...base, padding: '2px 8px'}),
+              multiValue: (base) => ({ ...base, backgroundColor: 'var(--select-multivalue-bg, #e0e7ff)', borderRadius: '0.25rem'}),
+              multiValueLabel: (base) => ({ ...base, color: 'var(--select-multivalue-text, #3730a3)'}),
+              multiValueRemove: (base) => ({ ...base, color: 'var(--select-multivalue-remove-text, #4f46e5)', '&:hover': { backgroundColor: 'var(--select-multivalue-remove-hover-bg, #c7d2fe)', color: 'var(--select-multivalue-remove-hover-text, #3730a3)'}}),
+              input: (base) => ({ ...base, margin: '0px', paddingBottom: '0px', paddingTop: '0px', color: 'var(--select-text, #111827)' }),
+              menu: (base) => ({ ...base, backgroundColor: 'var(--select-menu-bg, white)', borderRadius: '0.375rem', zIndex: 20}),
+              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? 'var(--select-option-selected-bg, #3b82f6)' : state.isFocused ? 'var(--select-option-focus-bg, #dbeafe)' : 'var(--select-menu-bg, white)', color: state.isSelected ? 'var(--select-option-selected-text, white)' : 'var(--select-text, #111827)', '&:active': { backgroundColor: 'var(--select-option-active-bg, #2563eb)'}, }),
               placeholder: (base) => ({ ...base, color: 'var(--select-placeholder-text, #6b7280)'}),
+              clearIndicator: (base) => ({ ...base, color: 'var(--select-clear-indicator, #9ca3af)', '&:hover': {color: 'var(--select-clear-indicator-hover, #ef4444)'}}),
+              dropdownIndicator: (base) => ({ ...base, color: 'var(--select-dropdown-indicator, #9ca3af)', '&:hover': {color: 'var(--select-dropdown-indicator-hover, #6b7280)'}}),
             }}
           />
         </div>
 
         {/* Start Date */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52">
+          <label htmlFor="startDate" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5">
             From Date
           </label>
           <input
@@ -220,14 +262,14 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             name="startDate"
             value={filters.startDate || ''}
             onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            placeholder="dd.mm.yyyy" /* Added placeholder */
+            className="shadow-sm block w-full border border-customGray-300 dark:border-customGray-600 rounded-md py-2 px-3 text-customGray-900 dark:text-customGray-100 bg-white dark:bg-customGray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+            placeholder="dd.mm.yyyy"
           />
         </div>
 
         {/* End Date */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52">
+          <label htmlFor="endDate" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5">
             To Date
           </label>
           <input
@@ -236,22 +278,22 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
             name="endDate"
             value={filters.endDate || ''}
             onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            placeholder="dd.mm.yyyy" /* Added placeholder */
+            className="shadow-sm block w-full border border-customGray-300 dark:border-customGray-600 rounded-md py-2 px-3 text-customGray-900 dark:text-customGray-100 bg-white dark:bg-customGray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+            placeholder="dd.mm.yyyy"
           />
         </div>
 
         {/* Completion Filter */}
-        <div className="flex-grow md:flex-grow-0 md:w-48">
-          <label htmlFor="completionFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <div className="flex-grow md:flex-grow-0 md:w-52">
+          <label htmlFor="completionFilter" className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5">
             Completion Status
           </label>
           <select
             id="completionFilter"
             name="completionFilter"
-            value={filters.completionFilter || 'all'} /* Default to 'all' */
+            value={filters.completionFilter || 'all'}
             onChange={handleInputChange}
-            className="shadow-sm block w-full border rounded py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className="shadow-sm block w-full border border-customGray-300 dark:border-customGray-600 rounded-md py-2 px-3 text-customGray-900 dark:text-customGray-100 bg-white dark:bg-customGray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
           >
             <option value="all">All Tasks</option>
             <option value="only_completed">Only Completed (Checkbox)</option>
@@ -265,17 +307,17 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
         </div>
 
         {/* Action Buttons - Remain in the first row */}
-        <div className="flex space-x-2 self-end">
+        <div className="flex space-x-3 self-end"> {/* Increased space-x */}
           <button
             type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition-colors duration-150"
           >
             Apply Filters
           </button>
            <button
             type="button"
             onClick={handleReset}
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex justify-center py-2 px-4 border border-customGray-300 dark:border-customGray-500 shadow-sm text-sm font-medium rounded-md text-customGray-700 dark:text-customGray-100 bg-customGray-100 dark:bg-customGray-700 hover:bg-customGray-200 dark:hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light transition-colors duration-150"
           >
             Reset
           </button>
@@ -283,22 +325,22 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
       </div> {/* End Row 1 */}
 
       {/* Row 2: Assignee Multi-Select Buttons */}
-      <div className="mb-4"> {/* Added margin bottom */}
-         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {/* Added mb-2 */}
+      <div className="mb-6"> {/* Increased margin bottom */}
+         <label className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-2">
             Assignee (select multiple)
          </label>
-         <div className="flex flex-wrap gap-2">
+         <div className="flex flex-wrap gap-2.5"> {/* Increased gap */}
             {(distinctValues.assignees || []).map((assignee) => {
                 const isSelected = (filters.assignee || []).includes(assignee);
                 return (
                     <button
                         key={assignee}
-                        type="button" // Important: prevent form submission
+                        type="button"
                         onClick={() => handleAssigneeToggle(assignee)}
-                        className={`py-1 px-3 rounded-md text-sm border ${
+                        className={`py-1.5 px-3.5 rounded-md text-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary-light/60 ${
                             isSelected 
-                                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
-                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                ? 'bg-primary text-white border-primary hover:bg-primary-dark' 
+                                : 'bg-customGray-100 dark:bg-customGray-700 text-customGray-800 dark:text-customGray-200 border-customGray-300 dark:border-customGray-600 hover:bg-customGray-200 dark:hover:bg-customGray-600'
                         }`}
                     >
                         {assignee}
@@ -310,20 +352,20 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
 
       {/* Row 3: Task Type Multi-Select Buttons */}
       <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-2">
               Task Type (select multiple)
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5"> {/* Increased gap */}
               {(distinctValues.taskTypes || []).map((taskType) => {
                   const isSelected = (filters.taskType || []).includes(taskType);
                   return (
                       <button
                           key={taskType}
-                          type="button" // Important: prevent form submission
+                          type="button"
                           onClick={() => handleTaskTypeToggle(taskType)}
-                          className={`py-1 px-3 rounded-md text-sm border ${isSelected
-                                  ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          className={`py-1.5 px-3.5 rounded-md text-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/60 dark:focus:ring-primary-light/60 ${isSelected
+                                  ? 'bg-primary text-white border-primary hover:bg-primary-dark'
+                                  : 'bg-customGray-100 dark:bg-customGray-700 text-customGray-800 dark:text-customGray-200 border-customGray-300 dark:border-customGray-600 hover:bg-customGray-200 dark:hover:bg-customGray-600'
                               }`}
                       >
                           {taskType}
@@ -335,4 +377,4 @@ export default function FilterPanel({ filters, setFilters, distinctValues, onApp
 
     </form>
   );
-} 
+}
