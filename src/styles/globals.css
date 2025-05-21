@@ -4,15 +4,15 @@
 
 /* Optional: Your custom global styles below */
 body {
-  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+  @apply font-sans bg-customGray-50 dark:bg-customGray-900 text-customGray-900 dark:text-customGray-100;
   max-width: 100vw;
   overflow-x: hidden;
 }
 
 /* Container with wider max-width */
 .container {
-  max-width: 100% !important;
-  width: 100%;
+  /* max-width: 100% !important; */ /* Removed to allow Tailwind's container or explicit width to control */
+  /* width: 100%; */ /* Removed */
   margin-left: auto;
   margin-right: auto;
 }

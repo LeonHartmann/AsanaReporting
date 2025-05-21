@@ -221,11 +221,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
   const renderClickableChart = (title, ChartComponent, dataProp) => {
     // Simplified: removed logic for activity/throughput data
     const chartProps = { [dataProp || 'tasks']: tasks }; 
-    const chartElement = <ChartComponent {...chartProps} />;
+    const chartElement = <ChartComponent {...chartProps} />; // isFullscreen is handled by the ChartModal now for the actual chart content
     return (
-      // Use openChartModal for standard charts
-      <div className="cursor-pointer hover:shadow-lg transition-shadow duration-200 rounded-lg" onClick={() => openChartModal(title, <ChartComponent {...chartProps} isFullscreen />)}>
-         {chartElement}
+      <div 
+        className="cursor-pointer bg-white dark:bg-customGray-800 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.015] transition-all duration-200 ease-in-out h-full flex flex-col" // Added bg, rounded-xl, shadow-lg, hover:shadow-xl, hover:scale, h-full, flex
+        onClick={() => openChartModal(title, <ChartComponent {...chartProps} isFullscreen />)} // Pass the chart with isFullscreen for the modal
+      >
+         <div className="flex-grow p-1"> {/* Added padding for content within card if any, and flex-grow */}
+            {chartElement}
+        </div>
       </div>
     );
   }
@@ -323,16 +327,23 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
 
              {/* Chart Grid Section - Add ID to wrapper */}
-             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {isLoading && !tasks.length ? (
-                  // Show a single loading indicator spanning columns if needed, or repeat per chart
-                  <div className="lg:col-span-3 text-center py-10">Loading chart data...</div> 
+             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap to match FilterPanel */}
+                 {isLoading && !tasks.length && !error ? (
+                  <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">
+                    <div className="flex justify-center items-center">
+                      <svg className="animate-spin h-6 w-6 text-primary mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading chart data...
+                    </div>
+                  </div> 
                 ) : error && !tasks.length ? (
-                      <div className="lg:col-span-3 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                         Could not load chart data: {error}
+                      <div className="lg:col-span-3 bg-error/10 border border-error/40 text-error px-4 py-3 rounded-lg relative font-sans" role="alert">
+                         <strong className="font-bold">Error!</strong> Could not load chart data: {error}
                       </div>
-                  ) : tasks.length === 0 ? (
-                    <div className="lg:col-span-3 text-center py-10">No tasks match the current filters.</div>
+                  ) : !isLoading && tasks.length === 0 && !error ? (
+                    <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">No tasks match the current filters.</div>
                   ) : (
                     <> 
                       {/* Add IDs to individual chart wrappers */}

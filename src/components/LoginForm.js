@@ -37,21 +37,21 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-12rem)]"> {/* Adjust height based on layout */} 
+    <div className="flex items-center justify-center min-h-screen bg-customGray-50 dark:bg-customGray-900 font-sans px-4"> {/* Use min-h-screen and theme bg */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-sm"
+        className="bg-white dark:bg-customGray-800 p-8 rounded-xl shadow-xl w-full max-w-md" /* Consistent styling, max-w-md */
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">Login</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center text-customGray-900 dark:text-customGray-100">Login</h2> {/* Increased size/margin */ }
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <div className="bg-error/10 border border-error/40 text-error px-4 py-3 rounded-lg relative mb-6" role="alert"> {/* Updated error style */}
             <span className="block sm:inline">{error}</span>
           </div>
         )}
-        <div className="mb-4">
+        <div className="mb-5"> {/* Adjusted margin */}
           <label
             htmlFor="username"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5" /* Updated styles */
           >
             Username
           </label>
@@ -61,13 +61,13 @@ export default function LoginForm() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="shadow-sm appearance-none border border-customGray-300 dark:border-customGray-600 rounded-md w-full py-2.5 px-3 text-customGray-900 dark:text-customGray-100 bg-white dark:bg-customGray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" /* Updated styles */
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-8"> {/* Increased margin */}
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="block text-sm font-medium text-customGray-700 dark:text-customGray-300 mb-1.5" /* Updated styles */
           >
             Password
           </label>
@@ -77,14 +77,14 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="shadow-sm appearance-none border border-customGray-300 dark:border-customGray-600 rounded-md w-full py-2.5 px-3 text-customGray-900 dark:text-customGray-100 bg-white dark:bg-customGray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" /* Updated styles */
           />
         </div>
         <div className="flex items-center justify-between">
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-150" /* Updated styles */
           >
             {isLoading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

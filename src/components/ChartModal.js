@@ -64,32 +64,32 @@ export default function ChartModal({ isOpen, onClose, title, children }) {
 
   return (
     <div 
-      className={`fixed inset-0 bg-black ${isFullscreen ? 'bg-opacity-90' : 'bg-opacity-75'} z-50 flex justify-center items-center ${isFullscreen ? 'p-0' : 'p-2 sm:p-4'} transition-all duration-300 ease-in-out`}
-      onClick={isFullscreen ? toggleFullscreen : onClose}
+      className={`fixed inset-0 bg-customGray-900 ${isFullscreen ? 'bg-opacity-80' : 'bg-opacity-60'} z-50 flex justify-center items-center ${isFullscreen ? 'p-0' : 'p-2 sm:p-4'} transition-opacity duration-300 ease-in-out font-sans`} // Updated overlay and font
+      onClick={isFullscreen ? undefined : onClose} // Only close on backdrop click if not fullscreen
     >
       <div 
         ref={modalContentRef}
-        className={`${isFullscreen ? 'w-screen h-screen rounded-none' : 'bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-7xl h-[90vh]'} relative flex flex-col`}
+        className={`${isFullscreen ? 'w-screen h-screen rounded-none' : 'bg-white dark:bg-customGray-800 rounded-xl shadow-xl w-full max-w-7xl h-[90vh]'} relative flex flex-col transition-all duration-300 ease-in-out`} // Updated panel styles
         onClick={(e) => e.stopPropagation()}
       >
         {/* Control Buttons */}
-        <div className={`absolute top-2 right-2 z-10 flex gap-2 ${isFullscreen ? 'opacity-50 hover:opacity-100' : ''} transition-opacity`}>
+        <div className={`absolute top-3 right-3 z-20 flex gap-2.5 ${isFullscreen ? 'opacity-30 hover:opacity-100 focus-within:opacity-100' : ''} transition-opacity`}> {/* Adjusted position and gap */}
           {/* Fullscreen Toggle Button */}
           <button 
             onClick={toggleFullscreen}
-            className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-1 leading-none bg-white dark:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center`}
+            className="text-customGray-600 dark:text-customGray-300 hover:text-customGray-900 dark:hover:text-white p-1.5 bg-white/70 dark:bg-customGray-700/70 hover:bg-customGray-100 dark:hover:bg-customGray-600 rounded-full w-9 h-9 flex items-center justify-center shadow-sm transition-colors" // Updated styles
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={isFullscreen ? "Exit fullscreen (Esc)" : "Enter fullscreen"}
           >
             {isFullscreen ? (
-              // Minimize icon
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
+              // Minimize icon (Heroicons)
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25" />
               </svg>
             ) : (
-              // Expand icon
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+              // Expand icon (Heroicons)
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9M20.25 20.25h-4.5m4.5 0v-4.5m0-4.5L15 15" />
               </svg>
             )}
           </button>
@@ -97,25 +97,28 @@ export default function ChartModal({ isOpen, onClose, title, children }) {
           {/* Close Button */}
           <button 
             onClick={onClose}
-            className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-2xl font-bold p-1 leading-none bg-white dark:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center`}
-            aria-label="Close modal"
-            title="Close"
+            className="text-customGray-600 dark:text-customGray-300 hover:text-customGray-900 dark:hover:text-white p-1.5 bg-white/70 dark:bg-customGray-700/70 hover:bg-customGray-100 dark:hover:bg-customGray-600 rounded-full w-9 h-9 flex items-center justify-center shadow-sm transition-colors" // Updated styles
+            aria-label="Close modal (Esc)"
+            title="Close (Esc)"
           >
-            &times;
+            {/* Close icon (Heroicons) */}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
         
         {/* Modal Title - only show when not in fullscreen */}
         {title && !isFullscreen && (
-          <div className="px-6 pt-6 pb-2">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white text-center">
+          <div className="px-6 pt-5 pb-3 border-b border-customGray-200 dark:border-customGray-700"> {/* Added border */}
+            <h3 className="text-xl font-semibold text-customGray-900 dark:text-customGray-100 text-center"> {/* Updated text styles */}
               {title}
             </h3>
           </div>
         )}
         
         {/* Modal Content (Chart) */}
-        <div className={`flex-1 ${isFullscreen ? 'p-0' : 'p-4'} overflow-hidden`}>
+        <div className={`flex-1 ${isFullscreen ? 'p-0 bg-white dark:bg-customGray-800' : 'p-4 sm:p-6'} overflow-hidden`}> {/* Ensure bg for chart area in fullscreen */}
           <div className="w-full h-full">
             {/* Pass isFullscreen prop to child components */}
             {React.Children.map(children, child => 

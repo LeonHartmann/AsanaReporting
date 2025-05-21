@@ -51,34 +51,39 @@ export default function TaskSummary({ tasks, avgCycleTime, isLoading }) {
     };
   }, [tasks]);
 
+  // Common card classes
+  const cardClasses = "bg-white dark:bg-customGray-800 shadow-lg rounded-xl p-5 text-center flex flex-col justify-between font-sans";
+  const titleClasses = "text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2"; // Increased mb
+  const valueClasses = "text-3xl font-bold text-customGray-900 dark:text-customGray-100";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Completed tasks</h3>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.completed}</div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8"> {/* Increased gap */}
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Completed Tasks</h3>
+        <div className={valueClasses}>{stats.completed}</div>
       </div>
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Incomplete tasks</h3>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.incomplete}</div>
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Incomplete Tasks</h3>
+        <div className={valueClasses}>{stats.incomplete}</div>
       </div>
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Waiting for Feedback from Sales</h3>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.waitingFeedback}</div>
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Waiting Feedback</h3>
+        <div className={valueClasses}>{stats.waitingFeedback}</div>
       </div>
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Overdue tasks</h3>
-        <div className={`text-3xl font-bold ${stats.overdue > 0 ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{stats.overdue}</div>
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Overdue Tasks</h3>
+        <div className={`text-3xl font-bold ${stats.overdue > 0 ? 'text-error' : 'text-customGray-900 dark:text-customGray-100'}`}>{stats.overdue}</div>
       </div>
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Avg Completion Time</h3>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} days` : 'N/A')}
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Avg Completion Time</h3>
+        <div className={valueClasses}>
+            {isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} d` : 'N/A')} {/* Shortened "days" to "d" */}
         </div>
       </div>
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Total tasks</h3>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+      <div className={cardClasses}>
+        <h3 className={titleClasses}>Total Tasks</h3>
+        <div className={valueClasses}>{stats.total}</div>
       </div>
     </div>
   );
-} 
+}
