@@ -318,7 +318,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         {/* Exportable Content Area (identified by id) */} 
         <div id="capture-content">
              {/* Task Summary Section */}
-             <div id="export-task-summary" className="max-w-screen-2xl mx-auto">
+             <div id="export-task-summary" className="">
                 {!error && (
                   <TaskSummary 
                     tasks={tasks} 
@@ -329,14 +329,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
 
              {/* Average Time In Status Section - This component might be better full-width or have its own internal max-width if needed */}
-             <div id="export-avg-time-status" className="max-w-screen-2xl mx-auto">
+             <div id="export-avg-time-status" className="">
                 {!isLoading && !error && (
                    <AverageTimeInStatus tasks={tasks} />
                 )} 
              </div>
 
              {/* Chart Grid Section - Add ID to wrapper */}
-             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-screen-2xl mx-auto"> {/* Increased gap & added max-width */}
+             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap & removed max-width */}
                  {isLoading && !tasks.length && !error ? (
                   <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">
                     <div className="flex justify-center items-center">
@@ -379,7 +379,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
 
              {/* Line Chart Section - Add ID */}
-             <div id="export-trend-chart" className="mb-8 max-w-screen-2xl mx-auto"> {/* Added max-width */}
+             <div id="export-trend-chart" className="mb-8"> {/* Removed max-width */}
                  {!isLoading && !error && tasks.length > 0 && (
                       renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
                  )} 
