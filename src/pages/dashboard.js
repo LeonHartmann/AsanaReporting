@@ -260,9 +260,9 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <title>GGBC Reporting Dashboard</title>
       </Head>
 
-      {/* Container for centered content (Filters, Summaries, Charts) */}
-      <div className="container mx-auto px-2 md:px-4">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">GGBC Reporting Dashboard</h2>
+      {/* Wrapper for dashboard content. Padding is now handled by Layout.js <main> tag. */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-6 text-customGray-900 dark:text-customGray-100">GGBC Reporting Dashboard</h2>
 
         {/* Filter Section */}
         <FilterPanel
@@ -277,39 +277,48 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         <div className="my-4 text-right flex justify-end items-center space-x-2"> {/* Use flex for alignment */}
             {/* CSV Export Button */}
             <button
-                onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)} // Pass tasks and filename
-                disabled={isLoading || tasks.length === 0} // Disable if loading or no tasks
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)}
+                disabled={isLoading || tasks.length === 0}
+                className="px-4 py-2 bg-secondary hover:bg-secondary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
             >
                 Export Tasks to CSV
             </button>
             
             {/* PDF Export Button */}
             <button
-                // Use the selected elements from state for the export
                 onClick={() => exportDashboardToPDF(selectedPdfElementIds, filters, setIsExportingPDF, setError)}
-                disabled={isExportingPDF || isLoading || selectedPdfElementIds.length === 0} // Also disable if nothing selected
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={selectedPdfElementIds.length === 0 ? "Select elements to export via settings" : "Export selected charts to PDF"} // Add tooltip
+                disabled={isExportingPDF || isLoading || selectedPdfElementIds.length === 0}
+                className="flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
+                title={selectedPdfElementIds.length === 0 ? "Select elements to export via settings" : "Export selected charts to PDF"}
             >
-                {isExportingPDF ? 'Exporting PDF...' : 'Export Charts to PDF'}
+                {isExportingPDF ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Exporting PDF...
+                  </>
+                ) : (
+                  'Export Charts to PDF'
+                )}
             </button>
             
             {/* PDF Settings Button */}
             <button
                 onClick={() => setIsPdfSettingsModalOpen(true)}
-                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Configure PDF Export" // Tooltip
-                disabled={isLoading} // Disable settings if main data is loading
+                className="p-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
+                title="Configure PDF Export"
+                disabled={isLoading}
             >
-                <SettingsIcon className="w-5 h-5" /> {/* Example usage */}
+                <SettingsIcon className="w-5 h-5" />
             </button>
         </div>
 
         {/* Exportable Content Area (identified by id) */} 
         <div id="capture-content">
              {/* Task Summary Section */}
-             <div id="export-task-summary">
+             <div id="export-task-summary" className="max-w-screen-2xl mx-auto">
                 {!error && (
                   <TaskSummary 
                     tasks={tasks} 
@@ -319,15 +328,15 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
                 )} 
              </div>
 
-             {/* Average Time In Status Section */}
-             <div id="export-avg-time-status">
+             {/* Average Time In Status Section - This component might be better full-width or have its own internal max-width if needed */}
+             <div id="export-avg-time-status" className="max-w-screen-2xl mx-auto">
                 {!isLoading && !error && (
                    <AverageTimeInStatus tasks={tasks} />
                 )} 
              </div>
 
              {/* Chart Grid Section - Add ID to wrapper */}
-             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap to match FilterPanel */}
+             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-screen-2xl mx-auto"> {/* Increased gap & added max-width */}
                  {isLoading && !tasks.length && !error ? (
                   <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">
                     <div className="flex justify-center items-center">
@@ -370,7 +379,7 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
 
              {/* Line Chart Section - Add ID */}
-             <div id="export-trend-chart" className="mb-8">
+             <div id="export-trend-chart" className="mb-8 max-w-screen-2xl mx-auto"> {/* Added max-width */}
                  {!isLoading && !error && tasks.length > 0 && (
                       renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
                  )} 
@@ -398,11 +407,11 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              </div>
          </div> { /* End #capture-content */} 
 
-      </div> { /* --- End container for centered content --- */}
+      </div> {/* --- End wrapper for dashboard content --- */}
 
       {/* --- Task List Section - Moved OUTSIDE container for full width --- */}
-      <div className="mt-8 px-2 md:px-4"> { /* Add margin and horizontal padding */}
-        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white container mx-auto">Task List</h2> { /* Keep title centered */ }
+      <div className="mt-8"> {/* Horizontal padding is now handled by Layout.js <main> tag */}
+        <h2 className="text-2xl font-semibold mb-4 text-customGray-900 dark:text-customGray-100 container mx-auto">Task List</h2> {/* Keep title centered */}
         <TaskTable 
           tasks={tasks} 
           isLoading={isLoading && tasks.length === 0} 

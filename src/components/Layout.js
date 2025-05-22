@@ -152,7 +152,7 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
         </nav>
       </header>
 
-      <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8"> {/* Added container and more padding */}
+      <main className="w-full py-8 px-4 sm:px-6 lg:px-8"> {/* Removed container, mx-auto; kept padding and added w-full */}
         {children}
       </main>
 
