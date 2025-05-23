@@ -41,7 +41,7 @@ const getTextColor = () => {
   return '#374151'; // customGray.700 for light mode
 };
 
-export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) {
+export default function CompletionStatusChart({ tasks }) {
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-customGray-500 dark:text-customGray-400">No task data available for chart.</div>;
   }
@@ -103,8 +103,7 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
       {
         data: counts,
         backgroundColor: backgroundColors,
-        borderColor: borderColors,
-        borderWidth: 1,
+        borderWidth: 0, // Remove borders
       },
     ],
   };
@@ -113,17 +112,28 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
   const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'none', // Disable hover interactions
+    },
+    hover: {
+      mode: 'none', // Disable hover effects
+    },
+    animation: {
+      duration: 0, // No animations
+    },
     plugins: {
       legend: {
-        position: isFullscreen ? 'right' : 'bottom',
+        position: 'bottom',
         labels: {
           font: {
             family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 14 : 12
+            size: 12,
+            weight: '500',
           },
-          color: getTextColor(), // Updated color
-          padding: isFullscreen ? 20 : 10,
-          boxWidth: isFullscreen ? 15 : 10,
+          color: getTextColor(),
+          padding: 10,
+          boxWidth: 10,
           usePointStyle: true,
         }
       },
@@ -133,71 +143,29 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
         align: 'center',
         font: {
           family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 22 : 18, // Adjusted size
-          weight: '600' // semibold
+          size: 20,
+          weight: '600',
         },
-        color: getTextColor(), // Updated color
+        color: getTextColor(),
         padding: {
-          top: isFullscreen ? 25 : 15,
-          bottom: isFullscreen ? 25 : 15 // Increased padding
+          top: 0,
+          bottom: 25,
         }
       },
       tooltip: {
-        enabled: true,
-        backgroundColor: 'rgba(0,0,0,0.8)', // Darker tooltip background
-        titleFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 15 : 13,
-          weight: 'bold',
-        },
-        bodyFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 14 : 12
-        },
-        titleColor: '#ffffff', // White title text for dark tooltip
-        bodyColor: '#ffffff', // White body text for dark tooltip
-        padding: isFullscreen ? 14 : 10, // Increased padding
-        cornerRadius: 6, // Rounded corners
-        displayColors: true, // Show color boxes
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-        callbacks: {
-          label: function(context) {
-            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-            const percentage = Math.round((context.raw / total) * 100);
-            return `${context.label}: ${context.raw} (${percentage}%)`;
-          }
-        }
+        enabled: false, // Disable tooltips completely
       }
     },
-    cutout: isFullscreen ? '55%' : '65%', // Adjusted doughnut cutout
-  };
-
-  // Additional options for fullscreen mode
-  const fullscreenOptions = isFullscreen ? {
-    layout: {
-      padding: {
-        top: 20,
-        right: 20,
-        bottom: 20,
-        left: 20
+    cutout: '65%',
+    elements: {
+      arc: {
+        borderWidth: 0, // Remove borders on arc elements
       }
     },
-    animation: {
-      duration: 500
-    }
-  } : {};
-
-  // Merge options
-  const options = {
-    ...baseOptions,
-    ...fullscreenOptions
   };
 
-  // Custom container class based on fullscreen state
-  const containerClass = isFullscreen
-    ? "w-full h-full bg-white dark:bg-customGray-800" // Ensure fullscreen modal background matches
-    : "bg-white dark:bg-customGray-800 p-4 rounded-xl shadow-lg h-96 cursor-pointer"; // Updated styles: shadow-lg, rounded-xl
+  // Custom container class - removed isFullscreen and cursor-pointer
+  const containerClass = "p-6 h-96";
 
   // Effect to update text color on theme change
   // This is a bit of a hack for Chart.js as it doesn't always react to external CSS changes for canvas text
@@ -218,9 +186,8 @@ export default function CompletionStatusChart({ tasks, onClick, isFullscreen }) 
       id="completion-status-chart"
       data-title="Task Status Distribution"
       className={containerClass}
-      onClick={!isFullscreen ? onClick : undefined} // Only allow click to open modal if not already fullscreen
     >
-      <Doughnut ref={chartRef} data={data} options={options} />
+      <Doughnut ref={chartRef} data={data} options={baseOptions} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { differenceInHours, differenceInDays, parseISO } from 'date-fns';
 
 const TIME_FRAMES = {
@@ -10,6 +10,8 @@ const TIME_FRAMES = {
 };
 
 export default function CompletionRateSummary({ tasks, isLoading }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const completionStats = useMemo(() => {
     if (!tasks) {
       return { [TIME_FRAMES.LT_24H]: 0, [TIME_FRAMES.LT_7D]: 0, [TIME_FRAMES.LT_14D]: 0, [TIME_FRAMES.LT_1M]: 0, [TIME_FRAMES.GE_1M]: 0 };
@@ -60,10 +62,16 @@ export default function CompletionRateSummary({ tasks, isLoading }) {
     return counts;
   }, [tasks]);
 
+  // Get fastest completion metrics for summary
+  const fastestCount = completionStats[TIME_FRAMES.LT_24H];
+  const weekCount = completionStats[TIME_FRAMES.LT_7D];
+  const slowestCount = completionStats[TIME_FRAMES.GE_1M];
+  const totalCompleted = Object.values(completionStats).reduce((sum, count) => sum + count, 0);
+
   const renderStatCard = (label, value) => (
-    <div key={label} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
-      <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">{label}</h3>
-      <div className="text-3xl font-bold text-gray-900 dark:text-white">
+    <div key={label} className="bg-white dark:bg-customGray-800 rounded-lg p-4 text-center shadow-sm">
+      <h3 className="text-customGray-600 dark:text-customGray-400 text-sm font-medium mb-2">{label}</h3>
+      <div className="text-2xl font-bold text-customGray-900 dark:text-customGray-100">
         {isLoading ? '...' : value}
       </div>
     </div>
@@ -71,9 +79,62 @@ export default function CompletionRateSummary({ tasks, isLoading }) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Task Completion Rate</h2>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {Object.entries(completionStats).map(([label, value]) => renderStatCard(label, value))}
+      {/* Collapsible Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full bg-white dark:bg-customGray-800 rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-customGray-900 dark:text-customGray-100 mb-2">
+              Task Completion Rate
+            </h3>
+            <div className="text-sm text-customGray-600 dark:text-customGray-400">
+              {isLoading ? (
+                'Loading completion data...'
+              ) : totalCompleted > 0 ? (
+                <>
+                  <span className="font-medium text-secondary">Fast</span>
+                  <span className="ml-1">({fastestCount} &lt;24h)</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-medium text-primary">Weekly</span>
+                  <span className="ml-1">({weekCount} &lt;7d)</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-medium text-warning">Slow</span>
+                  <span className="ml-1">({slowestCount} &gt;1mo)</span>
+                </>
+              ) : (
+                'No completed tasks with timing data'
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl font-bold text-primary">{isLoading ? '...' : totalCompleted}</span>
+            <svg
+              className={`w-5 h-5 text-customGray-400 transition-transform duration-200 ${
+                isExpanded ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
+      {/* Expandable Content */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="bg-customGray-50 dark:bg-customGray-700/50 rounded-xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {Object.entries(completionStats).map(([label, value]) => renderStatCard(label, value))}
+          </div>
+        </div>
       </div>
     </div>
   );

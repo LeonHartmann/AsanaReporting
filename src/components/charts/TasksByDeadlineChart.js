@@ -19,7 +19,7 @@ const getGridColor = () => {
 };
 
 
-export default function TasksByDeadlineChart({ tasks, onClick, isFullscreen }) { // Added isFullscreen
+export default function TasksByDeadlineChart({ tasks }) {
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-customGray-500 dark:text-customGray-400 py-10">No task data available for chart.</div>;
   }
@@ -106,18 +106,56 @@ export default function TasksByDeadlineChart({ tasks, onClick, isFullscreen }) {
         label: 'Tasks',
         data: counts,
         backgroundColor: backgroundColors,
-        borderColor: borderColors,
-        borderWidth: 1,
+        borderWidth: 0, // Remove borders
+        borderRadius: 3,
+        barThickness: 30,
       },
     ],
+  };
+
+  const textColor = getTextColor();
+
+  // Register custom plugin for number labels on top of bars
+  const customLabelsPlugin = {
+    id: 'customLabels',
+    afterDatasetsDraw: (chart) => {
+      const ctx = chart.ctx;
+      const datasets = chart.data.datasets;
+      const meta = chart.getDatasetMeta(0);
+      
+      meta.data.forEach((bar, index) => {
+        const value = datasets[0].data[index];
+        
+        // Position for number on top of the bar
+        const x = bar.x;
+        const y = bar.y - 8;
+        
+        // Draw number
+        ctx.fillStyle = textColor;
+        ctx.font = `600 14px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(value.toString(), x, y);
+      });
+    }
   };
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'none', // Disable hover interactions
+    },
+    hover: {
+      mode: 'none', // Disable hover effects
+    },
+    animation: {
+      duration: 0, // No animations
+    },
     plugins: {
       legend: {
-        display: false, // No legend needed for single dataset bar chart
+        display: false,
       },
       title: {
         display: true,
@@ -125,114 +163,92 @@ export default function TasksByDeadlineChart({ tasks, onClick, isFullscreen }) {
         align: 'center',
         font: {
           family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 22 : 18,
+          size: 20,
           weight: '600',
         },
-        color: getTextColor(),
+        color: textColor,
         padding: {
-          top: isFullscreen ? 20 : 15,
-          bottom: isFullscreen ? 20 : 15,
+          top: 0,
+          bottom: 25,
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 15 : 13,
-          weight: 'bold',
-        },
-        bodyFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 14 : 12,
-        },
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        padding: isFullscreen ? 12 : 10,
-        cornerRadius: 6,
-        displayColors: true, // Show color box next to label
-        callbacks: {
-          label: function(context) {
-            return `Tasks: ${context.raw}`;
-          }
-        }
+        enabled: false, // Disable tooltips completely
       }
     },
     scales: {
-      x: { // For vertical bar chart, X is category, Y is value
+      x: {
         ticks: {
           font: {
             family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 13 : 11,
+            size: 13,
+            weight: '500',
           },
-          color: getTextColor(),
+          color: textColor,
+          padding: 12,
         },
         grid: {
-          display: false, // Hide vertical grid lines for cleaner look
+          display: false,
+        },
+        border: {
+          display: false,
         },
       },
-      y: { // Value axis
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1, // Ensure integer ticks if counts are always whole numbers
-          precision: 0,
-          font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 13 : 11,
-          },
-          color: getTextColor(),
-        },
-        grid: {
-          display: true,
-          color: getGridColor(),
-          drawBorder: false,
-        },
-        title: {
-            display: isFullscreen,
-            text: 'Number of Tasks',
-            font: {
-              family: 'Inter, system-ui, sans-serif',
-              size: isFullscreen ? 15 : 13,
-              weight: '500',
-            },
-            color: getTextColor(),
-        },
+      y: {
+        display: false, // Hide y-axis for cleaner look
+      }
+    },
+    layout: {
+      padding: {
+        top: 25,
+        right: 20,
+        bottom: 15,
+        left: 20,
       }
     },
     elements: {
       bar: {
-        borderRadius: 4,
-        borderSkipped: 'bottom',
+        borderWidth: 0, // Ensure no borders on bar elements
+        borderSkipped: false,
       }
-    }
+    },
   };
-  
-  const containerClass = isFullscreen
-    ? "w-full h-full bg-white dark:bg-customGray-800"
-    : "bg-white dark:bg-customGray-800 p-4 rounded-xl shadow-lg h-96 cursor-pointer";
+
+  // Custom container class
+  const containerClass = "p-6 h-96";
 
   const chartRef = useRef(null);
+  
+  // Update chart colors on theme change
   useEffect(() => {
     const chart = chartRef.current;
     if (chart) {
-      const textColor = getTextColor();
-      const gridColor = getGridColor();
-      chart.options.plugins.title.color = textColor;
-      chart.options.scales.x.ticks.color = textColor;
-      chart.options.scales.y.ticks.color = textColor;
-      if (chart.options.scales.y.title) chart.options.scales.y.title.color = textColor;
-      chart.options.scales.y.grid.color = gridColor;
+      const newTextColor = getTextColor();
+      if (chart.options.plugins.title) {
+        chart.options.plugins.title.color = newTextColor;
+      }
+      chart.options.scales.x.ticks.color = newTextColor;
       chart.update('none');
     }
-  }, [isFullscreen]); // Re-run if isFullscreen changes
+  }, []);
 
   return (
     <div
       id="tasks-by-deadline-chart"
       data-title="Tasks by Deadline"
       className={containerClass}
-      onClick={!isFullscreen ? onClick : undefined}
     >
-      <Bar ref={chartRef} data={data} options={options} />
+      <Bar 
+        ref={chartRef} 
+        data={data} 
+        options={options} 
+        plugins={[customLabelsPlugin]}
+        style={{
+          border: 'none',
+          outline: 'none',
+          boxShadow: 'none'
+        }}
+      />
     </div>
   );
 }

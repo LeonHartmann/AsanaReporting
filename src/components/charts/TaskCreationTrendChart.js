@@ -38,7 +38,7 @@ const getGridColor = () => {
 };
 
 
-export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
+export default function TaskTrendChart({ tasks }) {
   if (!tasks || tasks.length === 0) {
     return <div className="text-center text-customGray-500 dark:text-customGray-400">No task data available for chart.</div>;
   }
@@ -101,49 +101,115 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
       {
         label: 'Tasks Created',
         data: createdCounts,
-        fill: true, // Enable fill for area chart feel
+        fill: false, // Remove fill for cleaner lines
         borderColor: '#3b82f6', // primary.DEFAULT
-        backgroundColor: 'rgba(59, 130, 246, 0.2)', // primary.DEFAULT with alpha
-        tension: isFullscreen ? 0.3 : 0.2, // Smoother lines
-        borderWidth: isFullscreen ? 2.5 : 1.5,
-        pointRadius: isFullscreen ? 5 : 3,
-        pointHoverRadius: isFullscreen ? 8 : 5,
+        backgroundColor: '#3b82f6',
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 3, // Same as regular to prevent hover growth
         pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#3b82f6',
+        pointBorderWidth: 0,
       },
       {
         label: 'Tasks Completed',
         data: completedCounts,
-        fill: true, // Enable fill for area chart feel
+        fill: false, // Remove fill for cleaner lines
         borderColor: '#22c55e', // secondary.DEFAULT
-        backgroundColor: 'rgba(34, 197, 94, 0.2)', // secondary.DEFAULT with alpha
-        tension: isFullscreen ? 0.3 : 0.2, // Smoother lines
-        borderWidth: isFullscreen ? 2.5 : 1.5,
-        pointRadius: isFullscreen ? 5 : 3,
-        pointHoverRadius: isFullscreen ? 8 : 5,
+        backgroundColor: '#22c55e',
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 3, // Same as regular to prevent hover growth
         pointBackgroundColor: '#22c55e',
+        pointBorderColor: '#22c55e',
+        pointBorderWidth: 0,
       },
     ],
   };
 
-  // Base options for both normal and fullscreen modes
   const textColor = getTextColor();
-  const gridColor = getGridColor();
+
+  // Custom plugin to display numbers on data points
+  const customLabelsPlugin = {
+    id: 'customLabels',
+    afterDatasetsDraw: (chart) => {
+      const ctx = chart.ctx;
+      const datasets = chart.data.datasets;
+
+      // For each data point index, determine which line is higher and position accordingly
+      const dataLength = datasets[0].data.length;
+      
+      for (let index = 0; index < dataLength; index++) {
+        const createdDataset = datasets[0];
+        const completedDataset = datasets[1];
+        const createdMeta = chart.getDatasetMeta(0);
+        const completedMeta = chart.getDatasetMeta(1);
+        
+        const createdPoint = createdMeta.data[index];
+        const completedPoint = completedMeta.data[index];
+        const createdValue = createdDataset.data[index];
+        const completedValue = completedDataset.data[index];
+        
+        // Determine which line is higher (lower y-coordinate means higher on screen)
+        const createdIsHigher = createdPoint.y <= completedPoint.y;
+        
+        // Draw created tasks number
+        if (createdValue > 0) {
+          const x = createdPoint.x;
+          const y = createdIsHigher ? createdPoint.y - 15 : createdPoint.y + 12; // Very close to line
+          
+          ctx.fillStyle = '#3b82f6'; // Use line color for created tasks
+          ctx.font = `600 12px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = createdIsHigher ? 'bottom' : 'top';
+          ctx.fillText(createdValue.toString(), x, y);
+        }
+        
+        // Draw completed tasks number
+        if (completedValue > 0) {
+          const x = completedPoint.x;
+          const y = createdIsHigher ? completedPoint.y + 12 : completedPoint.y - 15; // Very close to line
+          
+          ctx.fillStyle = '#22c55e'; // Use line color for completed tasks
+          ctx.font = `600 12px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = createdIsHigher ? 'top' : 'bottom';
+          ctx.fillText(completedValue.toString(), x, y);
+        }
+      }
+    }
+  };
+
+  // Base options
   const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'none', // Disable hover interactions
+    },
+    hover: {
+      mode: 'none', // Disable hover effects
+    },
+    animation: {
+      duration: 0, // No animations
+    },
     plugins: {
       legend: {
         display: true,
-        position: isFullscreen ? 'top' : 'bottom',
+        position: 'bottom',
         labels: {
           font: {
             family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 14 : 12
+            size: 12,
+            weight: '500',
           },
           color: textColor,
           usePointStyle: true,
-          boxWidth: isFullscreen ? 10 : 8,
-          padding: isFullscreen ? 15 : 10,
+          boxWidth: 8,
+          padding: 10,
         }
       },
       title: {
@@ -152,156 +218,86 @@ export default function TaskTrendChart({ tasks, onClick, isFullscreen }) {
         align: 'center',
         font: {
           family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 22 : 18,
-          weight: '600' // semibold
+          size: 20,
+          weight: '600'
         },
         color: textColor,
         padding: {
-          top: isFullscreen ? 25 : 15,
-          bottom: isFullscreen ? 25 : 15
+          top: 0,
+          bottom: 25
         }
       },
       tooltip: {
-        mode: 'index',
-        intersect: false,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 15 : 13,
-          weight: 'bold',
-        },
-        bodyFont: {
-          family: 'Inter, system-ui, sans-serif',
-          size: isFullscreen ? 14 : 12
-        },
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        padding: isFullscreen ? 14 : 10,
-        cornerRadius: 6,
-        displayColors: true,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
+        enabled: false, // Disable tooltips completely
       }
     },
     scales: {
       y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          precision: 0,
-          font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 13 : 11
-          },
-          color: textColor,
-        },
-        title: {
-          display: isFullscreen,
-          text: 'Number of Tasks',
-          font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 15 : 13,
-            weight: '500' // medium
-          },
-          color: textColor,
-        },
-        grid: {
-          display: true,
-          color: gridColor,
-          drawBorder: false, // Softer look
-        }
+        display: false, // Hide y-axis for cleaner look
       },
       x: {
         ticks: {
           font: {
             family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 13 : 11
+            size: 13,
+            weight: '500',
           },
           color: textColor,
-          maxRotation: isFullscreen ? 0 : 30 // Less rotation for non-fullscreen
-        },
-        title: {
-          display: true,
-          text: 'Month',
-          font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: isFullscreen ? 15 : 13,
-            weight: isFullscreen ? '500' : 'normal'
-          },
-          color: textColor,
+          maxRotation: 0,
+          padding: 12,
         },
         grid: {
-          display: isFullscreen, // Only show X grid in fullscreen for cleaner look
-          color: gridColor,
-          drawBorder: false,
-        }
+          display: false, // Remove grid lines
+        },
+        border: {
+          display: false, // Remove x-axis border
+        },
       }
-    }
-  };
-
-  // Additional options for fullscreen mode
-  const fullscreenOptions = isFullscreen ? {
-    layout: {
-      padding: {
-        top: 20,
-        right: 30,
-        bottom: 30,
-        left: 20
-      }
-    },
-    interaction: {
-      mode: 'nearest',
-      axis: 'x',
-      intersect: false
-    },
-    animation: {
-      duration: 500
     },
     elements: {
+      point: {
+        radius: 3,
+        hoverRadius: 3, // Same as regular radius to prevent hover growth
+        borderWidth: 0,
+      },
       line: {
-        tension: 0.3 // Smoother curve in fullscreen
+        borderWidth: 2,
+        tension: 0.3,
       }
-    }
-  } : {};
-
-  // Merge options
-  const options = {
-    ...baseOptions,
-    ...fullscreenOptions
+    },
+    layout: {
+      padding: {
+        top: 25,
+        right: 20,
+        bottom: 15,
+        left: 20,
+      }
+    },
   };
 
-  // Custom container class based on fullscreen state
-  const containerClass = isFullscreen
-    ? "w-full h-full bg-white dark:bg-customGray-800" // Ensure fullscreen modal background matches
-    : "bg-white dark:bg-customGray-800 p-4 rounded-xl shadow-lg h-96 cursor-pointer"; // Updated styles
+  // Custom container class - removed background, shadow, and rounded corners for clean look
+  const containerClass = "p-4 h-96";
 
-  // Effect to update text/grid color on theme change
+  // Effect to update text color on theme change
   const chartRef = React.useRef(null);
   React.useEffect(() => {
     const chart = chartRef.current;
     if (chart) {
       const newTextColor = getTextColor();
-      const newGridColor = getGridColor();
       chart.options.plugins.legend.labels.color = newTextColor;
       chart.options.plugins.title.color = newTextColor;
-      chart.options.scales.y.ticks.color = newTextColor;
-      chart.options.scales.y.title.color = newTextColor;
       chart.options.scales.x.ticks.color = newTextColor;
-      chart.options.scales.x.title.color = newTextColor;
-      chart.options.scales.y.grid.color = newGridColor;
-      chart.options.scales.x.grid.color = newGridColor;
-      chart.update();
+      chart.update('none');
     }
-  }, []); // Add dependency on dark mode state if available
+  }, []);
 
   return (
     <div
       id="task-trend-chart"
       data-title="Task Creation & Completion Trend"
       className={containerClass}
-      onClick={!isFullscreen ? onClick : undefined}
     >
-      <Line ref={chartRef} data={data} options={options} />
+      <Line ref={chartRef} data={data} options={baseOptions} plugins={[customLabelsPlugin]} />
     </div>
   );
 }

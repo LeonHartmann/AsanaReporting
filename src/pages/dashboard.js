@@ -4,8 +4,7 @@ import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
 import TaskSummary from '@/components/TaskSummary'; // Import TaskSummary component
-import AssetSummary from '@/components/AssetSummary'; // Import AssetSummary component
-import TaskTypeSummary from '@/components/TaskTypeSummary'; // Import TaskTypeSummary component
+import DataSummaryTabs from '@/components/DataSummaryTabs'; // Import unified data summary component
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
 import TasksByAssigneeChart from '@/components/charts/TasksByAssigneeChart'; // Import the assignee chart
@@ -14,11 +13,9 @@ import TaskTrendChart from '@/components/charts/TaskCreationTrendChart'; // Impo
 import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; // Import the requester chart
 import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
-import CompletionRateSummary from '@/components/CompletionRateSummary';
 // --- NEW IMPORTS ---
 import AverageTimeInStatus from '@/components/AverageTimeInStatus';
 import TaskStatusDurations from '@/components/TaskStatusDurations';
-// --- END NEW IMPORTS ---
 // --- NEW: Import for date formatting ---
 import { format } from 'date-fns';
 // --- NEW: Import Layout ---
@@ -224,11 +221,24 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
     const chartElement = <ChartComponent {...chartProps} />; // isFullscreen is handled by the ChartModal now for the actual chart content
     return (
       <div 
-        className="cursor-pointer bg-white dark:bg-customGray-800 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.015] transition-all duration-200 ease-in-out h-full flex flex-col" // Added bg, rounded-xl, shadow-lg, hover:shadow-xl, hover:scale, h-full, flex
+        className="cursor-pointer bg-white dark:bg-customGray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out h-full flex flex-col"
         onClick={() => openChartModal(title, <ChartComponent {...chartProps} isFullscreen />)} // Pass the chart with isFullscreen for the modal
       >
          <div className="flex-grow p-1"> {/* Added padding for content within card if any, and flex-grow */}
             {chartElement}
+        </div>
+      </div>
+    );
+  }
+
+  // Helper to create static (non-clickable) chart wrappers
+  const renderStaticChart = (ChartComponent, dataProp) => {
+    const chartProps = { [dataProp || 'tasks']: tasks }; 
+    const chartElement = <ChartComponent {...chartProps} />;
+    return (
+      <div className="bg-white dark:bg-customGray-800 rounded-xl shadow-lg h-full flex flex-col">
+        <div className="flex-grow p-1"> 
+          {chartElement}
         </div>
       </div>
     );
@@ -274,44 +284,56 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
         />
 
         {/* Export Buttons */}
-        <div className="my-4 text-right flex justify-end items-center space-x-2"> {/* Use flex for alignment */}
+        <div className="my-6 flex justify-end items-center space-x-3">
             {/* CSV Export Button */}
             <button
                 onClick={() => exportTasksToCSV(tasks, `GGBC_Tasks_Export_${format(new Date(), 'yyyy-MM-dd')}.csv`)}
                 disabled={isLoading || tasks.length === 0}
-                className="px-4 py-2 bg-secondary hover:bg-secondary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
+                className="group flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                title="Export task data to CSV file"
             >
-                Export Tasks to CSV
+                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
+                <span>Export Tasks to CSV</span>
             </button>
             
             {/* PDF Export Button */}
             <button
                 onClick={() => exportDashboardToPDF(selectedPdfElementIds, filters, setIsExportingPDF, setError)}
                 disabled={isExportingPDF || isLoading || selectedPdfElementIds.length === 0}
-                className="flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
+                className="group flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 title={selectedPdfElementIds.length === 0 ? "Select elements to export via settings" : "Export selected charts to PDF"}
             >
                 {isExportingPDF ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg className="animate-spin w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Exporting PDF...
+                    <span>Exporting PDF...</span>
                   </>
                 ) : (
-                  'Export Charts to PDF'
+                  <>
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>Export Charts to PDF</span>
+                  </>
                 )}
             </button>
             
             {/* PDF Settings Button */}
             <button
                 onClick={() => setIsPdfSettingsModalOpen(true)}
-                className="p-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
-                title="Configure PDF Export"
+                className="group flex items-center justify-center w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                title="Configure PDF Export Settings"
                 disabled={isLoading}
             >
-                <SettingsIcon className="w-5 h-5" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
             </button>
         </div>
 
@@ -357,10 +379,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
                     <> 
                       {/* Add IDs to individual chart wrappers */}
                      <div id="export-completion-chart" className="lg:col-span-1">
-                        {renderClickableChart('Task Completion Status', CompletionStatusChart)}
+                        {renderStaticChart(CompletionStatusChart)}
                       </div>
                       <div id="export-deadline-chart" className="lg:col-span-1">
-                         {renderClickableChart('Tasks by Deadline', TasksByDeadlineChart)}
+                         {renderStaticChart(TasksByDeadlineChart)}
                        </div>
                        <div id="export-brand-chart" className="lg:col-span-1">
                           {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
@@ -381,28 +403,14 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
              {/* Line Chart Section - Add ID */}
              <div id="export-trend-chart" className="mb-8"> {/* Removed max-width */}
                  {!isLoading && !error && tasks.length > 0 && (
-                      renderClickableChart('Task Creation & Completion Trend', TaskTrendChart)
+                      renderStaticChart(TaskTrendChart)
                  )} 
              </div>
 
-             {/* Asset Summary Section - Add ID */}
-             <div id="export-asset-summary">
+             {/* Data Summary Section - Unified tabs for Asset Types, Task Types, and Completion Rate */}
+             <div id="export-data-summary">
                 {!isLoading && !error && tasks.length > 0 && (
-                  <AssetSummary tasks={tasks} />
-                )}
-             </div>
-
-             {/* Task Type Summary Section - Add ID */}
-             <div id="export-task-type-summary">
-                {!isLoading && !error && tasks.length > 0 && (
-                  <TaskTypeSummary tasks={tasks} />
-                )}
-             </div>
-
-             {/* Completion Rate Summary Section - Add ID */}
-             <div id="export-completion-rate">
-                {!error && (
-                  <CompletionRateSummary tasks={tasks} isLoading={isLoading} />
+                  <DataSummaryTabs tasks={tasks} isLoading={isLoading} />
                 )}
              </div>
          </div> { /* End #capture-content */} 
@@ -411,12 +419,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
       {/* --- Task List Section - Moved OUTSIDE container for full width --- */}
       <div className="mt-8"> {/* Horizontal padding is now handled by Layout.js <main> tag */}
-        <h2 className="text-2xl font-semibold mb-4 text-customGray-900 dark:text-customGray-100 container mx-auto">Task List</h2> {/* Keep title centered */}
         <TaskTable 
           tasks={tasks} 
           isLoading={isLoading && tasks.length === 0} 
-          error={error} 
-          onRowClick={(task) => openTaskStatusModal(task.id, task.name)}
+          error={error}
         />
       </div>
       {/* --- End Task List Section --- */}

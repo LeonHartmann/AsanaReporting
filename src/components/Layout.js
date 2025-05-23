@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
+import SportFiveLogo from './SportFiveLogo';
 
 export default function Layout({ children, title = 'SPORTFIVE' }) {
   const router = useRouter();
@@ -100,59 +101,78 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="bg-white dark:bg-customGray-800 shadow-md">
-        <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20"> {/* Increased height for more space */}
-            <div className="flex items-center">
-              <h1 className="text-2xl font-semibold text-primary dark:text-primary-light">
-                SPORTFIVE
-              </h1>
-              {/* Show sync message if there is one */}
+      <header className="bg-white dark:bg-customGray-800 shadow-sm border-b border-customGray-200 dark:border-customGray-700 w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Dashboard Title - Left Side */}
+            <div className="flex items-center space-x-4">
+              <SportFiveLogo className="h-8 text-primary dark:text-primary-light" />
+              <div className="flex flex-col items-start justify-center">
+                <h1 className="text-xl font-normal text-customGray-900 dark:text-customGray-100">Analytics Dashboard</h1>
+                <p className="text-base font-light text-customGray-500 dark:text-customGray-400">Performance & Insights</p>
+              </div>
+            </div>
+
+            {/* Right - Sync Info and Actions */}
+            <div className="flex items-center space-x-4">
+              {/* Sync Message */}
               {syncMessage && (
-                <span className={`ml-6 text-sm ${syncMessage.startsWith('Error') ? 'text-error' : 'text-success'}`}>
+                <span className={`text-sm ${syncMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
                   {syncMessage}
                 </span>
               )}
-            </div>
-            <div className="flex items-center space-x-4">
-              {showSync && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      console.log("Sync button clicked in Layout - using direct handler");
-                      handleSyncNow();
-                    }}
-                    disabled={isSyncing}
-                    className="flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-200"
-                  >
-                    {isSyncing ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Syncing...
-                      </>
-                    ) : (
-                      'Sync Asana'
-                    )}
-                  </button>
-                </div>
+
+              {/* Last Sync Time */}
+              {lastSyncTime && (
+                <span className="text-sm text-customGray-600 dark:text-customGray-400">
+                  Last scan {format(lastSyncTime, 'MMM dd, HH:mm')}
+                </span>
               )}
+
+              {/* Sync Button */}
+              {showSync && (
+                <button
+                  onClick={() => {
+                    console.log("Sync button clicked in Layout - using direct handler");
+                    handleSyncNow();
+                  }}
+                  disabled={isSyncing}
+                  className="inline-flex items-center px-3 py-1.5 border border-customGray-300 dark:border-customGray-600 rounded-md text-sm font-medium text-customGray-700 dark:text-customGray-200 bg-white dark:bg-customGray-800 hover:bg-customGray-50 dark:hover:bg-customGray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  {isSyncing ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Sync Assets
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Sign Out Button */}
               {showLogout && (
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-secondary hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-light transition-colors duration-200"
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-customGray-600 hover:bg-customGray-700 dark:bg-customGray-700 dark:hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-customGray-500 transition-colors duration-200"
                 >
-                  Logout
+                  Sign Out
                 </button>
               )}
             </div>
           </div>
-        </nav>
+        </div>
       </header>
 
-      <main className="w-full py-8 px-4 sm:px-6 lg:px-8"> {/* Removed container, mx-auto; kept padding and added w-full */}
+      <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
         {children}
       </main>
 

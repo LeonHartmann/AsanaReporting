@@ -52,3 +52,17 @@ body {
   height: 2.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
+
+/* Remove any potential outlines from chart canvas elements */
+canvas {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Specifically target Chart.js canvas elements */
+.chartjs-render-monitor {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
