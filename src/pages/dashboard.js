@@ -311,10 +311,10 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
             
             {/* PDF Export Button */}
             <button
-                onClick={() => exportDashboardToPDF(selectedPdfElementIds, filters, setIsExportingPDF, setError)}
-                disabled={isExportingPDF || isLoading || selectedPdfElementIds.length === 0}
+                onClick={() => exportDashboardToPDF(filters, tasks, avgCycleTime, setIsExportingPDF, setError)}
+                disabled={isExportingPDF || isLoading}
                 className="group flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                title={selectedPdfElementIds.length === 0 ? "Select elements to export via settings" : "Export selected charts to PDF"}
+                title="Export management report PDF"
             >
                 {isExportingPDF ? (
                   <>

@@ -1,213 +1,248 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- addPdfHeader function remains the same as before ---
-const addPdfHeader = (pdf, currentY, dateTimeString, splitFilters) => {
-    // ... (implementation from previous answer) ...
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const margin = 40;
-    const availableWidth = pdfWidth - 2 * margin;
-    let y = currentY;
+// Utilities
+const margin = 40;
+const createPdf = () => new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
 
-    // PDF Header (Title, Date, Filters)
-    pdf.setFontSize(16);
-    pdf.setFont(undefined, 'bold');
-    pdf.text("GGBC Reporting Dashboard", pdfWidth / 2, y, { align: 'center' });
-    y += 15;
+const drawHeader = (pdf, title, filtersText) => {
+  const width = pdf.internal.pageSize.getWidth();
+  const now = new Date().toLocaleString();
 
-    pdf.setFontSize(8);
-    pdf.setFont(undefined, 'normal');
-    pdf.text(`Exported: ${dateTimeString}`, pdfWidth - margin, margin + 5, { align: 'right' });
-    y += 10;
+  pdf.setFontSize(18);
+  pdf.setFont(undefined, 'bold');
+  pdf.text(title, width / 2, margin, { align: 'center' });
 
+  pdf.setFontSize(9);
+  pdf.setFont(undefined, 'normal');
+  pdf.text(`Generated: ${now}`, width - margin, margin, { align: 'right' });
+  if (filtersText) {
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'bold');
-    pdf.text('Applied Filters:', margin, y);
-    y += 15;
+    pdf.text('Filters', margin, margin);
     pdf.setFont(undefined, 'normal');
-    pdf.text(splitFilters, margin, y);
-    y += (splitFilters.length * 10) + 15;
-
-    return y;
+    const wrapped = pdf.splitTextToSize(filtersText, width - 2 * margin);
+    pdf.text(wrapped, margin, margin + 14);
+    return margin + 14 + wrapped.length * 10 + 10;
+  }
+  return margin + 10;
 };
 
-/**
- * Takes a source canvas and returns a new canvas with 16:9 aspect ratio,
- * drawing the source canvas centered within it with padding.
- * @param {HTMLCanvasElement} sourceCanvas The canvas from html2canvas.
- * @param {string} [backgroundColor='#ffffff'] The background color for padding.
- * @returns {HTMLCanvasElement} A new canvas with 16:9 aspect ratio.
- */
-const convertTo16x9Canvas = (sourceCanvas, backgroundColor = '#ffffff') => {
-    const sourceWidth = sourceCanvas.width;
-    const sourceHeight = sourceCanvas.height;
-    const sourceRatio = sourceWidth / sourceHeight;
-    const targetRatio = 16 / 9;
-
-    let targetWidth = sourceWidth;
-    let targetHeight = sourceHeight;
-
-    if (sourceRatio > targetRatio) {
-        // Source is wider than 16:9, padding will be added top/bottom
-        targetHeight = sourceWidth / targetRatio; // Calculate height based on source width and 16:9 ratio
-    } else if (sourceRatio < targetRatio) {
-        // Source is taller than 16:9, padding will be added left/right
-        targetWidth = sourceHeight * targetRatio; // Calculate width based on source height and 16:9 ratio
+// KPI calculations sourced from dashboard logic
+const calcKpis = (tasks, avgCycleTime) => {
+  if (!tasks || tasks.length === 0) return { completed: 0, incomplete: 0, waitingFeedback: 0, overdue: 0, total: 0, avgCycleTime: avgCycleTime ?? null };
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let completed = 0, incomplete = 0, waitingFeedback = 0, overdue = 0;
+  for (const t of tasks) {
+    if (t.status === '🌀 Completed/Feedback') { waitingFeedback++; continue; }
+    if (t.completed) { completed++; continue; }
+    incomplete++;
+    if (t.deadline) {
+      const d = new Date(t.deadline);
+      const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      if (nd < today) overdue++;
     }
-    // If sourceRatio === targetRatio, target dimensions remain source dimensions
-
-    const targetCanvas = document.createElement('canvas');
-    targetCanvas.width = targetWidth;
-    targetCanvas.height = targetHeight;
-
-    const ctx = targetCanvas.getContext('2d');
-
-    // Fill background color for padding
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-    // Calculate coordinates to draw the source canvas centered
-    const drawX = (targetWidth - sourceWidth) / 2;
-    const drawY = (targetHeight - sourceHeight) / 2;
-
-    // Draw the source canvas onto the target canvas
-    ctx.drawImage(sourceCanvas, drawX, drawY, sourceWidth, sourceHeight);
-
-    console.log(`Converted canvas from ${sourceWidth}x${sourceHeight} to 16:9 ${targetWidth}x${targetHeight}`);
-
-    return targetCanvas;
+  }
+  return { completed, incomplete, waitingFeedback, overdue, total: tasks.length, avgCycleTime: avgCycleTime ?? null };
 };
 
+const statusKeys = [
+  { key: '📃 To Do ', label: 'To Do' },
+  { key: ' ☕️ Awaiting Info', label: 'Awaiting Info' },
+  { key: '🎨 In progress', label: 'In Progress' },
+  { key: '📩 In Review ', label: 'In Review' },
+  { key: '🌀 Completed/Feedback', label: 'Complete/Feedback' },
+];
 
-/**
- * Exports the dashboard content to a PDF file by capturing individual sections,
- * ensuring each captured element image has a 16:9 aspect ratio via padding.
- *
- * @param {string[]} elementIdsToCapture Array of HTML element IDs to capture.
- * @param {object} filters The currently applied filters object.
- * @param {function} setIsExporting Callback function to set the exporting state (true/false).
- * @param {function} setError Callback function to set an error message.
- * @param {function} [setProgress] Optional callback for progress updates.
- */
-export const exportDashboardToPDF = async (
-    elementIdsToCapture,
-    filters,
-    setIsExporting,
-    setError,
-    setProgress
-) => {
-    console.log("Exporting PDF by elements (16:9 conversion)...");
-
-    // --- Initial Setup (Validation, State, PDF, Header Content) ---
-    if (!Array.isArray(elementIdsToCapture) || elementIdsToCapture.length === 0) {
-        console.error("No element IDs provided for PDF export.");
-        setError("Configuration error: No elements specified for export.");
-        return;
-    }
-    setIsExporting(true);
-    setError('');
-    if (setProgress) setProgress({ current: 0, total: elementIdsToCapture.length });
-
-    const now = new Date();
-    const dateTimeString = now.toLocaleString();
-    const filtersApplied = Object.entries(filters)
-        // ... (filter formatting logic remains the same) ...
-        .filter(([key, value]) => value && (!Array.isArray(value) || value.length > 0))
-        .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${Array.isArray(value) ? value.join(', ') : value}`)
-        .join('\n');
-
-    const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'pt',
-        format: 'a4'
+const calcStatusAverages = (tasks) => {
+  const sums = {}; const counts = {};
+  statusKeys.forEach(({ key }) => { sums[key] = 0; counts[key] = 0; });
+  tasks?.forEach(t => {
+    statusKeys.forEach(({ key }) => {
+      const v = parseFloat(t[key]);
+      if (!Number.isNaN(v) && v >= 0) { sums[key] += v; counts[key] += 1; }
     });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 40;
-    const availableWidth = pdfWidth - 2 * margin;
-    let currentY = margin;
-    const splitFilters = pdf.splitTextToSize(filtersApplied || 'None', availableWidth);
-    currentY = addPdfHeader(pdf, currentY, dateTimeString, splitFilters);
-    // --- End Initial Setup ---
+  });
+  return statusKeys
+    .filter(({ key }) => counts[key] > 0)
+    .map(({ key, label }) => ({ label, seconds: Math.round(sums[key] / counts[key]) }));
+};
 
-    try {
-        console.log("Starting element capture loop...");
-        let elementIndex = 0;
+const fmtDuration = (s) => {
+  if (s == null || Number.isNaN(s)) return 'N/A';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  return parts.join(' ') || '0m';
+};
 
-        for (const elementId of elementIdsToCapture) {
-            elementIndex++;
-            if (setProgress) setProgress({ current: elementIndex, total: elementIdsToCapture.length, stage: `Capturing ${elementId}` });
+const nf = new Intl.NumberFormat();
 
-            const element = document.getElementById(elementId);
-            if (!element) {
-                console.warn(`Element with ID '${elementId}' not found. Skipping.`);
-                continue;
-            }
-            console.log(`Capturing element: #${elementId}`);
+const addKpiGrid = (pdf, y, kpis) => {
+  const w = pdf.internal.pageSize.getWidth();
+  const col = (w - 2 * margin) / 6;
+  // tile background
+  pdf.setDrawColor(235);
+  for (let i = 0; i < 6; i++) {
+    const x = margin + i * col + 6;
+    pdf.roundedRect(x, y - 24, col - 12, 54, 6, 6, 'S');
+  }
+  pdf.setFont(undefined, 'bold');
+  pdf.setFontSize(22);
+  const vals = [nf.format(kpis.completed), nf.format(kpis.incomplete), nf.format(kpis.waitingFeedback), nf.format(kpis.overdue), kpis.avgCycleTime != null ? `${kpis.avgCycleTime} d` : 'N/A', nf.format(kpis.total)];
+  const labels = ['Completed', 'Incomplete', 'Waiting', 'Overdue', 'Avg Time', 'Total'];
+  vals.forEach((v, i) => {
+    const x = margin + i * col + col / 2;
+    pdf.text(String(v), x, y, { align: 'center' });
+  });
+  pdf.setFont(undefined, 'normal');
+  pdf.setFontSize(10);
+  labels.forEach((l, i) => {
+    const x = margin + i * col + col / 2;
+    pdf.text(l.toUpperCase(), x, y + 14, { align: 'center' });
+  });
+  return y + 28;
+};
 
-            // --- html2canvas Capture ---
-            let sourceCanvas;
-            try {
-                 sourceCanvas = await html2canvas(element, {
-                    useCORS: true,
-                    backgroundColor: '#ffffff', // Set background for capture itself
-                    scale: window.devicePixelRatio || 2, // Keep high-res capture
-                    logging: false,
-                });
-            } catch (canvasError) {
-                console.error(`html2canvas failed for element #${elementId}:`, canvasError);
-                setError(`Error capturing element #${elementId}. Skipping.`);
-                continue;
-            }
+const addStatusTiles = (pdf, startY, averages) => {
+  const w = pdf.internal.pageSize.getWidth();
+  const tileW = (w - 2 * margin - 4 * 12) / 5; // 5 columns with 12pt gap
+  let x = margin;
+  let y = startY;
+  pdf.setFontSize(10);
+  averages.forEach(({ label, seconds }, idx) => {
+    // box
+    pdf.setDrawColor(235);
+    pdf.roundedRect(x, y, tileW, 48, 6, 6, 'S');
+    // label
+    pdf.text(label.toUpperCase(), x + 10, y + 16);
+    // value
+    pdf.setFont(undefined, 'bold');
+    pdf.setFontSize(14);
+    pdf.text(fmtDuration(seconds), x + tileW - 10, y + 30, { align: 'right' });
+    pdf.setFont(undefined, 'normal');
+    pdf.setFontSize(10);
+    // next tile position
+    x += tileW + 12;
+    if ((idx + 1) % 5 === 0) { x = margin; y += 60; }
+  });
+  return y + 60;
+};
 
-            // --- Convert to 16:9 Canvas ---
-            if (setProgress) setProgress({ current: elementIndex, total: elementIdsToCapture.length, stage: `Converting ${elementId} to 16:9` });
-            const finalCanvas = convertTo16x9Canvas(sourceCanvas, '#ffffff'); // Use white padding
+// Simple lists for top entities (text, crisp)
+const topCounts = (arr, key, limit = 10) => {
+  const map = new Map();
+  arr.forEach(t => {
+    const k = (t[key] || 'N/A').toString();
+    map.set(k, (map.get(k) || 0) + 1);
+  });
+  return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0, limit);
+};
 
-            // --- Get Image Data from the 16:9 Canvas ---
-            // Use PNG for better quality of graphics/text
-            const imgData = finalCanvas.toDataURL('image/png');
-            const imgProps = pdf.getImageProperties(imgData); // Properties of the 16:9 image
+const addTwoColumnTopLists = (pdf, y, tasks) => {
+  const w = pdf.internal.pageSize.getWidth();
+  const colW = (w - 2 * margin - 20) / 2;
+  const left = topCounts(tasks, 'brand', 10);
+  const right = topCounts(tasks, 'assignee', 10);
 
-            console.log(`16:9 Canvas (${imgProps.width}x${imgProps.height}) generated for #${elementId}, adding to PDF...`);
+  pdf.setFont(undefined, 'bold');
+  pdf.setFontSize(12);
+  pdf.text('Top Brands', margin, y);
+  pdf.text('Top Assignees', margin + colW + 20, y);
 
-            // --- Scale 16:9 Image and Add to PDF ---
-            // Scale the 16:9 image to fit the available PDF width
-            const imgWidth = availableWidth;
-            // Height will be calculated based on the 16:9 ratio and availableWidth
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width; // or simply imgWidth * 9 / 16
-            const spaceNeeded = imgHeight + 15; // Image height + spacing
+  pdf.setFont(undefined, 'normal');
+  pdf.setFontSize(10);
+  let ly = y + 14;
+  left.forEach(([name, count]) => { pdf.text(`${name}`, margin, ly); pdf.text(nf.format(count), margin + colW - 10, ly, { align: 'right' }); ly += 12; });
+  let ry = y + 14;
+  right.forEach(([name, count]) => { pdf.text(`${name}`, margin + colW + 20, ry); pdf.text(nf.format(count), margin + colW + 20 + colW - 10, ry, { align: 'right' }); ry += 12; });
+  return Math.max(ly, ry) + 6;
+};
 
-            // --- Page Break Logic ---
-            if (currentY + spaceNeeded > pdfHeight - margin) {
-                console.log(`Adding new page for element #${elementId}`);
-                pdf.addPage();
-                currentY = margin;
-                currentY = addPdfHeader(pdf, currentY, dateTimeString, splitFilters);
-            }
+const captureElement = async (id) => {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: window.devicePixelRatio || 2, logging: false });
+  return canvas.toDataURL('image/png');
+};
 
-            // Add the 16:9 image
-            pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-            currentY += spaceNeeded;
+const addImageFullWidth = (pdf, imgData, y) => {
+  const width = pdf.internal.pageSize.getWidth();
+  const height = pdf.internal.pageSize.getHeight();
+  const available = width - 2 * margin;
+  const props = pdf.getImageProperties(imgData);
+  const imgH = (props.height * available) / props.width;
+  if (y + imgH > height - margin) { pdf.addPage(); y = margin; }
+  pdf.addImage(imgData, 'PNG', margin, y, available, imgH);
+  return y + imgH + 14;
+};
 
-            // Optional: Clean up canvases if memory becomes an issue, though JS garbage collection usually handles this.
-            // sourceCanvas = null;
-            // finalCanvas = null;
+// New: Management‑style PDF export
+export const exportDashboardToPDF = async (filters, tasks, avgCycleTime, setIsExporting, setError, setProgress) => {
+  try {
+    setIsExporting?.(true);
+    setError?.('');
+    const pdf = createPdf();
+    const filtersText = Object.entries(filters || {})
+      .filter(([k, v]) => v && (!Array.isArray(v) || v.length))
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join('\n');
 
-        } // End of loop
+    let y = drawHeader(pdf, 'GGBC Management Report', filtersText);
 
-        // --- Save PDF ---
-        console.log("Saving PDF...");
-        if (setProgress) setProgress({ current: elementIdsToCapture.length, total: elementIdsToCapture.length, stage: "Saving PDF" });
-        const filename = `GGBC_Dashboard_Export_${now.toISOString().split('T')[0]}_16x9.pdf`;
-        pdf.save(filename);
-        console.log("PDF Saved as", filename);
+    // KPIs
+    const kpis = calcKpis(tasks || [], avgCycleTime ?? null);
+    y = addKpiGrid(pdf, y + 10, kpis);
 
-    } catch (err) {
-        console.error("Error generating PDF:", err);
-        setError(`Failed to generate PDF export: ${err.message || 'Unknown error'}`);
-    } finally {
-        setIsExporting(false);
-        if (setProgress) setProgress(null);
+    // Average time in status
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('Average Time In Status', margin, y + 18);
+    const averages = calcStatusAverages(tasks || []);
+    y = addStatusTiles(pdf, y + 26, averages);
+
+    // Top lists
+    y = addTwoColumnTopLists(pdf, y + 6, tasks || []);
+
+    // Charts page(s)
+    const chartIds = [
+      'completion-status-chart',
+      'tasks-by-deadline-chart',
+      'tasks-by-brand-chart',
+      'tasks-by-assignee-chart',
+    ];
+    // Layout as two per row where possible
+    const width = pdf.internal.pageSize.getWidth();
+    const height = pdf.internal.pageSize.getHeight();
+    const available = width - 2 * margin;
+    const colW = (available - 12) / 2;
+    let col = 0;
+    for (let i = 0; i < chartIds.length; i++) {
+      setProgress?.({ current: i + 1, total: chartIds.length, stage: `Capturing ${chartIds[i]}` });
+      const img = await captureElement(chartIds[i]);
+      if (!img) continue;
+      const props = pdf.getImageProperties(img);
+      const imgH = (props.height * colW) / props.width;
+      if (y + imgH > height - margin) { pdf.addPage(); y = margin; col = 0; }
+      const x = margin + (col === 0 ? 0 : colW + 12);
+      pdf.addImage(img, 'PNG', x, y, colW, imgH);
+      col = (col + 1) % 2;
+      if (col === 0) y += imgH + 14;
     }
+
+    // Save
+    const filename = `GGBC_Management_Report_${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(filename);
+  } catch (err) {
+    console.error('PDF export error:', err);
+    setError?.(err.message || 'Failed to export PDF');
+  } finally {
+    setIsExporting?.(false);
+    setProgress?.(null);
+  }
 };
