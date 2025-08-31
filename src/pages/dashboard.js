@@ -3,7 +3,8 @@ import Head from 'next/head';
 import { withAuth } from '@/lib/auth'; // HOC for page protection
 import FilterPanel from '@/components/FilterPanel';
 import TaskTable from '@/components/TaskTable';
-import TaskSummary from '@/components/TaskSummary'; // Import TaskSummary component
+// TaskSummary has been superseded in layout by AnalyticsOverview
+import AnalyticsOverview from '@/components/AnalyticsOverview';
 import DataSummaryTabs from '@/components/DataSummaryTabs'; // Import unified data summary component
 import CompletionStatusChart from '@/components/charts/CompletionStatusChart'; // Import the chart
 import TasksByBrandChart from '@/components/charts/TasksByBrandChart'; // Import the new chart
@@ -14,7 +15,7 @@ import TasksByRequesterChart from '@/components/charts/TasksByRequesterChart'; /
 import ChartModal from '@/components/ChartModal'; // Import the modal
 import TasksByDeadlineChart from '@/components/charts/TasksByDeadlineChart';
 // --- NEW IMPORTS ---
-import AverageTimeInStatus from '@/components/AverageTimeInStatus';
+// AverageTimeInStatus is now rendered inside AnalyticsOverview
 import TaskStatusDurations from '@/components/TaskStatusDurations';
 // --- NEW: Import for date formatting ---
 import { format } from 'date-fns';
@@ -34,8 +35,7 @@ import { differenceInDays, parseISO } from 'date-fns'; // Removed unused date-fn
 
 // --- Define exportable elements with user-friendly names ---
 const availablePdfElements = [
-  { id: 'export-task-summary', name: 'Task Summary' },
-  { id: 'export-avg-time-status', name: 'Average Time In Status' },
+  { id: 'export-task-summary', name: 'Overview' },
   { id: 'export-completion-chart', name: 'Completion Status Chart' },
   { id: 'export-deadline-chart', name: 'Deadline Chart' },
   { id: 'export-brand-chart', name: 'Brand Chart' },
@@ -49,6 +49,12 @@ const availablePdfElements = [
 ];
 // Extract just the IDs for initial state
 const allPdfElementIds = availablePdfElements.map(el => el.id);
+
+// UI Primitives
+import Card from '@/components/ui/Card';
+import SectionHeader from '@/components/ui/SectionHeader';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EmptyState from '@/components/ui/EmptyState';
 
 function DashboardPage({ user }) { // User prop is passed by withAuth
   const [tasks, setTasks] = useState([]);
@@ -272,16 +278,21 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
       {/* Wrapper for dashboard content. Padding is now handled by Layout.js <main> tag. */}
       <div>
-        <h2 className="text-2xl font-semibold mb-6 text-customGray-900 dark:text-customGray-100">GGBC Reporting Dashboard</h2>
+        <SectionHeader
+          title="GGBC Reporting Dashboard"
+          subtitle="Modern overview of tasks, trends, and performance"
+        />
 
         {/* Filter Section */}
-        <FilterPanel
-          filters={filters}
-          setFilters={setFilters}
-          distinctValues={distinctValues}
-          onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters}
-        />
+        <Card>
+          <FilterPanel
+            filters={filters}
+            setFilters={setFilters}
+            distinctValues={distinctValues}
+            onApplyFilters={handleApplyFilters}
+            onResetFilters={handleResetFilters}
+          />
+        </Card>
 
         {/* Export Buttons */}
         <div className="my-6 flex justify-end items-center space-x-3">
@@ -339,79 +350,85 @@ function DashboardPage({ user }) { // User prop is passed by withAuth
 
         {/* Exportable Content Area (identified by id) */} 
         <div id="capture-content">
-             {/* Task Summary Section */}
+             {/* Overview (full-bleed, modern) */}
              <div id="export-task-summary" className="">
-                {!error && (
-                  <TaskSummary 
-                    tasks={tasks} 
-                    avgCycleTime={avgCycleTime} 
-                    isLoading={isLoading} 
-                  />
-                )} 
-             </div>
-
-             {/* Average Time In Status Section - This component might be better full-width or have its own internal max-width if needed */}
-             <div id="export-avg-time-status" className="">
-                {!isLoading && !error && (
-                   <AverageTimeInStatus tasks={tasks} />
-                )} 
+               <AnalyticsOverview tasks={tasks} avgCycleTime={avgCycleTime} isLoading={isLoading} />
              </div>
 
              {/* Chart Grid Section - Add ID to wrapper */}
-             <div id="export-chart-grid" className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap & removed max-width */}
-                 {isLoading && !tasks.length && !error ? (
-                  <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">
-                    <div className="flex justify-center items-center">
-                      <svg className="animate-spin h-6 w-6 text-primary mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Loading chart data...
-                    </div>
-                  </div> 
-                ) : error && !tasks.length ? (
-                      <div className="lg:col-span-3 bg-error/10 border border-error/40 text-error px-4 py-3 rounded-lg relative font-sans" role="alert">
-                         <strong className="font-bold">Error!</strong> Could not load chart data: {error}
-                      </div>
-                  ) : !isLoading && tasks.length === 0 && !error ? (
-                    <div className="lg:col-span-3 text-center py-12 text-customGray-500 dark:text-customGray-400 font-medium">No tasks match the current filters.</div>
-                  ) : (
-                    <> 
-                      {/* Add IDs to individual chart wrappers */}
-                     <div id="export-completion-chart" className="lg:col-span-1">
-                        {renderStaticChart(CompletionStatusChart)}
-                      </div>
-                      <div id="export-deadline-chart" className="lg:col-span-1">
-                         {renderStaticChart(TasksByDeadlineChart)}
-                       </div>
-                       <div id="export-brand-chart" className="lg:col-span-1">
-                          {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
-                        </div>
-                        <div id="export-assignee-chart" className="lg:col-span-1">
-                           {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
-                         </div>
-                         <div id="export-asset-chart" className="lg:col-span-1">
-                            {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
-                          </div>
-                          <div id="export-requester-chart" className="lg:col-span-1">
-                             {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
-                           </div>
-                    </>
-                  )}
+             <div id="export-chart-grid" className="mt-6 mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {isLoading && !tasks.length && !error ? (
+                 <div className="lg:col-span-3">
+                   <Card>
+                     <LoadingSpinner label="Loading chart data..." />
+                   </Card>
+                 </div>
+               ) : error && !tasks.length ? (
+                 <div className="lg:col-span-3">
+                   <Card>
+                     <div className="bg-error/10 border border-error/40 text-error px-4 py-3 rounded-md" role="alert">
+                       <strong className="font-semibold">Error:</strong> Could not load chart data: {error}
+                     </div>
+                   </Card>
+                 </div>
+               ) : !isLoading && tasks.length === 0 && !error ? (
+                 <div className="lg:col-span-3">
+                   <Card>
+                     <EmptyState title="No data for current filters" description="Try adjusting filters or syncing from the header." />
+                   </Card>
+                 </div>
+               ) : (
+                 <> 
+                   <div id="export-completion-chart" className="lg:col-span-1">
+                     <Card title="Completion Status">
+                       {renderStaticChart(CompletionStatusChart)}
+                     </Card>
+                   </div>
+                   <div id="export-deadline-chart" className="lg:col-span-1">
+                     <Card title="Tasks by Deadline">
+                       {renderStaticChart(TasksByDeadlineChart)}
+                     </Card>
+                   </div>
+                   <div id="export-brand-chart" className="lg:col-span-1">
+                     <Card title="Tasks by Brand">
+                       {renderClickableChart('Tasks by Brand', TasksByBrandChart)}
+                     </Card>
+                   </div>
+                   <div id="export-assignee-chart" className="lg:col-span-1">
+                     <Card title="Tasks by Assignee">
+                       {renderClickableChart('Tasks by Assignee', TasksByAssigneeChart)}
+                     </Card>
+                   </div>
+                   <div id="export-asset-chart" className="lg:col-span-1">
+                     <Card title="Tasks by Asset Type">
+                       {renderClickableChart('Tasks by Asset Type', TasksByAssetChart)}
+                     </Card>
+                   </div>
+                   <div id="export-requester-chart" className="lg:col-span-1">
+                     <Card title="Tasks by Requester">
+                       {renderClickableChart('Tasks by Requester', TasksByRequesterChart)}
+                     </Card>
+                   </div>
+                 </>
+               )}
              </div>
 
              {/* Line Chart Section - Add ID */}
-             <div id="export-trend-chart" className="mb-8"> {/* Removed max-width */}
+             <div id="export-trend-chart" className="mb-8">
+               <Card title="Task Creation & Completion Trend">
                  {!isLoading && !error && tasks.length > 0 && (
                       renderStaticChart(TaskTrendChart)
-                 )} 
+                 )}
+               </Card>
              </div>
 
              {/* Data Summary Section - Unified tabs for Asset Types, Task Types, and Completion Rate */}
              <div id="export-data-summary">
-                {!isLoading && !error && tasks.length > 0 && (
-                  <DataSummaryTabs tasks={tasks} isLoading={isLoading} />
-                )}
+               <Card title="Data Summaries" subtitle="Asset types, task types, completion rate">
+                 {!isLoading && !error && tasks.length > 0 && (
+                   <DataSummaryTabs tasks={tasks} isLoading={isLoading} />
+                 )}
+               </Card>
              </div>
          </div> { /* End #capture-content */} 
 

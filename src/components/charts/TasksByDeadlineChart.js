@@ -2,21 +2,7 @@ import React, { useEffect, useRef } from 'react'; // Added useEffect, useRef
 import { Bar } from 'react-chartjs-2';
 // ChartJS and scales already registered in other files, but safe to include if this were standalone.
 
-// Helper to determine text color based on dark mode
-const getTextColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return '#e5e7eb'; // customGray.200
-  }
-  return '#374151'; // customGray.700
-};
-
-// Helper to determine grid color based on dark mode
-const getGridColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return 'rgba(75, 85, 99, 0.4)'; // customGray.600 with alpha
-  }
-  return 'rgba(209, 213, 219, 0.6)'; // customGray.300 with alpha
-};
+import { getTextColor, observeTheme, barShadowPlugin } from './chartUtils';
 
 
 export default function TasksByDeadlineChart({ tasks }) {
@@ -106,8 +92,8 @@ export default function TasksByDeadlineChart({ tasks }) {
         label: 'Tasks',
         data: counts,
         backgroundColor: backgroundColors,
-        borderWidth: 0, // Remove borders
-        borderRadius: 3,
+        borderWidth: 0,
+        borderRadius: 5,
         barThickness: 30,
       },
     ],
@@ -130,8 +116,8 @@ export default function TasksByDeadlineChart({ tasks }) {
         const x = bar.x;
         const y = bar.y - 8;
         
-        // Draw number
-        ctx.fillStyle = textColor;
+        // Draw number (theme-aware)
+        ctx.fillStyle = getTextColor();
         ctx.font = `600 14px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
@@ -158,7 +144,7 @@ export default function TasksByDeadlineChart({ tasks }) {
         display: false,
       },
       title: {
-        display: true,
+        display: false,
         text: 'Tasks by Deadline (Upcoming/Overdue)',
         align: 'center',
         font: {
@@ -174,7 +160,8 @@ export default function TasksByDeadlineChart({ tasks }) {
       },
       tooltip: {
         enabled: false, // Disable tooltips completely
-      }
+      },
+      barShadow: { color: 'rgba(0,0,0,0.08)', blur: 6, offsetY: 3 },
     },
     scales: {
       x: {
@@ -215,7 +202,7 @@ export default function TasksByDeadlineChart({ tasks }) {
   };
 
   // Custom container class
-  const containerClass = "p-6 h-96";
+  const containerClass = "p-4 h-80";
 
   const chartRef = useRef(null);
   
@@ -230,6 +217,16 @@ export default function TasksByDeadlineChart({ tasks }) {
       chart.options.scales.x.ticks.color = newTextColor;
       chart.update('none');
     }
+    const disconnect = observeTheme(() => {
+      const ch = chartRef.current;
+      if (ch) {
+        const c = getTextColor();
+        if (ch.options.plugins.title) ch.options.plugins.title.color = c;
+        ch.options.scales.x.ticks.color = c;
+        ch.update('none');
+      }
+    });
+    return disconnect;
   }, []);
 
   return (
@@ -242,7 +239,7 @@ export default function TasksByDeadlineChart({ tasks }) {
         ref={chartRef} 
         data={data} 
         options={options} 
-        plugins={[customLabelsPlugin]}
+        plugins={[customLabelsPlugin, barShadowPlugin]}
         style={{
           border: 'none',
           outline: 'none',

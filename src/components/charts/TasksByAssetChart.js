@@ -19,31 +19,7 @@ ChartJS.register(
   Legend
 );
 
-// Helper to determine text color based on dark mode
-const getTextColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return '#e5e7eb'; // customGray.200
-  }
-  return '#374151'; // customGray.700
-};
-
-// Helper to determine grid color based on dark mode
-const getGridColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return 'rgba(75, 85, 99, 0.4)'; // customGray.600 with alpha for dark mode grid (darker than text)
-  }
-  return 'rgba(209, 213, 219, 0.6)'; // customGray.300 with alpha for light mode grid
-};
-
-// Helper for input background in dark mode
-const getInputBgColor = () => {
-  return document.documentElement.classList.contains('dark') ? '#374151' : '#ffffff'; // customGray.700 or white
-};
-
-// Helper for input border in dark mode
-const getInputBrColor = () => {
-  return document.documentElement.classList.contains('dark') ? '#4b5563' : '#d1d5db'; // customGray.600 or customGray.300
-};
+import { getTextColor, observeTheme, createVerticalGradient, formatNumber, barShadowPlugin } from './chartUtils';
 
 export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,10 +139,17 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       {
         label: 'Tasks Count',
         data: dataCounts,
-        backgroundColor: '#1f2937', // Dark bars for actual values
+        backgroundColor: (ctx) => {
+          const { chart } = ctx;
+          const { ctx: c, chartArea } = chart;
+          if (!chartArea) return '#f97316';
+          return createVerticalGradient(c, chartArea, 'rgba(249,115,22,0.95)', 'rgba(249,115,22,0.65)');
+        },
         borderWidth: 0, // Remove borders
-        borderColor: 'transparent', // Ensure no border color
-        borderRadius: 0, // Remove border radius that might cause outlines
+        borderColor: 'transparent',
+        borderRadius: 6,
+        categoryPercentage: 0.7,
+        barPercentage: 0.7,
         barThickness: isFullscreen ? 18 : 14,
       },
     ],
@@ -209,6 +192,9 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
             weight: '500',
           },
           color: textColor,
+          callback: function(value) {
+            return this.getLabelForValue ? this.getLabelForValue(value) : value;
+          },
           padding: 12,
         },
         grid: {
@@ -224,7 +210,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
         display: false,
       },
       title: {
-        display: true,
+        display: false,
         text: 'Tasks by Asset Type',
         align: 'center',
         font: {
@@ -238,9 +224,8 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
           bottom: 25,
         }
       },
-      tooltip: {
-        enabled: false, // Disable tooltips completely
-      }
+      tooltip: { enabled: false },
+      barShadow: { color: 'rgba(0,0,0,0.08)', blur: 6, offsetY: 3 },
     },
     layout: {
       padding: {
@@ -252,7 +237,8 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
     },
     elements: {
       bar: {
-        borderWidth: 0, // Ensure no borders on bar elements
+        borderWidth: 0,
+        borderRadius: 6,
         borderSkipped: false,
       }
     },
@@ -273,12 +259,12 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
         const x = bar.x + 8;
         const y = bar.y;
         
-        // Draw number
-        ctx.fillStyle = textColor;
+        // Draw number (theme-aware)
+        ctx.fillStyle = getTextColor();
         ctx.font = `600 ${isFullscreen ? '15px' : '14px'} Inter, system-ui, sans-serif`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(value.toString(), x, y);
+        ctx.fillText(formatNumber(value), x, y);
       });
     }
   };
@@ -286,7 +272,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
   // Custom container class
   const containerClass = isFullscreen
     ? "w-full h-full flex flex-col bg-white dark:bg-customGray-800"
-    : "p-6 h-96 cursor-pointer relative";
+    : "p-4 h-80 cursor-pointer relative";
 
   const chartRef = React.useRef(null);
   const inputRef = React.useRef(null);
@@ -302,6 +288,16 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
       chart.options.scales.y.ticks.color = newTextColor;
       chart.update('none');
     }
+    const disconnect = observeTheme(() => {
+      const ch = chartRef.current;
+      if (ch) {
+        const c = getTextColor();
+        if (ch.options.plugins.title) ch.options.plugins.title.color = c;
+        ch.options.scales.y.ticks.color = c;
+        ch.update('none');
+      }
+    });
+    return disconnect;
   }, [isFullscreen]);
 
   // Normal view - simplified chart
@@ -319,7 +315,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
             ref={chartRef} 
             data={data} 
             options={options} 
-            plugins={[customLabelsPlugin]}
+            plugins={[customLabelsPlugin, barShadowPlugin]}
             style={{
               border: 'none',
               outline: 'none',
@@ -380,7 +376,7 @@ export default function TasksByAssetChart({ tasks, onClick, isFullscreen }) {
             ref={chartRef} 
             data={data} 
             options={options} 
-            plugins={[customLabelsPlugin]}
+            plugins={[customLabelsPlugin, barShadowPlugin]}
             style={{
               border: 'none',
               outline: 'none',

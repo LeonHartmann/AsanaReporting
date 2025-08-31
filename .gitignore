@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 last-sync-time.txt
+AGENTS.md
 
 # OS generated files
 Thumbs.db

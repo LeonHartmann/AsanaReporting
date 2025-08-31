@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import SportFiveLogo from './SportFiveLogo';
+import ThemeToggle from './ui/ThemeToggle';
 
 export default function Layout({ children, title = 'SPORTFIVE' }) {
   const router = useRouter();
@@ -101,20 +102,21 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="bg-white dark:bg-customGray-800 shadow-sm border-b border-customGray-200 dark:border-customGray-700 w-full">
+      <header className="bg-white dark:bg-customGray-800 shadow-sm w-full sticky top-0 z-40">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Dashboard Title - Left Side */}
             <div className="flex items-center space-x-4">
               <SportFiveLogo className="h-8 text-primary dark:text-primary-light" />
               <div className="flex flex-col items-start justify-center">
-                <h1 className="text-xl font-normal text-customGray-900 dark:text-customGray-100">Analytics Dashboard</h1>
-                <p className="text-base font-light text-customGray-500 dark:text-customGray-400">Performance & Insights</p>
+                <h1 className="text-xl font-semibold text-customGray-900 dark:text-customGray-100 tracking-tight">Analytics Dashboard</h1>
+                <p className="text-sm font-normal text-customGray-500 dark:text-customGray-400">Performance & insights</p>
               </div>
             </div>
 
             {/* Right - Sync Info and Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
               {/* Sync Message */}
               {syncMessage && (
                 <span className={`text-sm ${syncMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
@@ -124,8 +126,8 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
 
               {/* Last Sync Time */}
               {lastSyncTime && (
-                <span className="text-sm text-customGray-600 dark:text-customGray-400">
-                  Last scan {format(lastSyncTime, 'MMM dd, HH:mm')}
+                <span className="text-xs text-customGray-600 dark:text-customGray-400">
+                  Last sync {format(lastSyncTime, 'MMM dd, HH:mm')}
                 </span>
               )}
 
@@ -137,7 +139,7 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
                     handleSyncNow();
                   }}
                   disabled={isSyncing}
-                  className="inline-flex items-center px-3 py-1.5 border border-customGray-300 dark:border-customGray-600 rounded-md text-sm font-medium text-customGray-700 dark:text-customGray-200 bg-white dark:bg-customGray-800 hover:bg-customGray-50 dark:hover:bg-customGray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-customGray-700 dark:text-customGray-200 bg-white dark:bg-customGray-700 hover:bg-customGray-50 dark:hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isSyncing ? (
                     <>
@@ -162,7 +164,7 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
               {showLogout && (
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-customGray-600 hover:bg-customGray-700 dark:bg-customGray-700 dark:hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-customGray-500 transition-colors duration-200"
+                  className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-customGray-700 hover:bg-customGray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-customGray-500 transition-colors duration-200"
                 >
                   Sign Out
                 </button>
@@ -172,12 +174,12 @@ export default function Layout({ children, title = 'SPORTFIVE' }) {
         </div>
       </header>
 
-      <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
+      <main className="w-full py-10 px-4 sm:px-6 lg:px-10">
         {children}
       </main>
 
-      <footer className="bg-customGray-100 dark:bg-customGray-800 mt-12 py-6"> {/* Increased top margin and padding */}
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-customGray-600 dark:text-customGray-400 text-sm">
+      <footer className="bg-transparent mt-12 py-6">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-customGray-500 dark:text-customGray-400 text-sm">
               © {new Date().getFullYear()} Leon Hartmann
           </div>
       </footer>

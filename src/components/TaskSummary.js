@@ -51,60 +51,27 @@ export default function TaskSummary({ tasks, avgCycleTime, isLoading }) {
     };
   }, [tasks]);
 
+  const items = [
+    { label: 'Completed', value: stats.completed, dot: 'bg-green-500' },
+    { label: 'Incomplete', value: stats.incomplete, dot: 'bg-blue-500' },
+    { label: 'Waiting Feedback', value: stats.waitingFeedback, dot: 'bg-yellow-500' },
+    { label: 'Overdue', value: stats.overdue, dot: 'bg-red-500', accent: stats.overdue > 0 ? 'text-red-600 dark:text-red-400' : '' },
+    { label: 'Avg Time', value: isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} d` : 'N/A'), dot: 'bg-purple-500' },
+    { label: 'Total', value: stats.total, dot: 'bg-indigo-500' },
+  ];
+
   return (
-    <div className="mb-8">
-      {/* Section Header */}
-      <div className="flex items-center mb-2">
-        <div className="flex items-center">
-          <svg className="h-6 w-6 text-customGray-600 dark:text-customGray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-          <h2 className="text-xl font-semibold text-customGray-900 dark:text-customGray-100">Analytics Overview</h2>
-        </div>
-      </div>
-      
-      {/* Subtitle Note */}
-      <p className="text-sm text-customGray-500 dark:text-customGray-400 mb-6">Key performance metrics and task completion statistics</p>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Completed Tasks */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-green-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Completed Tasks</h3>
-          <div className="text-3xl font-bold text-customGray-900 dark:text-customGray-100">{stats.completed}</div>
-        </div>
-
-        {/* Incomplete Tasks */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Incomplete Tasks</h3>
-          <div className="text-3xl font-bold text-customGray-900 dark:text-customGray-100">{stats.incomplete}</div>
-        </div>
-
-        {/* Waiting Feedback */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-yellow-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Waiting Feedback</h3>
-          <div className="text-3xl font-bold text-customGray-900 dark:text-customGray-100">{stats.waitingFeedback}</div>
-        </div>
-
-        {/* Overdue Tasks */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-red-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Overdue Tasks</h3>
-          <div className={`text-3xl font-bold ${stats.overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-customGray-900 dark:text-customGray-100'}`}>{stats.overdue}</div>
-        </div>
-
-        {/* Avg Completion Time */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-purple-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Avg Completion Time</h3>
-          <div className="text-3xl font-bold text-customGray-900 dark:text-customGray-100">
-            {isLoading ? '...' : (avgCycleTime !== null ? `${avgCycleTime} d` : 'N/A')}
+    <div className="mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        {items.map(({ label, value, dot, accent }) => (
+          <div key={label} className="flex items-baseline justify-between">
+            <div className="flex items-center gap-2">
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`} />
+              <span className="text-xs uppercase tracking-wide text-customGray-500 dark:text-customGray-400">{label}</span>
+            </div>
+            <div className={`text-3xl font-semibold text-customGray-900 dark:text-customGray-100 ${accent || ''}`}>{value}</div>
           </div>
-        </div>
-
-        {/* Total Tasks */}
-        <div className="bg-white dark:bg-customGray-800 border-l-4 border-indigo-500 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg p-5">
-          <h3 className="text-customGray-500 dark:text-customGray-400 text-sm font-medium mb-2">Total Tasks</h3>
-          <div className="text-3xl font-bold text-customGray-900 dark:text-customGray-100">{stats.total}</div>
-        </div>
+        ))}
       </div>
     </div>
   );

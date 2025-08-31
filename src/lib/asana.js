@@ -8,12 +8,29 @@ async function fetchAllPages(url) {
   let nextUrl = url;
 
   while (nextUrl) {
-    const response = await fetch(nextUrl, {
-      headers: {
-        Authorization: `Bearer ${ASANA_PAT}`,
-        Accept: 'application/json',
-      },
-    });
+    // Add a fetch timeout to avoid hanging indefinitely on network issues
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000); // 20s per-page timeout
+
+    let response;
+    try {
+      response = await fetch(nextUrl, {
+        headers: {
+          Authorization: `Bearer ${ASANA_PAT}`,
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') {
+        console.error('Asana API request timed out:', nextUrl);
+        throw new Error('Asana API request timed out');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       const errorData = await response.json();

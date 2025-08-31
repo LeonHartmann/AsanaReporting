@@ -21,25 +21,20 @@ ChartJS.register(
 // accent.purple: '#8b5cf6', accent.orange: '#f97316', accent.pink: '#ec4899'
 // customGray.500: '#6b7280'
 const STATUS_COLORS = {
-  'Completed': '#22c55e', // success
-  'Completed/Feedback': '#4ade80', // secondary.light (a lighter green)
-  'In progress': '#3b82f6', // info / primary.DEFAULT
-  'In Review': '#8b5cf6', // accent.purple
-  'To Do': '#facc15',     // warning
-  'Awaiting Info': '#f97316', // accent.orange
-  'Blocked': '#ef4444',   // error
-  'No Status': '#6b7280', // customGray.500
+  'Completed': '#22c55e',
+  'Completed/Feedback': '#4ade80',
+  'In progress': '#3b82f6',
+  'In Review': '#8b5cf6',
+  'To Do': '#facc15',
+  'Awaiting Info': '#f97316',
+  'Blocked': '#ef4444',
+  'No Status': '#6b7280',
 };
-const DEFAULT_COLOR = '#6b7280'; // customGray.500
+const DEFAULT_COLOR = '#6b7280';
 
 // Helper to determine text color based on dark mode
 // This is a simplified example; a more robust solution might use context or a global store
-const getTextColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return '#e5e7eb'; // customGray.200 for dark mode
-  }
-  return '#374151'; // customGray.700 for light mode
-};
+import { getTextColor, getMutedTextColor, observeTheme } from './chartUtils';
 
 export default function CompletionStatusChart({ tasks }) {
   if (!tasks || tasks.length === 0) {
@@ -79,9 +74,14 @@ export default function CompletionStatusChart({ tasks }) {
     statusCounts[status] = (statusCounts[status] || 0) + 1;
   });
 
-  // Convert to arrays for ChartJS
-  const statuses = Object.keys(statusCounts);
-  const counts = Object.values(statusCounts);
+  // Convert to arrays for ChartJS (sorted by count desc for better legibility)
+  const entries = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]);
+  const statuses = entries.map(([k]) => k);
+  const counts = entries.map(([, v]) => v);
+
+  const total = counts.reduce((a, b) => a + b, 0);
+  const completedCount = statusCounts['Completed'] || 0;
+  const completedRate = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   
   // Generate colors for chart using the fixed map
   const backgroundColors = statuses.map(status => {
@@ -109,6 +109,32 @@ export default function CompletionStatusChart({ tasks }) {
   };
 
   // Base options for both normal and fullscreen modes
+  // Custom plugin to draw center labels (total + completion rate)
+  const centerLabelPlugin = {
+    id: 'centerLabel',
+    afterDraw: (chart) => {
+      const { ctx, chartArea: { width, height } } = chart;
+      const centerX = chart.getDatasetMeta(0).data[0]?.x || width / 2;
+      const centerY = chart.getDatasetMeta(0).data[0]?.y || height / 2;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = getMutedTextColor();
+      ctx.font = '600 12px Inter, system-ui, sans-serif';
+      ctx.fillText('Total', centerX, centerY - 6);
+
+      ctx.fillStyle = getTextColor();
+      ctx.font = '700 18px Inter, system-ui, sans-serif';
+      ctx.fillText(String(total), centerX, centerY + 14);
+
+      // Secondary metric: completion rate
+      ctx.fillStyle = getMutedTextColor();
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      ctx.fillText(`${completedRate}% completed`, centerX, centerY + 32);
+      ctx.restore();
+    }
+  };
+
   const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -126,11 +152,7 @@ export default function CompletionStatusChart({ tasks }) {
       legend: {
         position: 'bottom',
         labels: {
-          font: {
-            family: 'Inter, system-ui, sans-serif',
-            size: 12,
-            weight: '500',
-          },
+          font: { family: 'Inter, system-ui, sans-serif', size: 12, weight: '500' },
           color: getTextColor(),
           padding: 10,
           boxWidth: 10,
@@ -138,7 +160,7 @@ export default function CompletionStatusChart({ tasks }) {
         }
       },
       title: {
-        display: true,
+        display: false,
         text: 'Task Status Distribution',
         align: 'center',
         font: {
@@ -156,7 +178,9 @@ export default function CompletionStatusChart({ tasks }) {
         enabled: false, // Disable tooltips completely
       }
     },
-    cutout: '65%',
+    rotation: -90, // Start at top
+    circumference: 360,
+    cutout: '70%',
     elements: {
       arc: {
         borderWidth: 0, // Remove borders on arc elements
@@ -165,7 +189,7 @@ export default function CompletionStatusChart({ tasks }) {
   };
 
   // Custom container class - removed isFullscreen and cursor-pointer
-  const containerClass = "p-6 h-96";
+  const containerClass = "p-4 h-80";
 
   // Effect to update text color on theme change
   // This is a bit of a hack for Chart.js as it doesn't always react to external CSS changes for canvas text
@@ -178,8 +202,17 @@ export default function CompletionStatusChart({ tasks }) {
       chart.options.plugins.title.color = textColor;
       chart.update();
     }
-    // Also listen for dark mode changes if possible, for now, relies on initial getTextColor
-  }, []); // Re-run if a dark mode state variable changes, if you have one.
+    const disconnect = observeTheme(() => {
+      const ch = chartRef.current;
+      if (ch) {
+        const c = getTextColor();
+        ch.options.plugins.legend.labels.color = c;
+        ch.options.plugins.title.color = c;
+        ch.update('none');
+      }
+    });
+    return disconnect;
+  }, []);
 
   return (
     <div
@@ -187,7 +220,7 @@ export default function CompletionStatusChart({ tasks }) {
       data-title="Task Status Distribution"
       className={containerClass}
     >
-      <Doughnut ref={chartRef} data={data} options={baseOptions} />
+      <Doughnut ref={chartRef} data={data} options={baseOptions} plugins={[centerLabelPlugin]} />
     </div>
   );
 }

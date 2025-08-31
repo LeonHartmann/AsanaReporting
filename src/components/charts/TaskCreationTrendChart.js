@@ -21,22 +21,7 @@ ChartJS.register(
   Legend
 );
 
-// Helper to determine text color based on dark mode
-const getTextColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return '#e5e7eb'; // customGray.200 for dark mode
-  }
-  return '#374151'; // customGray.700 for light mode
-};
-
-// Helper to determine grid color based on dark mode
-const getGridColor = () => {
-  if (typeof window !== 'undefined' && document.documentElement.classList.contains('dark')) {
-    return 'rgba(229, 231, 235, 0.2)'; // customGray.200 with alpha for dark mode grid
-  }
-  return 'rgba(209, 213, 219, 0.5)'; // customGray.300 with alpha for light mode grid
-};
-
+import { getTextColor, createVerticalGradient, observeTheme } from './chartUtils';
 
 export default function TaskTrendChart({ tasks }) {
   if (!tasks || tasks.length === 0) {
@@ -101,9 +86,14 @@ export default function TaskTrendChart({ tasks }) {
       {
         label: 'Tasks Created',
         data: createdCounts,
-        fill: false, // Remove fill for cleaner lines
-        borderColor: '#3b82f6', // primary.DEFAULT
-        backgroundColor: '#3b82f6',
+        fill: true,
+        borderColor: '#3b82f6',
+        backgroundColor: (ctx) => {
+          const { chart } = ctx;
+          const { ctx: c, chartArea } = chart;
+          if (!chartArea) return '#3b82f6';
+          return createVerticalGradient(c, chartArea, 'rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)');
+        },
         tension: 0.3,
         borderWidth: 2,
         pointRadius: 3,
@@ -115,9 +105,14 @@ export default function TaskTrendChart({ tasks }) {
       {
         label: 'Tasks Completed',
         data: completedCounts,
-        fill: false, // Remove fill for cleaner lines
-        borderColor: '#22c55e', // secondary.DEFAULT
-        backgroundColor: '#22c55e',
+        fill: true,
+        borderColor: '#22c55e',
+        backgroundColor: (ctx) => {
+          const { chart } = ctx;
+          const { ctx: c, chartArea } = chart;
+          if (!chartArea) return '#22c55e';
+          return createVerticalGradient(c, chartArea, 'rgba(34,197,94,0.18)', 'rgba(34,197,94,0.02)');
+        },
         tension: 0.3,
         borderWidth: 2,
         pointRadius: 3,
@@ -213,7 +208,7 @@ export default function TaskTrendChart({ tasks }) {
         }
       },
       title: {
-        display: true,
+        display: false,
         text: 'Task Creation & Completion Trend',
         align: 'center',
         font: {
@@ -289,6 +284,17 @@ export default function TaskTrendChart({ tasks }) {
       chart.options.scales.x.ticks.color = newTextColor;
       chart.update('none');
     }
+    const disconnect = observeTheme(() => {
+      const ch = chartRef.current;
+      if (ch) {
+        const c = getTextColor();
+        ch.options.plugins.legend.labels.color = c;
+        ch.options.plugins.title.color = c;
+        ch.options.scales.x.ticks.color = c;
+        ch.update('none');
+      }
+    });
+    return disconnect;
   }, []);
 
   return (

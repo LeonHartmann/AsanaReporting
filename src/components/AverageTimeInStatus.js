@@ -133,30 +133,20 @@ function AverageTimeInStatus({ tasks = [] }) {
     }, [tasks]); // Recalculate when tasks change
 
     return (
-        <div className="mb-8">
-            {/* Section Header */}
-            <div className="flex items-center mb-2">
-                <svg className="h-5 w-5 text-customGray-600 dark:text-customGray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h2 className="text-lg font-medium text-customGray-900 dark:text-customGray-100">Average Time in Status</h2>
-            </div>
-            
-            {/* Note */}
-            <p className="text-sm text-customGray-500 dark:text-customGray-400 mb-6">Note: Averages depend on task historical data collected</p>
+        <div className="mb-2">
 
             {isLoading && (
                 <div className="text-center text-customGray-500 dark:text-customGray-400 py-4">Calculating averages...</div>
             )}
             
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <div className="bg-error/10 text-error px-4 py-3 rounded-lg mb-4" role="alert">
                     Error: {error}
                 </div>
             )}
             
             {!isLoading && !error && (!avgDurations || avgDurations.length === 0) && (
-                <div className="text-customGray-500 dark:text-customGray-400 p-4 border rounded-lg shadow-sm bg-white dark:bg-customGray-800 text-center">
+                <div className="text-customGray-500 dark:text-customGray-400 p-4 rounded-lg shadow-sm bg-white dark:bg-customGray-800 text-center">
                     No average duration data available for active statuses.
                 </div>
             )}
@@ -164,13 +154,12 @@ function AverageTimeInStatus({ tasks = [] }) {
             {!isLoading && !error && avgDurations && avgDurations.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {avgDurations.map(({ status, displayName, color, bgColor, duration }) => (
-                        <div key={status} className="bg-white dark:bg-customGray-800 shadow-sm border border-customGray-200 dark:border-customGray-700 rounded-lg p-6">
-                            <div className="mb-3">
-                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium text-white ${bgColor}`}>
-                                    {displayName}
-                                </span>
+                        <div key={status} className="flex items-center justify-between rounded-lg bg-customGray-50 dark:bg-customGray-800/60 p-4">
+                            <div className="flex items-center gap-2">
+                                <span className={`inline-block w-2.5 h-2.5 rounded-full ${bgColor}`}></span>
+                                <span className="text-xs uppercase tracking-wide text-customGray-600 dark:text-customGray-300">{displayName}</span>
                             </div>
-                            <div className="text-2xl font-semibold text-customGray-900 dark:text-customGray-100">{formatSeconds(duration)}</div>
+                            <div className="text-xl font-semibold text-customGray-900 dark:text-customGray-100">{formatSeconds(duration)}</div>
                         </div>
                     ))}
                 </div>
